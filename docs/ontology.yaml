@@ -1,48 +1,55 @@
-version: 1
+version: 2
 classes:
   Form:
-    description: <질문과 이에 따른 전체 응답을 갖는 설문조사>
-    evidence: [로그 2, 로그 4, 로그 6, 로그 7, 로그 8]             # 설문조사 = 설문 = 폼 => 대표어 Form
+    description: 질문과 이에 따른 전체 응답을 갖는 설문조사
+    evidence: [로그 2, 로그 4, 로그 6, 로그 7, 로그 8]
     attributes:
-      title: {type: String}    # 설문조사 제목
-      note: {type: String}    # 설문조사 설명
-      progress: {type: float, range: [0, 1], evidence: {로그 3, 로그 4, 로그 6}}    # 진행률 퍼센트
-      question_num: {type: int, evidence: {로그 1, 로그 4, 로그 8, 로그 9}}   # 설문길이(질문 수)
-      editable: {type: boolean, evidence: [로그 3, 로그 4, 로그 6]}    # 제출 후 응답 내용 확인·수정 가능 여부
-      status: {type: enum, values: [open, closed], evidence: [로그 2]}    # 응답 가능 여부를 표시함
-
+      title: {type: string}
+      note: {type: string}
+      progress: {type: float, range: [0, 1], evidence: [로그 3, 로그 4, 로그 6]}
+      question_num: {type: int, evidence: [로그 1, 로그 4, 로그 8, 로그 9]}
+      editable: {type: boolean, note: '제출 후 응답 수정·취소 허용 여부. 제출 내용 조회는 항상 가능', evidence: [로그 3, 로그 4, 로그 6]}
+      status: {type: enum, values: [open, closed], evidence: [로그 2]}
+      deadline: {type: datetime, evidence: [로그 2]}
+      sections: {type: list, note: 문항 묶음, evidence: [관찰 1, 로그 3, 로그 9]}
+      payment_link: {type: string, note: 송금 링크만 저장하며 송금 처리·완료 여부는 다루지 않는다, evidence: [로그 10, 관찰 2]}
+      consent: {type: object, note: 수집 항목·목적·보유 기간을 보여 주는 동의 문구, evidence: [로그 4, 로그 9]}
     relations:
-      - has: Question                   # ← 반드시 이 파일에 정의된 클래스
-        evidence: [로그 1]                           # ← ③ 관계의 근거
+      - has: Question
+        evidence: [로그 1]
       - has: Result
         evidence: [로그 2]
       - has: ExternalService
         evidence: [로그 10]
 
   User:
-    description: <설문조사를 제작하고 응답하는 서비스 이용자>
-    evidence: [로그 6, 로그 7]                       # ← ① 클래스의 근거 (필수)
+    description: 설문조사를 제작하고 응답하는 서비스 이용자
+    evidence: [로그 6, 로그 7]
     attributes:
       id: {type: int, key: true}
-      user_type: {type: enum, value: [creator, respondent]}
-      personal_info: {type: list, example: [name, phone_number, email], evidence: {로그 3}}
+      user_type: {type: enum, values: [creator, respondent], note: 역할이며 같은 사용자가 제작자이자 응답자일 수 있다}
+      personal_info: {type: list, example: [name, phone_number, email], note: 학교·직장·동아리처럼 여러 묶음으로 저장할 수 있다(구현은 Profile), evidence: [로그 3]}
     relations:
-      - make: Form                   # ← 반드시 이 파일에 정의된 클래스
-        evidence: [로그 1]                           # ← ③ 관계의 근거
+      - make: Form
+        evidence: [로그 1]
       - make: Response
         evidence: [로그 3, 로그 7]
 
   Question:
-    description: <제작자가 의도를 갖고 만든 질문, 폼을 구성함>
-    evidence: [로그 1]                       # ← ① 클래스의 근거 (필수)
+    description: 제작자가 의도를 갖고 만든 질문으로 폼을 구성함
+    evidence: [로그 1]
     attributes:
-      question_note: {type: String}    # 질문 내용
-      question_type: {type: enum, value: [multiple_choice, short_answer, long_answer, dropdown, checkbox]}
-      input_format: {type: String, example: ["010-0000-0000", "공백포함500자"], evidence: {로그 6, 관찰 1, 관찰 2}}    # 입력 형식(전화번호 형식, 길이제한 등)
-      attachments: {type: list, example: ["jpg", "mp4", "pdf"], evidence: {로그 6}}    # 질문에 첨부하고 싶은 참고자료
+      question_note: {type: string}
+      question_type: {type: enum, values: [multiple_choice, short_answer, long_answer, dropdown, checkbox]}
+      input_format: {type: string, example: ['010-0000-0000', 공백포함500자], evidence: [로그 6, 관찰 1, 관찰 2]}
+      attachments: {type: list, example: [jpg, mp4, pdf], evidence: [로그 6]}
+      options: {type: list, example: [소프트웨어학과, 컴퓨터공학과], evidence: [로그 7, 관찰 1]}
+      required: {type: boolean, evidence: [로그 7]}
+      profile_key: {type: enum, values: [name, student_id, department, phone_number, email], note: 자동으로 채울 기본 정보 항목, evidence: [로그 3, 로그 8]}
+      branch_rules: {type: list, note: 조건에 따른 문항·섹션 분기, evidence: [로그 3]}
     relations:
-      - belongs_to: Form                   # ← 반드시 이 파일에 정의된 클래스
-        evidence: [로그 1]                           # ← ③ 관계의 근거
+      - belongs_to: Form
+        evidence: [로그 1]
       - by: User
         evidence: [로그 1, 로그 3]
 
@@ -50,9 +57,10 @@ classes:
     description: 응답자가 하나의 Form에 작성하거나 제출한 응답 내용
     evidence: [로그 3, 로그 4, 로그 6, 관찰 2]
     attributes:
-      content: {type: list, evidence: [로그 3, 로그 6, 로그 7, 로그 10, 관찰 2]}
+      content: {type: list, note: 신뢰할 수 없는 외부 입력으로 데이터로만 다룬다, evidence: [로그 3, 로그 6, 로그 7, 로그 10, 관찰 2]}
       status: {type: enum, values: [in_progress, submitted, abandoned], evidence: [로그 4, 로그 8, 로그 9, 관찰 2]}
-      attachments: {type: list, example: ["jpg", "mp4", "pdf"], evidence: [로그 1, 로그 2]}
+      attachments: {type: list, example: [jpg, mp4, pdf], evidence: [로그 1, 로그 2]}
+      submitted_at: {type: datetime, evidence: [로그 3, 로그 4, 로그 6]}
     relations:
       - belongs_to: Form
         evidence: [로그 2, 로그 6]
@@ -94,5 +102,25 @@ classes:
       - linked_to: Result
         evidence: [로그 2, 관찰 1]
 
-# 범위 밖(명시): 실제 은행 송금·결제 처리 / Google Sheets·Google Drive 자체 기능 구현 / 외부 AI 서비스 자체 구현 / 카카오톡 등 외부 서비스 자체 기능 구현
-# 핵심 흐름: <User> --(제작한다)--> <Form> --(응답한다)--> <Response> --(집계한다)--> <Result>
+  RequestContext:
+    description: 제작자가 자연어로 요청한 응답 분석 조건(요청 1회 단위). 강의 3 출력 스키마의 대상
+    evidence: [로그 1, 로그 2, 관찰 1]
+    attributes:
+      conditions: {type: list, example: [소프트웨어학과, 4학년, '3번 문항 - 예'], evidence: [로그 1, 관찰 1]}
+      match: {type: enum, values: [all, any, not], evidence: [관찰 1]}
+      operation: {type: enum, values: [count, summarize, list], evidence: [로그 1, 로그 2]}
+      sort: {type: object, example: {by: 나이, order: asc}, evidence: [관찰 1]}
+    relations:
+      - made_by: User
+        evidence: [로그 1, 로그 2]
+      - targets: Form
+        evidence: [로그 1, 로그 2]
+      - refers_to: Question
+        evidence: [관찰 1]
+      - filters: Response
+        evidence: [관찰 1]
+      - produces: Result
+        evidence: [로그 1, 관찰 1]
+
+# 범위 밖: 실제 은행 송금·결제 처리, Google Sheets·Google Drive 자체 기능 구현, 카카오톡 등 외부 서비스 자체 기능 구현
+# 핵심 흐름: User --(제작한다)--> Form --(응답한다)--> Response --(집계한다)--> Result

@@ -99,7 +99,7 @@ ex) #12
 <summary> 브랜치 규칙 </summary>
 
 ```jsx
-{tag}/{issueNum}
+{tag}/{work-name}
 ex) feature/login
 ```
 

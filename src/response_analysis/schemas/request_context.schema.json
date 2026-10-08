@@ -1,0 +1,41 @@
+{
+  "$schema": "<http://json-schema.org/draft-07/schema#>",
+  "title": "RequestContext",
+  "description": "응답 분석: 제작자가 자연어로 요청한 내용을 파싱 (요청 1회 단위)",
+  "type": "object",
+  "properties": {
+
+    "conditions": {
+      "type": "array",
+      "description": "응답을 걸러낼 조건 목록. 조건이 없으면(전체 응답 대상) null이 아니라 빈 배열이다.",
+      "examples": [["소프트웨어학과", "4학년"], ["3번 문항 - 예"], ["3번 문항 - 미응답"], []],
+      "items": {
+        "type": "string",
+        "description": "조건 하나. 특성, 특정 답안 선택, 응답 여부 등 다양할 수 있다."
+      }
+    },
+    "match": {
+      "type": "string",
+      "enum": ["all", "any", "not"],
+      "description": "조건 결합 방식. all=모든 조건을 만족, any=하나 이상 만족, not=나열한 조건 중 어느 것에도 해당하지 않음. 조건이 2개 이상이거나 부정 표현이 있을 때만 쓴다. 긍정 조건과 부정 조건이 섞이면 생략한다."
+    },
+    "operation": {
+      "type": ["string", "null"],
+      "enum": ["count", "summarize", "list", null],
+      "description": "결과를 보여주는 방식. count=개수, summarize=요약 설명, list=표본 나열. 발화로 알 수 없으면 null."
+    },
+    "sort": {
+      "type": "object",
+      "description": "결과 정렬 기준. operation이 list일 때만 쓴다.",
+      "properties": {
+        "by": {"type": "string", "description": "정렬 기준 문항. 발화에 나온 표현을 그대로 담는다."},
+        "order": {"type": "string", "enum": ["asc", "desc"], "description": "asc=적은·어린·낮은 순, desc=많은·높은 순"}
+      },
+      "required": ["by", "order"],
+      "additionalProperties": false
+    }
+
+  },
+  "required": ["conditions", "operation"],
+  "additionalProperties": false
+}

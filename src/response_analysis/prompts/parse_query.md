@@ -1,10 +1,10 @@
-# 단골 파싱 프롬프트 — parse_query.md (강의 3 산출물)
+# 응답 분석 프롬프트 — parse_query.md (강의 3 산출물)
 
 | 항목 | 값 |
 |---|---|
 | prompt_version | 1 |
-| 짝이 되는 스키마 | `src/dangol/schemas/request_context.schema.json` |
-| 읽는 코드 | `src/dangol/parser.py` — `<!-- prompt:start -->`와 `<!-- prompt:end -->` 사이만 읽어 system 프롬프트로 보낸다 |
+| 짝이 되는 스키마 | `src/response_analysis/schemas/request_context.schema.json` |
+| 읽는 코드 | `src/response_analysis/parser.py` — `<!-- prompt:start -->`와 `<!-- prompt:end -->` 사이만 읽어 system 프롬프트로 보낸다 |
 | 누가 쓰는가 | 👤 사람이 쓴다. 파서의 판정 기준이므로 에이전트에게 수정을 맡기지 않는다 |
 
 ## 이 파일은 어떻게 쓰이나

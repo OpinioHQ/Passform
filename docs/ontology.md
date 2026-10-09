@@ -36,7 +36,7 @@ classes:
 ```
 
 ```yaml
-version: 3
+version: 4
 classes:
   Form:
     description: 질문과 이에 따른 전체 응답을 갖는 설문조사
@@ -50,7 +50,7 @@ classes:
       deadline: {type: datetime, evidence: [로그 2]}
       sections: {type: list, note: 순서가 있는 문항 묶음. 응답 중 남은 분량은 섹션과 분기 경로에서 계산한다, evidence: [관찰 1, 로그 3, 로그 9]}
       payment_link: {type: string, note: 송금 링크만 저장하며 송금 처리·완료 여부는 다루지 않는다, evidence: [로그 10, 관찰 2]}
-      consent: {type: object, note: 수집 항목·목적·보유 기간을 보여 주는 동의 문구, evidence: [로그 4, 로그 9]}
+      consent: {type: object, note: '배포된 모든 폼에서 수집 항목·목적·보유 기간·동의 거부 안내를 보여 주는 문구.', evidence: [로그 4, 로그 9]}
     relations:
       - made_by: User
         required: true
@@ -69,7 +69,7 @@ classes:
     evidence: [관찰 1, 로그 6, 로그 7]
     attributes:
       id: {type: int, key: true}
-      personal_info: {type: list, example: [name, phone_number, email], note: 학교·직장·동아리처럼 여러 묶음으로 저장할 수 있다(구현은 Profile), evidence: [로그 3]}
+      personal_info: {type: list, example: [name, student_id, department, phone_number, email, address, birth_date], note: '학교·직장·동아리처럼 여러 묶음으로 저장할 수 있다(구현은 Profile).', evidence: [로그 3]}
     relations:
       - make: Form
         evidence: [로그 1]
@@ -82,12 +82,12 @@ classes:
     attributes:
       section: {type: string, note: 이 문항이 속한 Form.sections의 섹션을 가리키는 개념적 참조. 섹션 안에 문항을 배치하면 소속을 중복 저장하지 않는다, evidence: [로그 3, 관찰 1]}
       question_note: {type: string, evidence: [관찰 1]}
-      question_type: {type: enum, values: [multiple_choice, short_answer, long_answer, dropdown, checkbox], evidence: [관찰 1]}
-      input_format: {type: string, example: ['010-0000-0000', 공백포함500자], evidence: [로그 6, 관찰 1, 관찰 2]}
+      question_type: {type: enum, values: [multiple_choice, short_answer, long_answer, dropdown, checkbox], note: 날짜는 별도 문항 유형이 아니라 short_answer의 input_format으로 제공한다, evidence: [관찰 1]}
+      input_format: {type: object, example: {kind: mobile_phone, placeholder: '010-0000-0000'}, note: '이름·휴대전화·집전화·주소·학번·날짜 등 입력값의 범주와 형식·길이 제약을 나타낸다. 화면 안내와 응답 검증·저장 형식, 동의서 수집 항목의 범주에 사용한다.', evidence: [로그 6, 로그 8, 관찰 1, 관찰 2]}
       attachments: {type: list, example: [jpg, mp4, pdf], note: 제작자가 문항에 첨부하는 참고 파일. 허용 형식과 용량 제한은 SPEC에서 정의한다, evidence: [로그 6]}
       options: {type: list, example: [소프트웨어학과, 컴퓨터공학과], evidence: [로그 7, 관찰 1]}
       required: {type: boolean, evidence: [로그 7]}
-      profile_key: {type: enum, values: [name, student_id, department, phone_number, email], note: 자동으로 채울 기본 정보 항목, evidence: [로그 3]}
+      profile_key: {type: enum, values: [name, student_id, department, phone_number, email, address, birth_date], note: '제작자가 응답자 본인의 정보라고 확인한 문항에만 설정하는 프로필 자동채우기 키.', evidence: [로그 3]}
       branch_rules: {type: list, note: 조건에 따른 문항·섹션 분기, evidence: [로그 3]}
     relations:
       - belongs_to: Form

@@ -36,7 +36,7 @@ classes:
 ```
 
 ```yaml
-version: 3
+version: 4
 classes:
   Form:
     description: 질문과 이에 따른 전체 응답을 갖는 설문조사
@@ -45,12 +45,14 @@ classes:
       title: {type: string, evidence: [관찰 1]}
       note: {type: string, evidence: [관찰 1]}
       question_num: {type: int, evidence: [로그 1, 로그 4, 로그 8, 로그 9]}
-      editable: {type: boolean, note: '제출 후 응답 수정·취소 허용 여부. 제출 내용 조회는 항상 가능', evidence: [로그 3, 로그 4, 로그 6]}
+      definition_version: {type: int, nullable: true, note: '마지막으로 배포 검증을 통과한 폼 정의 버전. 첫 배포 전에는 null이고 draft 편집 중에는 증가하지 않으며 이전 배포 정의는 보존한다', evidence: [기획상 추가]}
+      editable: {type: boolean, note: '제출 후 응답 수정 허용 여부. 제출 내용 조회는 항상 가능', evidence: [로그 3, 로그 4, 로그 6]}
+      cancellable: {type: boolean, note: '응답자 본인의 제출 응답 취소 허용 여부. 제작자의 폼 단위 응답 전체 삭제 권한과 무관한 제품 정책', evidence: [기획상 추가]}
       status: {type: enum, values: [open, closed], note: 배포된 폼의 응답 접수 상태. 제작 중 폼의 임시 저장은 SPEC에서 정의한다, evidence: [로그 2]}
       deadline: {type: datetime, evidence: [로그 2]}
       sections: {type: list, note: 순서가 있는 문항 묶음. 응답 중 남은 분량은 섹션과 분기 경로에서 계산한다, evidence: [관찰 1, 로그 3, 로그 9]}
       payment_link: {type: string, note: 송금 링크만 저장하며 송금 처리·완료 여부는 다루지 않는다, evidence: [로그 10, 관찰 2]}
-      consent: {type: object, note: 수집 항목·목적·보유 기간을 보여 주는 동의 문구, evidence: [로그 4, 로그 9]}
+      consent: {type: object, note: '배포된 모든 폼에서 수집 항목·목적·보유 기간·동의 거부 안내를 보여 주는 문구.', evidence: [로그 4, 로그 9]}
     relations:
       - made_by: User
         required: true
@@ -69,7 +71,7 @@ classes:
     evidence: [관찰 1, 로그 6, 로그 7]
     attributes:
       id: {type: int, key: true}
-      personal_info: {type: list, example: [name, phone_number, email], note: 학교·직장·동아리처럼 여러 묶음으로 저장할 수 있다(구현은 Profile), evidence: [로그 3]}
+      personal_info: {type: list, example: [name, student_id, department, phone_number, email, address, birth_date], note: '학교·직장·동아리처럼 여러 묶음으로 저장할 수 있다(구현은 Profile).', evidence: [로그 3]}
     relations:
       - make: Form
         evidence: [로그 1]
@@ -82,12 +84,12 @@ classes:
     attributes:
       section: {type: string, note: 이 문항이 속한 Form.sections의 섹션을 가리키는 개념적 참조. 섹션 안에 문항을 배치하면 소속을 중복 저장하지 않는다, evidence: [로그 3, 관찰 1]}
       question_note: {type: string, evidence: [관찰 1]}
-      question_type: {type: enum, values: [multiple_choice, short_answer, long_answer, dropdown, checkbox], evidence: [관찰 1]}
-      input_format: {type: string, example: ['010-0000-0000', 공백포함500자], evidence: [로그 6, 관찰 1, 관찰 2]}
+      question_type: {type: enum, values: [multiple_choice, short_answer, long_answer, dropdown, checkbox], note: 날짜는 별도 문항 유형이 아니라 short_answer의 input_format으로 제공한다, evidence: [관찰 1]}
+      input_format: {type: object, example: {kind: mobile_phone, placeholder: '010-0000-0000'}, note: '이름·휴대전화·집전화·주소·학번·날짜 등 입력값의 범주와 형식·길이 제약을 나타낸다. 화면 안내와 응답 검증·저장 형식, 동의서 수집 항목의 범주에 사용한다.', evidence: [로그 6, 로그 8, 관찰 1, 관찰 2]}
       attachments: {type: list, example: [jpg, mp4, pdf], note: 제작자가 문항에 첨부하는 참고 파일. 허용 형식과 용량 제한은 SPEC에서 정의한다, evidence: [로그 6]}
       options: {type: list, example: [소프트웨어학과, 컴퓨터공학과], evidence: [로그 7, 관찰 1]}
       required: {type: boolean, evidence: [로그 7]}
-      profile_key: {type: enum, values: [name, student_id, department, phone_number, email], note: 자동으로 채울 기본 정보 항목, evidence: [로그 3]}
+      profile_key: {type: enum, values: [name, student_id, department, phone_number, email, address, birth_date], note: '제작자가 응답자 본인의 정보라고 확인한 문항에만 설정하는 프로필 자동채우기 키.', evidence: [로그 3]}
       branch_rules: {type: list, note: 조건에 따른 문항·섹션 분기, evidence: [로그 3]}
     relations:
       - belongs_to: Form
@@ -100,9 +102,11 @@ classes:
     evidence: [로그 3, 로그 4, 로그 6, 관찰 2]
     attributes:
       content: {type: list, note: 신뢰할 수 없는 외부 입력으로 데이터로만 다룬다, evidence: [로그 3, 로그 6, 로그 7, 로그 10, 관찰 2]}
+      form_version: {type: int, note: '응답 작성 시작 시 사용한 Form 배포 정의 버전. 제출 후 수정해도 바꾸지 않는다', evidence: [기획상 추가]}
       status: {type: enum, values: [in_progress, submitted, abandoned], note: in_progress는 응답 임시 저장 상태. abandoned 판정 기준은 SPEC에서 정의한다, evidence: [로그 4, 로그 8, 로그 9, 관찰 2]}
       attachments: {type: list, example: [jpg, mp4, pdf], note: 응답자가 업로드한 파일. 허용 형식과 용량 제한은 SPEC에서 정의한다, evidence: [로그 1, 로그 2]}
-      submitted_at: {type: datetime, evidence: [로그 3, 로그 4, 로그 6]}
+      submitted_at: {type: datetime, nullable: true, note: '작성 중에는 null이며 최초 제출 시각을 기록한다', evidence: [로그 3, 로그 4, 로그 6]}
+      updated_at: {type: datetime, nullable: true, note: '제출 후 응답을 수정한 최근 시각. 수정 전에는 null이다', evidence: [기획상 추가]}
     relations:
       - belongs_to: Form
         evidence: [로그 2, 로그 6]
@@ -114,12 +118,12 @@ classes:
         evidence: [로그 7, 로그 10, 관찰 2]
 
   Result:
-    description: Form에 제출된 Response 전체를 집계하여 제작자가 확인하는 결과. RequestContext로 필터링해도 원래 결과는 유지된다
+    description: Form에 제출된 Response 전체를 집계하여 제작자가 확인하는 결과. 전체 응답 수는 폼 단위이고 문항 통계는 통합 또는 제출 당시 폼 버전별로 확인한다. RequestContext로 필터링해도 원래 결과는 유지된다
     evidence: [로그 1, 로그 2, 관찰 1]
     attributes:
-      response_count: {type: int, note: 필터 조건과 무관한 Form 전체 제출 응답 수 , evidence: [관찰 1]}
-      filtered_response_count: {type: int, derived: true, note: 현재 RequestContext에 맞는 제출 응답 수. 조회할 때 계산한다. 조건이 없으면 response_count와 같다, evidence: [로그 1, 관찰 1]}
-      statistics: {type: list, evidence: [로그 1, 관찰 1]}
+      response_count: {type: int, note: '필터·폼 버전과 무관하게 현재 남은 Form 전체 제출 응답 수', evidence: [관찰 1]}
+      filtered_response_count: {type: int, derived: true, note: '해당 Form의 모든 제출 버전에서 RequestContext 조건에 맞는 응답 수. 조건을 판정할 수 없는 응답은 별도로 알리고 집계하지 않으며 조건이 없으면 Form 전체 제출 응답 수와 같다', evidence: [로그 1, 관찰 1, 기획상 추가]}
+      statistics: {type: list, note: '통합 조회와 버전별 조회를 모두 제공한다. 통합 시 동일한 문항·선택지만 합산하고 바뀐 항목은 구분한다', evidence: [로그 1, 관찰 1, 기획상 추가]}
       summary: {type: string, evidence: [로그 1, 관찰 1]}
       external_service_linked: {type: boolean, evidence: [로그 2, 관찰 1]}
     relations:
@@ -148,13 +152,13 @@ classes:
         evidence: [로그 2, 관찰 1]
 
   RequestContext:
-    description: 제작자가 자연어로 요청한 응답 조회 조건(요청 1회 단위). Result를 변경하지 않고 보여 줄 응답을 고른다.
+    description: 제작자가 자연어로 요청한 응답 조회 조건(요청 1회 단위). 해당 Form의 모든 제출 버전에서 Result를 변경하지 않고 보여 줄 응답을 고른다.
     note: 근거는 응답 결과를 확인·정리하며 도구를 오가는 문제를 뒷받침한다. 자연어 요청과 conditions·match·operation·sort의 구체적 구조는 이를 해결하기 위한 설계 가설로, 인터뷰에서 사용성이 검증된 것은 아니다
     evidence: [로그 1, 로그 2, 관찰 1]
     attributes:
       conditions: {type: list, example: [소프트웨어학과, 4학년, '3번 문항 - 예'], evidence: [로그 1, 관찰 1]}
       match: {type: enum, values: [all, any, not], evidence: [관찰 1]}
-      operation: {type: enum, values: [count, summarize, list], evidence: [로그 1, 로그 2]}
+      operation: {type: enum, values: [count, summarize, list, null], note: 'null은 출력 방식을 판별할 수 없는 파서 결과이며 분석하지 않고 되묻는다', evidence: [로그 1, 로그 2, 기획상 추가]}
       sort: {type: object, example: {by: 나이, order: asc}, evidence: [관찰 1]}
     relations:
       - made_by: User

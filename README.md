@@ -12,6 +12,38 @@
 ## Github
 
 <details>
+<summary>저장소 구조</summary>
+
+```jsx
+<팀-저장소>/
+  AGENTS.md                          # 강의 4 — 도메인 용어집, 절대 규칙, 완료의 정의
+  docs/
+    research/interviews.md           # 강의 2 — 인터뷰 프로토콜과 로그
+    ontology.yaml                    # 강의 2 — 미니 온톨로지
+    PROBLEM.md                       # 강의 4 — 문제 정의서
+    SPEC.md                          # 강의 4 — 제품 스펙(SDD)과 수용 기준(AC)
+    spikes/YYYY-MM-DD_<가설>.md      # 강의 4 — 기술 타당성 스파이크
+    ARCHITECTURE.md                  # 강의 6 — 아키텍처 설계서
+    prompts/delegation_examples.md   # 강의 5 — 위임 프롬프트와 검증 루프 기록
+  src/response_analysis/
+    schemas/request_context.schema.json     # 강의 3 — 출력 스키마
+    prompts/parse_query.md           # 강의 3 — 파싱 프롬프트
+    tools/                           # 강의 6 — 도구 구현
+  config/rag.yaml                    # 강의 6 — RAG 설정
+  tests/
+    harness/golden_cases.yaml        # 강의 5 — 골든 케이스(데이터)
+    test_<기능>_golden.py            # 강의 5 — 골든 테스트
+  evals/
+    evalset.jsonl                    # 강의 7 — 평가 데이터셋
+    README.md                        # 강의 7 — evals 설계
+    judge_prompt.md                  # 강의 7 — judge 프롬프트
+    run_evals.py                     # 강의 7 — 러너
+    results/YYYY-MM-DD.json          # 강의 7 — 측정 기록
+  data/seed/                         # 예시 데이터
+```
+</details>
+
+<details>
 <summary>커밋 규칙</summary>
 
 ```jsx
@@ -99,7 +131,7 @@ ex) #12
 <summary> 브랜치 규칙 </summary>
 
 ```jsx
-{tag}/{work-name}
+{tag}/{작업내용}
 ex) feature/login
 ```
 

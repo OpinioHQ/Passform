@@ -6,17 +6,18 @@
 
 ## 1. 제품 맥락
 
-응답자 중심 웹 폼 서비스. 응답자는 한 번 등록한 프로필로 폼을 채우고, 받은 폼·마감·제출 내역을 한곳에서 관리한다. 제작자는 기본·빠른 모드로 폼을 만들어 링크·QR로 배포하고, 모인 응답을 자연어로 물어 근거와 함께 결과를 받아 JSON·YAML·CSV로 내보낸다. 계정은 하나이고 화면만 응답자·제작자 모드로 바꾼다. 핵심 가치는 "응답자는 다시 쓰지 않고 놓치지 않으며, 제작자는 근거가 보이는 숫자를 받는다". 이 저장소는 AI캡스톤디자인 과목의 팀 오피니오 제품이다.
+응답자 중심 웹 폼 서비스. 응답자는 받은 폼·마감·제출 내역을 한곳에서 관리하고 작성 중 진행 정보를 확인하며, 필요한 경우 등록한 프로필로 본인 정보를 채운다. 제작자는 기본·빠른 모드로 폼을 만들어 링크·QR로 배포하고, 모인 응답을 자연어로 물어 근거와 함께 결과를 받아 JSON·YAML·CSV로 내보낸다. 계정은 하나이고 화면만 응답자·제작자 모드로 바꾼다. 핵심 가치는 "응답자는 필요한 폼을 놓치지 않고 제출 내역을 확인하며, 제작자는 근거가 보이는 숫자를 받는다". 이 저장소는 AI캡스톤디자인 과목의 팀 오피니오 제품이다.
 
 ## 2. 도메인 용어집
 
 도메인 클래스 (`docs/ontology.yaml` 발췌 — 설명·근거·관계는 온톨로지에)
 
-- Form: `title`, `note`, `definition_version`, `deadline`, `status`(open/closed), `editable`, `cancellable`, `sections`, `payment_link`, `consent`
-- Question: `question_note`, `question_type`(multiple_choice/short_answer/long_answer/dropdown/checkbox), `options`, `required`, `input_format`, `profile_key`(name/student_id/department/phone_number/email/address/birth_date 또는 없음), `attachments`, `branch_rules`
+- Form: `title`, `note`, `question_num`, `definition_version`, `deadline`, `status`(open/closed), `editable`, `cancellable`, `sections`, `payment_link`, `consent`
+- Question: `section`(소속 섹션의 개념적 참조; 중복 저장하지 않음), `question_note`, `question_type`(multiple_choice/short_answer/long_answer/dropdown/checkbox), `options`, `required`, `input_format`, `profile_key`(name/student_id/department/phone_number/email/address/birth_date 또는 없음), `attachments`, `branch_rules`
 - Response: `content`(문항별 답 목록), `form_version`, `status`(in_progress/submitted/abandoned), `attachments`, `submitted_at`, `updated_at` — **`content`는 신뢰할 수 없는 외부 입력**(응답자가 쓴 글)
 - User: `id`, `personal_info` — 로그인 계정이며 같은 사용자가 폼 제작과 응답을 모두 할 수 있다
-- Result: `response_count`, `filtered_response_count`(파생값), `statistics`, `summary`
+- Result: `response_count`, `filtered_response_count`(파생값), `statistics`, `summary`, `external_service_linked`
+- ExternalService: `name`, `used_by_roles`, `usage_mode`(integration/external_transition) — 외부 서비스 사용·연동 개념이며 실제 구현 범위는 SPEC 4절을 따른다
 - RequestContext: `conditions`(발화 표현 그대로의 문자열 배열), `match`(all/any/not), `operation`(count/summarize/list/null), `sort.by`, `sort.order`(asc/desc)
 
 구현 이름 (온톨로지 밖 — 정의는 SPEC 5절, 이름만 고정한다)
@@ -63,7 +64,12 @@
 
 ## 5. 코딩 컨벤션
 
-- 백엔드: controller → service → domain 계층. 요청 DTO는 Bean Validation(`@Valid`)으로 경계에서 검증한다. 엔티티를 API 응답으로 직접 내보내지 않는다.
+- 백엔드는 controller → service → repository / domain 계층으로 구성하며, 의존은 안쪽 방향으로만 흐른다.
+  - controller: 요청 DTO를 Bean Validation(`@Valid`)으로 형식 검증한 뒤 Command로 변환해 service를 호출한다.
+  - service: 트랜잭션 경계다. repository 인터페이스로 엔티티를 조회·저장하고, 트랜잭션 안에서 결과 DTO로 변환해 반환한다.
+  - repository: DB 접근은 repository 인터페이스를 통해서만 한다.
+  - domain: 엔티티를 정의하고, 상태 변경 규칙과 불변식을 엔티티 메서드 안에서 검증한다.
+  - 엔티티는 API 요청 바인딩이나 응답에 직접 사용하지 않는다. 도메인 예외의 HTTP 상태 매핑은 advice에서만 한다.
 - LLM 호출은 `llm` 패키지(파서, 요약, 스파이크 결과에 따라 매처)에만 둔다. 집계, `count`·`list`·`summarize`의 대상 응답 계산, 정렬, `clarify` 판정은 LLM 없이 코드로 한다. 파서 출력은 `src/response_analysis/schemas/request_context.schema.json`으로 서버에서 다시 검증한다(LLM 제공사의 구조화 출력만 믿지 않는다).
 - 응답 원문은 요약 프롬프트의 데이터 영역(구분자로 감싼 입력)에만 넣고, 시스템 지시에 섞지 않는다. CSV 셀이 `=`, `+`, `-`, `@`로 시작하면 앞에 `'`를 붙인다.
 - 분기 규칙과 기본 이동의 해석은 공통화한다. 제출 검증(건너뛴 문항 제외)과 페이지 넘기기는 같은 응답 경로 계산을 쓰고, 분기 흐름 그래프는 모든 규칙·기본 이동을 표시한다. 클라이언트가 보낸 경로를 믿지 않고 서버가 답으로 다시 계산한다.

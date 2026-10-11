@@ -32,6 +32,7 @@
 | 화면 모드 스위치 | 오른쪽 위 스위치로 응답자 모드·제작자 모드 전환, 마지막 모드를 계정에 저장. 권한은 바꾸지 않는다 | (계획 — 인터뷰 근거 없음) |
 | 다중 프로필 | 학교·직장·동아리 등 프로필 여러 개 생성·수정·삭제, 허용 항목(주소·생년월일 포함)만 | 로그 3(기본정보 반복 입력) + 계획서(다중 프로필) |
 | 자동채우기 | 제작자가 응답자 본인 정보라고 확인한 문항에만 `Question.profile_key`를 설정한다. 응답자는 [내 정보로 채우기]로 고른 프로필의 값을 제안받아 확인·수정한 뒤 제출한다 | 로그 3(기본정보 반복 입력·자동 입력 요구) |
+| 글자 수 표시·제한 | 제작자는 기본·빠른 모드에서 단답형·장문형 문항의 최대 글자 수를 선택적으로 정한다. 응답자는 제한이 있는 문항에서 입력 중 `10/100`처럼 현재 글자 수와 최대 글자 수를 확인한다 | 관찰 2(외부 글자 수 세기 사용) |
 | 개인정보 동의 템플릿 | 모든 배포 폼에서 `input_format`의 입력 범주와 일반 문항 응답 내용을 수집 항목으로 알리고, 목적·보유 기간·동의 거부 안내를 보여 준다. 동의해야 제출할 수 있다 | 로그 4, 9; 모든 폼 적용은 제품 정책 |
 | 설문지 저장 | 응답자: 받은 폼을 내 폼함에 저장. 제작자: 만들던 폼 초안 저장, 내가 만든 폼 목록, 폼 복사 | 로그 2·7(마감 놓침), 관찰 1(이전 폼 참고 4회) |
 | 작성 중 자동 임시 저장 | 응답자가 폼에 작성한 답과 제작자가 만들던 초안을 입력 중 자동으로 저장한다. 화면을 나갔다 돌아와도 이어서 작성할 수 있고, 응답 초안은 제출 전까지 제작자의 결과에 나타나지 않는다 | 로그 4·8·9(장문 설문 중단), 관찰 2; 제작자 자동 저장은 제품 정책 |
@@ -39,8 +40,8 @@
 | 제출 이력 | 제출한 응답 다시 보기. 제작자는 응답자의 수정·취소 허용 여부를 각각 정한다. 허용된 수정은 기존 응답을 덮어쓰고, 폼이 바뀌어도 제출 당시 문항을 기준으로 이력을 보여 준다. 수정·취소는 폼이 열려 있고 마감 전일 때만 가능 | 로그 3, 4, 6; 권한 분리·폼 버전 보존은 제품 정책 |
 | 파일 첨부·업로드 | 제작자는 폼 설명란과 문항에 이미지·PDF·MP4를 첨부한다. 응답 화면에서 이미지만 바로 보이고 PDF·MP4는 다운로드해 본다. 응답자는 문항별 답에 파일을 첨부할 수 있고, 문항 하나의 답에 첨부한 파일 합계는 25MB 이하 | 로그 6(문항의 시각 자료), 로그 1·2(응답 파일 제출 제약) |
 | 클라우드 저장 공간·정리 | 계정마다 500MB. 내가 만든 폼과 받은 응답의 사용량을 확인한다. 정리는 폼 삭제, 그 폼의 받은 응답 전체 삭제, 그 폼의 응답 첨부 전체 삭제 중에서 고른다. 개별 응답이나 특정 응답자의 첨부만 삭제할 수는 없다. 폼 삭제 전에는 받은 응답의 내보내기 여부를 묻는다 | (제품 정책) |
-| 폼 빌더 — 기본 모드 | 구글폼과 비슷한 화면. 섹션과 문항 각각 추가·수정·삭제·복제·순서 변경, 문항 유형 5종, 입력 형식, 본인 정보 여부, 필수·설명, 미리보기, 상세 분기 설정 | 로그 1, 관찰 1; 입력 형식은 로그 6·8, 관찰 1·2 |
-| 폼 빌더 — 빠른 모드(선택형 제작 흐름) | 제작 목적·응답 대상 선택 → 그 맥락에 맞는 추천 문항 선택 → 직접 질문 추가 → 검토·미리보기. 선택·직접 추가한 문항 모두 입력 형식과 본인 정보 여부를 설정할 수 있고 기본 모드와 같은 폼 정의로 저장한다 | 로그 1(다수 문항 제작 부담), 로그 3(기본문항 자동 생성 요구), 관찰 1(이전 폼 참고); 목적·대상별 추천은 설계 가설 |
+| 폼 빌더 — 기본 모드 | 구글폼과 비슷한 화면. 섹션과 문항 각각 추가·수정·삭제·복제·순서 변경, 문항 유형 5종, 입력 형식, 단답형·장문형의 최대 글자 수, 본인 정보 여부, 필수·설명, 미리보기, 상세 분기 설정 | 로그 1, 관찰 1; 입력 형식은 로그 6·8, 관찰 1·2 |
+| 폼 빌더 — 빠른 모드(선택형 제작 흐름) | 제작 목적·응답 대상 선택 → 그 맥락에 맞는 추천 문항 선택 → 직접 질문 추가 → 검토·미리보기. 선택·직접 추가한 문항 모두 입력 형식, 단답형·장문형의 최대 글자 수와 본인 정보 여부를 설정할 수 있고 기본 모드와 같은 폼 정의로 저장한다 | 로그 1(다수 문항 제작 부담), 로그 3(기본문항 자동 생성 요구), 관찰 1(이전 폼 참고); 목적·대상별 추천은 설계 가설 |
 | 모바일 웹 응답·제작 | 모바일 브라우저에서 프로필·자동채우기, 내 폼함·마감·제출 이력, 폼 응답·파일 첨부를 사용한다. 폼 제작은 빠른 모드로 생성·저장·배포하고, 기본 모드 제작은 데스크톱 웹에서 제공한다 | 로그 3(모바일 제작 제약); 모바일 응답 범위는 제품 정책 |
 | 폼 설정 | 응답 받기 켜기·끄기(= `status` open/closed), 마감일, 응답 수정 허용·취소 허용 각각 설정, 응답 화면 보기 방식. 응답 제출 횟수는 제한하지 않음 | 관찰 1(폼 설정 사용), 로그 2(마감), 로그 3(응답 수정); 취소 허용 분리는 제품 정책 |
 | 조건분기 | 문항별 보기에서는 각 문항 뒤에 뒤쪽 문항·섹션이나 제출로 분기한다. 섹션별 보기에서는 섹션의 모든 질문에 답한 뒤 뒤쪽 섹션이나 제출로만 분기한다. 여러 답의 조합을 조건으로 쓸 수 있고, 제작자에게 분기 흐름을 그림으로 보여 준다 | 로그 3(로직 시각화 불편) |
@@ -56,7 +57,7 @@
 | 순서 | 기능 | 계획 동작 | 근거 | AC |
 |---|---|---|---|---|
 | 1 | 캘린더 | 내 폼함에 저장한 폼의 마감일을 달력에 표시 | 로그 2·7(마감 놓침) | AC52 (초안) |
-| 2 | AI 다듬기 | 장문 답의 글자 수 세기, 맞춤법 교정, 글 다듬기 제안 | 관찰 2(외부 창 6번), 로그 7, 10 | AC53~AC55 (초안) |
+| 2 | AI 다듬기 | 장문 답의 맞춤법 교정, 글 다듬기 제안 | 관찰 2(외부 창 6번), 로그 7, 10 | AC54~AC55 (초안) |
 | 3 | 구글폼 불러오기 | 구글폼을 폼 정의(`form.schema.json`)로 변환해 가져오기 | 관찰 1(이전 구글폼 템플릿 4회 참고) | 착수 시 작성 |
 | 4 | 협업 | 운영진 여러 명이 한 폼을 편집·결과 열람 | 로그 3(공동작업·공유), 관찰 1(드라이브 공유) | 착수 시 작성 |
 | 5 | 이탈 구간 분석 | 작성 중 자동 임시 저장은 MVP에 포함한다. 섹션별 중단 위치를 제작자에게 집계해 보여 주는 분석은 이 단계에서 개발한다 | 로그 4·8·9(장문 설문 중단), 로그 6(제작자 이탈 우려) | 착수 시 작성 |
@@ -146,16 +147,17 @@
 
 - `PATCH`는 보낸 최상위 키를 통째로 바꾼다(`sections`를 보내면 섹션 전체 교체). 검증은 바꾼 뒤의 전체 정의로 한다.
 - 제작자가 `draft` 폼을 기본·빠른 모드에서 편집하면 입력 변경을 자동 저장한다. 처음 만드는 폼은 작업을 시작할 때 `POST /forms`로 제작자 소유 초안을 만들고, 이후 `PATCH /forms/{form_id}`로 현재 폼 정의를 저장한다. 저장된 초안은 다시 열어 이어서 편집할 수 있다. 자동 저장 중·완료·실패를 화면에 구분해 보여 주고, 저장이 끝나기 전에 화면을 나가려 하면 경고하며 실패한 변경을 저장된 것으로 표시하지 않는다. 자동 저장은 초안의 의미 검증이나 배포를 실행하지 않고 `definition_version`도 늘리지 않는다. `open`·`closed` 폼의 편집은 기존 배포 버전 규칙에 따라 제작자가 명시적으로 저장한다.
-- 기본 모드에서 섹션과 문항의 추가·수정·삭제·복제·순서 변경은 현재 폼 정의 JSON을 편집한다. 문항 복제는 같은 폼 안에 새 `question_id`를 가진 문항을, 섹션 복제는 새 `section_id`와 각각 새 `question_id`를 가진 문항들을 만든다. 복제본의 문구·추가 설명·유형·선택지·필수 여부·입력 형식은 복사하지만 `branch_rules`는 비우고 `profile_key`는 `null`로 두어 분기와 응답자 본인 정보 여부를 제작자가 다시 설정한다. 원본은 바뀌지 않으며, 섹션·문항의 저장된 순서와 설정은 초안을 다시 열어도 유지된다. 폼 전체 복제는 별도의 `POST /forms/{form_id}/copy`로 처리한다.
+- 기본 모드에서 섹션과 문항의 추가·수정·삭제·복제·순서 변경은 현재 폼 정의 JSON을 편집한다. 문항 복제는 같은 폼 안에 새 `question_id`를 가진 문항을, 섹션 복제는 새 `section_id`와 각각 새 `question_id`를 가진 문항들을 만든다. 복제본의 문구·추가 설명·유형·선택지·필수 여부·입력 형식·최대 글자 수는 복사하지만 `branch_rules`는 비우고 `profile_key`는 `null`로 두어 분기와 응답자 본인 정보 여부를 제작자가 다시 설정한다. 원본은 바뀌지 않으며, 섹션·문항의 저장된 순서와 설정은 초안을 다시 열어도 유지된다. 폼 전체 복제는 별도의 `POST /forms/{form_id}/copy`로 처리한다.
 - `definition_version`은 마지막으로 배포 검증을 통과한 폼 정의 버전이다. 첫 배포 전 `draft`에서는 `null`이며, 처음 `open`할 때 검증을 통과한 정의를 버전 1로 저장한다. `open → draft`로 되돌린 뒤의 작업 초안도 새 버전이 아니다. `draft`의 폼 정의·첨부를 수정하거나 불완전한 상태로 저장해도 번호는 그대로 둔다. 다시 `open`할 때 의미 검증을 통과하면 아래에 열거한 버전 대상 정의가 마지막 배포본과 다른 경우에만 다음 번호로 저장하고, 같으면 기존 번호를 유지한다. 실패하면 `draft` 상태와 작업 초안을 유지하며 마지막 배포 정의·버전은 바꾸지 않는다.
 - `open`·`closed` 상태에서 제목·설명·섹션·문항·선택지·순서·분기·보기 방식·동의 문구·설명란/문항 첨부 등 **응답자가 보는 폼 정의**가 바뀌면, 변경 요청 전체를 검증한 뒤 다음 버전으로 저장한다. 별도 첨부 추가·삭제 API도 같은 규칙을 따른다. 이전 배포 버전은 불변으로 보존하고 각 `Response`는 제출할 때 사용한 `form_version`을 가리킨다. `status`·`deadline`·`settings.editable`·`settings.cancellable`처럼 응답 가능 여부와 수정·취소 권한을 정하는 운영 설정은 현재 값을 적용하며, 이 설정만 바꿔도 폼 정의 버전을 늘리지는 않는다. 폼 정의를 바꾸는 `PATCH`를 응답이 있다는 이유만으로 막지 않는다.
-- 제출 버전의 폼 제목·문항 문구·유형·선택지·순서·분기·입력 형식·동의 문구는 과거 응답을 읽고 수정할 수 있도록 보존한다. 버전 스냅샷에 남은 과거 운영 설정은 현재 수정·취소 권한이나 마감 판정에 쓰지 않는다. 응답 이력의 `form_title`과 문항 문구도 제출 버전에서 읽는다.
+- 제출 버전의 폼 제목·문항 문구·유형·선택지·순서·분기·입력 형식·최대 글자 수·동의 문구는 과거 응답을 읽고 수정할 수 있도록 보존한다. 버전 스냅샷에 남은 과거 운영 설정은 현재 수정·취소 권한이나 마감 판정에 쓰지 않는다. 응답 이력의 `form_title`과 문항 문구도 제출 버전에서 읽는다.
 - `Question.input_format`은 선택적인 입력 형식 객체다. MVP의 `kind`는 `name`, `mobile_phone`, `landline_phone`, `address`, `student_id`, `email`, `date`다. 이 형식은 `short_answer` 문항에 적용하며, 형식을 지정하지 않은 문항도 만들 수 있다. 안내용 `placeholder`는 검증 기준이 아니다. 제출과 제출 후 수정에 같은 규칙을 적용하고, 형식이 있는 필수 문항의 값이 앞뒤 공백을 제거한 뒤 비어 있으면 기존 필수 문항 검증으로 거부한다. 주소는 한 칸으로 받는다. 일반적인 예약 날짜는 응답자 프로필의 `birth_date`와 다르다.
   - `name`·`address`·`student_id`: 앞뒤 공백을 제거해 저장한다. 필수 여부 외의 별도 패턴 검증은 하지 않는다.
   - `mobile_phone`·`landline_phone`: 입력의 공백·하이픈을 제거한 뒤 숫자만 남아야 한다. 휴대전화는 10~11자리, 집전화는 9~11자리면 허용하고 숫자만 저장한다.
   - `email`: 앞뒤 공백을 제거하고, 공백 없이 `@`가 정확히 하나 있으며 `@` 앞이 비어 있지 않고 뒤에는 비어 있지 않은 부분이 점(`.`)으로 구분된 도메인만 허용한다. 제거한 앞뒤 공백 외의 글자는 그대로 저장한다.
   - `date`: `YYYY-MM-DD` 형태의 실제 날짜만 허용하고 그 형식으로 저장한다. 날짜는 별도 문항 유형이 아니라 `short_answer`의 입력 형식이다.
 - `Question.question_note`는 문항 문구이고, 폼 정의 JSON의 선택적 구현 필드 `question_description`은 응답자에게 보여 주는 문항별 보조 설명이다. 기본 모드는 `multiple_choice`(단일 선택), `dropdown`(단일 선택), `checkbox`(복수 선택), `short_answer`, `long_answer`를 모두 편집할 수 있다. 선택형 문항은 선택지, 모든 문항은 문구·설명·필수 여부를 저장하고 응답 화면에 적용한다.
+- 폼 정의 JSON의 선택적 구현 필드 `character_limit`은 제작자가 `short_answer`·`long_answer` 문항마다 정하는 최대 글자 수(양의 정수)다. 기본·빠른 모드 모두 설정·해제할 수 있고 `Question.input_format`과는 별개다. 제한이 있으면 응답 화면에서 입력 중 공백·줄바꿈을 포함한 현재 글자 수와 상한을 `10/100`처럼 표시한다. 화면과 서버는 같은 글자 수 기준을 쓰며, 제한을 넘은 답은 제출·제출 후 수정할 수 없다. 작성 중 초안은 제한을 넘어도 보존한다.
 - `Question.profile_key`는 동의서 생성 기준이 아니라 응답자 **본인 정보** 자동채우기 키다. 기본·빠른 모드 모두 입력 형식과 문항에 맞춰 제작자에게 이름은 “응답자 본인의 이름인가요?”, 주소는 “응답자 본인의 주소인가요?”, 날짜는 “응답자의 생년월일인가요?”처럼 묻는다. 기본값은 “아니요”(`profile_key: null`)이고, “예”로 확인한 경우에만 각각 `name`, `address`, `birth_date` 등 해당 프로필 키를 설정한다. 문항 문구나 입력 형식을 바꾸면 기존 본인 정보 선택을 지우고 다시 확인한다. 빠른 모드의 추천 문항에도 같은 규칙을 적용하며, 제작자 화면에는 `profile_key`라는 기술 용어를 노출하지 않는다.
 - `Form.note`는 설명 문구 그대로 두고, 폼 정의 JSON의 구현 필드 `note_attachments`에 설명란 첨부 파일을 둔다. `Form.attachments`라는 온톨로지 속성은 새로 만들지 않는다. `Question.attachments`는 문항 첨부다. 두 첨부 목록에는 `attachment_id`, `filename`, `content_type`, `size_bytes`를 담는다. 제작자의 첨부 파일에는 별도의 파일당·폼당·문항당 용량 제한이 없으며, 계정의 500MB 한도만 적용한다. 별도 첨부 API는 성공할 때만 현재 작업 정의의 첨부 목록을 바꾼다. 배포된 `open`·`closed` 폼에서는 첨부 추가·제거와 새 불변 버전 저장을 한 번의 성공으로 처리하고, `draft`에서는 작업 초안만 바꾼다. 파일 형식·용량·정의 검증이나 저장이 실패하면 첨부 목록·버전·사용량을 바꾸지 않고 임시 파일도 남기지 않는다.
 - 과거 폼 버전의 설명란·문항에 연결된 파일은 새 버전에서 첨부를 제거해도 해당 버전의 원본을 계속 제공한다. 과거 버전이 참조하는 동안 제작자 500MB 사용량에 포함하고, 폼 전체 삭제 시 버전별 첨부 원본도 삭제한다. 과거 버전 파일은 제작자와 그 버전의 응답을 제출한 로그인 사용자만 열람할 수 있다.
@@ -175,13 +177,13 @@
 | 엔드포인트 | 인증 | 입력 | 출력 |
 |---|---|---|---|
 | `GET /f/{slug}` · `GET /forms/{form_id}` | 공개 | — | `{form_id, definition_version, title, note, note_attachments, deadline, sections, display: {default_mode, allowed_modes}, payment_link, consent: {items, purpose, retention, refusal_notice}}` — 최신 버전. 분기 규칙이 없으면 `allowed_modes: ["one_question", "all_questions"]`, 있으면 `[default_mode]` / `404`(초안·삭제된 폼) / `409 {error: "form_closed"}` |
-| `POST /forms/{form_id}/responses` | 공개 | 파일 없으면 JSON `{form_version, answers: [{question_id, value}], consent_agreed: true, draft_response_id?}`; 파일이 있으면 같은 값의 JSON 부분과 각 파일의 `question_id`를 담은 `multipart/form-data`. `draft_response_id`는 로그인한 본인의 작성 중 응답에만 사용 | `201 {response_id, form_version, status: "submitted", content, attachments, submitted_at, updated_at: null}` / `400 {error: "consent_required" \| "required_missing" \| "invalid_input_format_value" \| "invalid_file_type", question_ids?}` / `413 {error: "file_too_large"}`(문항별 25MB 초과) / `404`(삭제된 폼 또는 본인 소유가 아닌 초안 ID) / `409 {error: "form_closed" \| "form_version_changed" \| "storage_quota_exceeded"}` |
+| `POST /forms/{form_id}/responses` | 공개 | 파일 없으면 JSON `{form_version, answers: [{question_id, value}], consent_agreed: true, draft_response_id?}`; 파일이 있으면 같은 값의 JSON 부분과 각 파일의 `question_id`를 담은 `multipart/form-data`. `draft_response_id`는 로그인한 본인의 작성 중 응답에만 사용 | `201 {response_id, form_version, status: "submitted", content, attachments, submitted_at, updated_at: null}` / `400 {error: "consent_required" \| "required_missing" \| "invalid_input_format_value" \| "character_limit_exceeded" \| "invalid_file_type", question_ids?}` / `413 {error: "file_too_large"}`(문항별 25MB 초과) / `404`(삭제된 폼 또는 본인 소유가 아닌 초안 ID) / `409 {error: "form_closed" \| "form_version_changed" \| "storage_quota_exceeded"}` |
 | `GET /me/forms/{form_id}/response-draft` | 로그인 | — | `{response_id, form_version, form_definition, answers: [{question_id, value}], saved_at}` — 작성 시작 버전의 문항을 포함한 본인의 작성 중 답만 / `404`(초안 없음) |
 | `PUT /me/forms/{form_id}/response-draft` | 로그인 | `{form_version, answers: [{question_id, value}]}` — 미완성 답 허용 | `200` 또는 첫 저장 `201 {response_id, status: "in_progress", saved_at}` / `409 {error: "form_closed" \| "form_version_changed" \| "storage_quota_exceeded"}` |
 | `DELETE /me/forms/{form_id}/response-draft` | 로그인 | — | `204` — 본인의 미제출 답만 지움 |
 | `GET /me/responses` | 로그인 | — | `[{response_id, form_id, form_title, form_version, submitted_at, updated_at, editable, cancellable}]` — 제출 이력만, 작성 중 응답 제외 |
 | `GET /me/responses/{response_id}` | 로그인 | — | `{form_title, form_version, form_definition, content: [{question_id, question_note, value}], attachments, submitted_at, updated_at, editable, cancellable}` — 문항·문구는 제출 버전 기준. 폼·받은 응답 전체 삭제로 조회 전용이 되면 `form_definition: null` |
-| `PATCH /me/responses/{response_id}` | 로그인 | `{answers, attachments?}`(새 파일이 있으면 각 파일의 `question_id`를 담은 `multipart/form-data`) | `200 {response_id, form_version, content, attachments, submitted_at, updated_at}` / `400 {error: "required_missing" \| "invalid_input_format_value" \| "invalid_file_type"}` / `413 {error: "file_too_large"}` / `409 {error: "history_only" \| "not_editable" \| "form_closed" \| "storage_quota_exceeded"}` |
+| `PATCH /me/responses/{response_id}` | 로그인 | `{answers, attachments?}`(새 파일이 있으면 각 파일의 `question_id`를 담은 `multipart/form-data`) | `200 {response_id, form_version, content, attachments, submitted_at, updated_at}` / `400 {error: "required_missing" \| "invalid_input_format_value" \| "character_limit_exceeded" \| "invalid_file_type"}` / `413 {error: "file_too_large"}` / `409 {error: "history_only" \| "not_editable" \| "form_closed" \| "storage_quota_exceeded"}` |
 | `DELETE /me/responses/{response_id}` | 로그인 | — | `204` / `409 {error: "history_only" \| "not_cancellable" \| "form_closed"}` |
 | `GET /forms/{form_id}/attachments/{attachment_id}` | 현재 버전의 `open` 폼은 공개; 제작자와 해당 버전의 응답을 제출한 로그인 사용자는 과거·마감 버전도 열람 | — | 폼 안내에 첨부된 파일. 초안은 제작자만 열람 |
 | `GET /forms/{form_id}/questions/{question_id}/attachments/{attachment_id}` | 현재 버전의 `open` 폼은 공개; 제작자와 해당 버전의 응답을 제출한 로그인 사용자는 과거·마감 버전도 열람 | — | 문항에 첨부된 파일. 초안은 제작자만 열람 |
@@ -196,9 +198,9 @@
 - 로그인 응답에는 폼당 동시에 작성 중인 응답을 하나만 두고, 답을 처음 입력해 계정 초안을 만들 때 그 폼을 내 폼함에도 저장한다. 이미 제출한 이력이 있어도 새 응답 초안을 만들 수 있고, 내 폼함의 `state`는 기존 제출 여부를 따르되 `has_draft`로 작성 중 여부를 별도로 보여 준다. 비로그인 초안은 내 폼함이나 계정의 제출 이력에 나타나지 않는다. 자동 저장 실패는 성공한 척하지 않고 경고하며, 마지막으로 저장된 내용은 유지한다.
 - 미완성 응답 초안에는 필수 문항·형식·분기 완성 여부를 제출 기준으로 검사하지 않는다. 로그인 초안의 `submitted_at`은 `null`이며, 제출 후 응답 수정 시각인 `updated_at`도 아직 `null`이다. 초안은 제작자에게 보이지 않고 `Result.response_count`·대시보드·AI 분석·내보내기·제출 이력에 포함되지 않는다. 폼 동의는 응답을 제작자에게 **제출할 때** 확인한다. 자동 임시 저장만으로 동의하거나 제출한 것으로 처리하지 않는다.
 - 응답 초안의 `form_version`은 작성하기 시작한 배포 버전이다. 제작자가 새 버전을 배포하면 기존 초안을 자동으로 새 문항에 끼워 넣거나 제출하지 않고, 저장된 답을 기존 버전 문항과 함께 보여 주며 기존 초안을 지우고 최신 폼으로 새로 시작할 선택을 제공한다. 응답자는 작성 중 초안을 직접 지울 수도 있다. 폼이 닫혔거나 마감되면 초안은 보존하되 제출은 막는다. 폼 자체를 삭제하면 그 폼의 계정 초안을 지우고, 브라우저 초안은 해당 폼에 다시 접근해 삭제 상태를 확인할 때 지운다. 제작자가 **받은 응답 전체**를 삭제하는 경우에는 아직 제출되지 않은 응답자 초안을 지우지 않는다.
-- 새 응답은 공개 조회에서 받은 최신 `definition_version`을 `form_version`으로 보낸다. 그 사이 제작자가 응답 화면의 폼 정의를 바꿨다면 서버는 `409 form_version_changed`를 반환하고 응답·파일을 저장하지 않는다. 화면은 최신 폼을 다시 열어 응답하도록 안내한다. 이미 제출된 응답을 수정할 때에는 현재 폼 버전 대신 그 응답의 불변 제출 버전으로 문항·분기·필수값·입력 형식을 검증한다.
+- 새 응답은 공개 조회에서 받은 최신 `definition_version`을 `form_version`으로 보낸다. 그 사이 제작자가 응답 화면의 폼 정의를 바꿨다면 서버는 `409 form_version_changed`를 반환하고 응답·파일을 저장하지 않는다. 화면은 최신 폼을 다시 열어 응답하도록 안내한다. 이미 제출된 응답을 수정할 때에는 현재 폼 버전 대신 그 응답의 불변 제출 버전으로 문항·분기·필수값·입력 형식·최대 글자 수를 검증한다.
 - 배포된 모든 폼은 동의 템플릿을 적용한다. 공개 조회의 `consent.items`는 문항의 `input_format`이 있으면 그 넓은 범주(예: 본인·부모님 이름 모두 “이름”), 없으면 “문항별 응답 내용”으로 만든다. 같은 범주는 중복 표시하지 않는다. `profile_key` 유무는 항목 생성이나 동의 필수 여부에 영향을 주지 않는다. `purpose`, `retention`은 제작자가 선택한 템플릿에서, 동의 거부 안내는 기본 문구에서 가져온다. 동의하지 않은 제출은 `submitted` 응답이나 서버 첨부를 만들지 않고 기존 작성 중 초안은 유지한다.
-- 제출할 때는 최신 폼 버전·공개 상태·마감·폼 동의·분기 경로·필수 문항·입력 형식·파일 종류·문항별 25MB·제작자 500MB 한도를 모두 다시 검사한다. 로그인 사용자가 본인 `draft_response_id`를 보낸 경우 성공한 요청에서 같은 `Response`를 `in_progress → submitted`로 바꾸고 `submitted_at`을 기록하며, 비로그인 브라우저 초안은 새 `Response`를 만든다. 성공 후 브라우저에 남은 해당 초안·첨부 임시 파일을 지우고 새 제출을 시작할 수 있다. 검증·용량 부족으로 제출에 실패하면 서버 초안과 브라우저 초안을 보존한다.
+- 제출할 때는 최신 폼 버전·공개 상태·마감·폼 동의·분기 경로·필수 문항·입력 형식·최대 글자 수·파일 종류·문항별 25MB·제작자 500MB 한도를 모두 다시 검사한다. 로그인 사용자가 본인 `draft_response_id`를 보낸 경우 성공한 요청에서 같은 `Response`를 `in_progress → submitted`로 바꾸고 `submitted_at`을 기록하며, 비로그인 브라우저 초안은 새 `Response`를 만든다. 성공 후 브라우저에 남은 해당 초안·첨부 임시 파일을 지우고 새 제출을 시작할 수 있다. 검증·용량 부족으로 제출에 실패하면 서버 초안과 브라우저 초안을 보존한다.
 - 자동채우기로 제안된 값은 응답자가 화면에서 확인·수정할 수 있으며, 자동채우기 요청 자체는 응답을 저장하거나 제출하지 않는다. 제출·수정할 때는 `input_format`의 값 검증·저장 규칙을 서버에서도 적용하고, 형식에 맞지 않으면 `400 invalid_input_format_value`로 응답과 파일 모두 저장하지 않는다.
 - 응답 화면의 현재 단계와 남은 분량은 `sections` 순서, 현재 문항, 응답으로 결정된 분기 경로에서 계산한다. 아직 답하지 않은 문항의 분기로 경로가 달라질 수 있으면 전체 문항 수나 백분율을 확정된 값처럼 표시하지 않는다. 진행 정보는 `Form`이나 `Response`의 속성으로 저장하지 않는다.
 - 제작자의 폼 설명란·문항 첨부는 이미지(`jpg`, `jpeg`, `png`, `gif`, `webp`)·PDF·MP4만 허용한다. 응답자 업로드는 PDF·이미지와 `zip`, `ppt`, `pptx`, `doc`, `docx`, `hwp`, `hwpx`를 허용한다. 확장자와 실제 파일 형식을 확인하고 이 목록 밖의 실행·스크립트 형식은 거부한다. ZIP은 서버에서 자동으로 압축 해제하거나 실행하지 않는다.
@@ -307,6 +309,8 @@
   - 테스트: 제작 화면에서 섹션 2개와 문항들을 만든 뒤 문항 문구·설명·선택지·필수 여부·입력 형식을 수정하고, 문항과 섹션을 각각 복제·순서 변경·삭제해 초안 저장 → 다시 열면 남은 섹션·문항과 순서·설정이 화면 및 `GET /forms/{id}/definition`에서 일치 / 복제본 ID는 원본과 다르고 원본 불변, 복제본의 분기 규칙 없음·`profile_key: null` / JSON만 직접 전송한 결과로 제작 화면 판정을 대신하지 않음
 - **AC80 [이벤트 기반]**: 제작자가 데스크톱 기본 모드에서 다섯 문항 유형과 문항별 문구·보조 설명·선택지·필수 여부·입력 형식을 설정해 저장하면, Passform은 다시 연 제작 화면과 배포된 응답 화면에 그 유형과 설정을 동일하게 적용한다. 본인 정보 여부의 확인·초기화와 입력값 검증은 AC72·73을 따른다.
   - 테스트: 제작 화면에서 `multiple_choice`·`dropdown`·`checkbox`·`short_answer`·`long_answer`를 각각 만들고 선택형의 선택지, 모든 문항의 설명·필수 여부 및 짧은 답의 날짜 입력 형식을 설정 → 초안 저장·재열기 후 설정 유지 / 배포 후 객관식·드롭다운은 단일 선택, 체크박스는 복수 선택, 짧은 답·장문 답은 각각 입력란을 보여 주고 문항 설명·필수 표시·날짜 안내가 제작 화면의 설정과 일치
+- **AC53 [이벤트 기반]**: 제작자가 기본·빠른 모드에서 `short_answer`·`long_answer` 문항의 `character_limit`을 양의 정수로 설정해 저장하면, Passform은 다시 연 제작 화면과 응답 화면에 같은 상한을 적용하고 입력 중 공백·줄바꿈을 포함한 현재 글자 수를 `현재/상한`으로 보여 준다. 제한을 넘은 답의 제출·제출 후 수정에는 `400 character_limit_exceeded`를 반환하고 기존 응답·파일을 바꾸지 않는다. 작성 중 초안은 제한을 넘어도 보존한다.
+  - 테스트: 두 제작 모드에서 각각 최대 100자를 설정해 초안 저장·재열기 → 설정 유지, 배포된 단답형·장문형에서 10자 입력 시 `10/100` 표시 / 공백·줄바꿈도 각각 1자로 세고 화면·서버 결과 일치 / 정확히 100자 제출 성공, 101자 제출·제출 후 수정은 400이고 기존 응답·파일 불변 / 초과한 답의 자동 임시 저장·복원 가능 / 제한이 없거나 선택형인 문항에는 `character_limit` 적용 안 됨
 - **AC81 [이벤트 기반]**: 제작자가 기본·빠른 모드에서 저장 전 미리보기를 열면, Passform은 현재 편집 중인 폼 정의를 응답자 화면 방식으로 보여 주고 같은 분기 경로 규칙을 적용한다. 미리보기에서 답을 입력하거나 제출 동작을 해도 실제 `Response`·결과 집계는 만들지 않으며 돌아오면 편집 내용은 유지된다.
   - 테스트: 두 제작 모드 각각에서 저장하지 않은 문항 문구가 미리보기에 즉시 나타남 / 기본 모드에서 문항 설명·보기 방식 변경도 미리보기에 반영 / 분기 폼의 선택지를 고르면 미리보기 다음 문항·섹션이 실제 응답 경로와 일치 / 미리보기에서 제출 후 `Response` 수·`Result.response_count` 불변, 편집 화면으로 돌아와 저장·재열기해도 편집 내용 유지
 - **AC84 [이벤트 기반]**: 제작자가 기본·빠른 모드에서 `draft` 폼을 편집하면, Passform은 변경 내용을 자동 저장하고 화면을 나갔다 다시 열었을 때 마지막 저장 완료 상태부터 이어서 편집하게 한다. 자동 저장은 폼을 배포하거나 `definition_version`을 늘리지 않는다. 저장에 실패하면 완료로 표시하지 않는다.
@@ -468,7 +472,6 @@
 ### 캡디 추가 개발 (초안 — 착수할 때 확정하고 골든 케이스를 쓴다)
 
 - **AC52 [이벤트 기반] (추가 1 · 캘린더)**: 사용자가 캘린더의 한 달을 열면, Passform은 내 폼함에 저장한 폼 중 `deadline`이 있는 폼을 Asia/Seoul 기준 마감 날짜에 `state`와 함께 보여 준다.
-- **AC53 [상시 적용] (추가 2 · AI 다듬기)**: Passform은 항상 장문 답의 글자 수를 공백 포함으로 세고, 문항의 `input_format` 글자 수 제한과 함께 보여 준다 — 화면과 서버가 같은 규칙으로 센다.
 - **AC54 [이벤트 기반] (추가 2 · AI 다듬기)**: 응답자가 맞춤법 교정이나 글 다듬기를 요청하면, Passform은 제안만 반환하고, 응답자가 수락할 때만 답을 바꾼다. 원문을 자동으로 바꾸지 않는다.
 - **AC55 [상시 적용] (추가 2 · AI 다듬기)**: Passform은 항상 다듬기 요청에 그 장문 문항의 답만 LLM에 보내고, 다른 문항(특히 `profile_key` 문항)의 값은 보내지 않는다.
 
@@ -525,7 +528,8 @@
 | AC49 | `export_filtered_matches_analyze`, `export_non_list_time_order`, `export_excludes_not_evaluable` | 미구현 |
 | AC50 | `csv_formula_escaped` | 미구현 |
 | AC51 | `repeat_submission_allowed`, `anonymous_repeat_submission_allowed` | 미구현 |
-| AC52~AC55 | (추가 개발 — 착수 시 작성) | 추가 개발 |
+| AC52, AC54~AC55 | (추가 개발 — 착수 시 작성) | 추가 개발 |
+| AC53 | `character_limit_saved_both_modes`, `character_count_display_and_validation`, `over_limit_draft_preserved` | 미구현 |
 | AC56 | `draft_saves_incomplete`, `open_runs_semantic_checks`, `reopen_validates_draft_version` | 미구현 |
 | AC57 | `invalid_status_transition`, `share_url_stable_on_reopen` | 미구현 |
 | AC58 | `form_edit_creates_immutable_version`, `attachment_change_creates_immutable_version`, `operating_setting_keeps_version` | 미구현 |

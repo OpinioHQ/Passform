@@ -1,5 +1,5 @@
 {
-  "$schema": "<http://json-schema.org/draft-07/schema#>",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "RequestContext",
   "description": "응답 분석: 제작자가 자연어로 요청한 내용을 파싱 (요청 1회 단위)",
   "type": "object",

@@ -12,18 +12,18 @@
 
 도메인 클래스 (`docs/ontology.yaml` 발췌 — 설명·근거·관계는 온톨로지에)
 
-- Form: `title`, `note`, `question_num`, `definition_version`, `deadline`, `status`(open/closed), `editable`, `cancellable`, `sections`, `payment_link`, `consent`
+- Form: `title`, `note`, `question_num`(파생값), `definition_version`, `deadline`, `status`(open/closed), `response_limit`, `editable`, `cancellable`, `sections`, `consent`
 - Question: `section`(소속 섹션의 개념적 참조; 중복 저장하지 않음), `question_note`, `question_type`(multiple_choice/short_answer/long_answer/dropdown/checkbox), `options`, `required`, `input_format`, `profile_key`(name/student_id/department/phone_number/email/address/birth_date 또는 없음), `attachments`, `branch_rules`
 - Response: `content`(문항별 답 목록), `form_version`, `status`(in_progress/submitted/abandoned), `attachments`, `submitted_at`, `updated_at` — **`content`는 신뢰할 수 없는 외부 입력**(응답자가 쓴 글)
 - User: `id`, `personal_info` — 로그인 계정이며 같은 사용자가 폼 제작과 응답을 모두 할 수 있다
-- Result: `response_count`, `filtered_response_count`(파생값), `statistics`, `summary`, `external_service_linked`
+- Result: `response_count`, `filtered_response_count`(파생값), `statistics`, `summary`
 - ExternalService: `name`, `used_by_roles`, `usage_mode`(integration/external_transition) — 외부 서비스 사용·연동 개념이며 실제 구현 범위는 SPEC 4절을 따른다
 - RequestContext: `conditions`(발화 표현 그대로의 문자열 배열), `match`(all/any/not), `operation`(count/summarize/list/null), `sort.by`, `sort.order`(asc/desc)
 
 구현 이름 (온톨로지 밖 — 정의는 SPEC 5절, 이름만 고정한다)
 
 - 폼 정의 JSON: `src/passform/schemas/form.schema.json`. 빌더 두 모드·복사·내보내기·AI 결과 탐색이 모두 쓴다
-- Form 구현 필드: `owner_id`, `status`에 `draft` 추가, `slug`·`share_url`, `consent_template_id`, `note_attachments`, `settings`(`editable`, `cancellable`, `display.default_mode`(one_question/all_questions/section_page))
+- Form 구현 필드: `owner_id`, `status`에 `draft` 추가, `slug`·`share_url`, `consent_template_id`, `note_attachments`, `payment_link`(송금 링크 — 온톨로지에서는 `ExternalService`로의 외부 이동), `settings`(`editable`, `cancellable`, `response_limit`(선착순 인원, 없으면 `null`), `display.default_mode`(one_question/all_questions/section_page))
 - Question 구현 필드: `template_id`(추천 문항 출처), `question_description`(문항 보조 설명, `question_note`와 별개), `character_limit`(단답·장문 최대 글자 수. 온톨로지 `input_format`의 길이 제약을 구현에서 분리한 필드)
 - 분기 규칙: `when.match`(all/any) + `when.conditions[]` → `go_to`(section_id/question_id/submit)
 - 엔티티: Profile(`label`, `personal_info`), Section(`title`, `questions`), SavedForm(`state`: saved/submitted, `has_draft` — 내 폼함), Notification(`type`: deadline, `created_at`, `read`), QuestionTemplate(추천 문항의 문구·유형·선택지·입력 형식; 추가할 때 `profile_key`는 `null`), ConsentTemplate(`purpose`, `retention`)
@@ -40,7 +40,7 @@
 - 분기 규칙의 `when.match`(all/any, 분기 조건 결합)와 `RequestContext.match`(all/any/not, 분석 조건 결합)는 다른 필드다.
 - `User.ui_mode`(화면 모드)와 `Form.settings.display.default_mode`(응답 화면 보기 방식)는 다르다.
 - 분기가 없으면 `one_question`·`all_questions` 중 시작 방식을 정하고 응답자가 전환할 수 있다. 분기가 있으면 `one_question`·`section_page` 중 정하고 응답 중 전환하지 않는다.
-- `deadline`이 지난 폼은 `Form.status`가 아직 `open`이어도 닫힌 것으로 처리한다.
+- `deadline`이 지난 폼은 `Form.status`가 아직 `open`이어도 닫힌 것으로 처리한다. 선착순 인원(온톨로지 `Form.response_limit`, 구현 `settings.response_limit`)에 도달하면 서버가 `status`를 `closed`로 바꾼다.
 - `Form.editable`·`Form.cancellable`(온톨로지)은 구현에서 각각 `settings.editable`·`settings.cancellable`이다. 응답자의 제출 후 수정과 취소를 별도로 허용하며 제출 이력 조회와는 무관하다.
 - `User.email`(알림 수신)과 `personal_info`의 `email`(자동채우기 값)은 다르다. 구현에서 `personal_info`는 Profile에 여러 묶음으로 저장한다.
 - `Question.input_format`은 입력 범주와 검증·저장 규칙을 정하는 선택적 객체다. `Question.profile_key`는 제작자가 응답자 본인 정보임을 확인한 경우에만 설정하는 자동채우기 키이며, 동의 항목 생성 기준이 아니다.

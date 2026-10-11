@@ -21,7 +21,7 @@
   docs/
     research/interviews.md           # 강의 2 — 인터뷰 프로토콜과 로그
     ontology.yaml                    # 강의 2 — 미니 온톨로지
-    ontology.yaml                    # 강의 2 — 미니 온톨로지 및 어휘
+    ontology.md                      # 강의 2 — 미니 온톨로지 및 어휘
     PROBLEM.md                       # 강의 4 — 문제 정의서
     SPEC.md                          # 강의 4 — 제품 스펙(SDD)과 수용 기준(AC)
     spikes/<가설>.md                 # 강의 4 — 기술 타당성 스파이크

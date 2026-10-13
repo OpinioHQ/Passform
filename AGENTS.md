@@ -26,7 +26,7 @@
 - Form 구현 필드: `owner_id`, `status`에 `draft` 추가, `slug`·`share_url`, `consent_template_id`, `note_attachments`, `payment_link`(송금 링크 — 온톨로지에서는 `ExternalService`로의 외부 이동), `settings`(`editable`, `cancellable`, `response_limit`(선착순 인원, 없으면 `null`), `display.default_mode`(one_question/all_questions/section_page))
 - Question 구현 필드: `template_id`(추천 문항 출처), `question_description`(문항 보조 설명, `question_note`와 별개), `character_limit`(단답·장문 최대 글자 수. 온톨로지 `input_format`의 길이 제약을 구현에서 분리한 필드)
 - 분기 규칙: `when.match`(all/any) + `when.conditions[]` → `go_to`(section_id/question_id/submit)
-- 엔티티: Profile(`label`, `personal_info`), Section(`title`, `questions`), SavedForm(`state`: saved/submitted, `has_draft` — 내 폼함), Notification(`type`: deadline, `created_at`, `read`), QuestionTemplate(추천 문항의 문구·유형·선택지·입력 형식; 추가할 때 `profile_key`는 `null`), ConsentTemplate(`purpose`, `retention`)
+- 엔티티: Profile(`label`, `personal_info`), Section(`title`, `questions`), SavedForm(`state`: saved/submitted, `has_draft` — 내 폼함, 온톨로지 `User —save→ Form`의 구현), Notification(`type`: deadline, `created_at`, `read`), QuestionTemplate(추천 문항의 문구·유형·선택지·입력 형식; 추가할 때 `profile_key`는 `null`), ConsentTemplate(`purpose`, `retention`)
 - User 구현 필드: `name`, `email`(소셜 로그인 계정), `ui_mode`(respondent/creator — 화면만 바꾸고 권한은 바꾸지 않는다), `deadline_reminder`
 - 분석 응답: `status`(ok/clarify), `matched[].kind`(option/answered/unanswered), `coverage`(판정 불가 범위), `clarify.reason`(unsupported_scope/parse_failed/missing_operation/missing_match/unknown_condition/ambiguous_match/double_negation/unsortable_field — 이 순서가 우선순위)
 

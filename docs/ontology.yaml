@@ -39,6 +39,8 @@ classes:
         evidence: [로그 1]
       - make: Response
         evidence: [로그 3, 로그 7]
+      - save: Form
+        evidence: [로그 2, 로그 7]
 
   Question:
     description: 제작자가 의도를 갖고 만든 질문으로 폼을 구성함

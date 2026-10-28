@@ -545,8 +545,8 @@
 | AC65 | `storage_quota_at_limit`, `storage_quota_rejects_overflow`, `response_file_charged_to_creator` | 미구현 |
 | AC66 | `creator_delete_all_responses`, `bulk_delete_preserves_submitter_history`, `bulk_delete_releases_storage` | 미구현 |
 | AC67 | `delete_form_offers_export`, `delete_form_export_failure_keeps_data`, `delete_form_preserves_submitter_history` | 미구현 |
-| AC68 | `mobile_respondent_full_flow`, `mobile_respondent_no_horizontal_scroll` | 미구현 |
-| AC69 | `mobile_quick_builder_publish`, `mobile_basic_builder_desktop_notice` | 미구현 |
+| AC68 | `mobile_respondent_full_flow`, `mobile_respondent_no_horizontal_scroll` (프론트엔드·E2E 테스트) | 미구현 |
+| AC69 | `mobile_quick_builder_publish`, `mobile_basic_builder_desktop_notice` (프론트엔드·E2E 테스트) | 미구현 |
 | AC70 | `delete_all_response_attachments`, `attachment_purge_keeps_response_count` | 미구현 |
 | AC71 | `quick_purpose_audience_recommendations`, `quick_custom_question_preview` | 미구현 |
 | AC72 | `own_info_confirmation_both_builders`, `own_info_reset_after_question_change` | 미구현 |
@@ -556,10 +556,10 @@
 | AC76 | `stale_form_version_rejected`, `latest_form_version_submits` | 미구현 |
 | AC77 | `natural_language_version_scope_rejected`, `unsupported_statistics_explained`, `all_responses_count_supported` | 미구현 |
 | AC78 | `all_versions_condition_filter_with_coverage`, `negation_does_not_count_unknown`, `no_condition_counts_all` | 미구현 |
-| AC79 | `basic_builder_edit_save_reopen`, `question_and_section_duplicate_new_ids`, `duplicate_resets_branch_and_profile_key` | 미구현 |
-| AC80 | `basic_builder_five_question_types`, `basic_builder_settings_roundtrip`, `published_controls_match_builder` | 미구현 |
-| AC81 | `builder_preview_unsaved_definition`, `builder_preview_branch_path`, `builder_preview_no_response` | 미구현 |
+| AC79 | `basic_builder_edit_save_reopen`, `question_and_section_duplicate_new_ids`, `duplicate_resets_branch_and_profile_key` (프론트엔드·E2E 테스트) | 미구현 |
+| AC80 | `basic_builder_five_question_types`, `basic_builder_settings_roundtrip`, `published_controls_match_builder` (프론트엔드·E2E 테스트) | 미구현 |
+| AC81 | `builder_preview_unsaved_definition`, `builder_preview_branch_path`, `builder_preview_no_response` (프론트엔드·E2E 테스트) | 미구현 |
 | AC82 | `respondent_draft_restores_same_browser`, `login_draft_text_cross_device`, `draft_file_same_browser_only` | 미구현 |
 | AC83 | `in_progress_owner_only_and_not_counted`, `submit_draft_same_response_id`, `stale_draft_not_submitted` | 미구현 |
-| AC84 | `creator_draft_autosave_both_modes`, `creator_autosave_no_publish`, `creator_autosave_failure_visible` | 미구현 |
+| AC84 | `creator_draft_autosave_both_modes`, `creator_autosave_no_publish`, `creator_autosave_failure_visible` (프론트엔드·E2E 테스트) | 미구현 |
 | AC85 | `response_limit_auto_close`, `response_limit_concurrent_submit`, `response_limit_reopen_requires_increase` | 미구현 |

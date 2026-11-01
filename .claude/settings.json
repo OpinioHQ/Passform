@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  },
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew build)",
+      "Bash(./gradlew test *)",
+      "Bash(./gradlew jacocoTestReport)",
+      "PowerShell(./gradlew build)",
+      "PowerShell(./gradlew test *)",
+      "PowerShell(./gradlew jacocoTestReport)"
+    ],
+    "ask": [
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "PowerShell(git commit *)",
+      "PowerShell(git push *)"
+    ],
+    "deny": [
+      "Edit(/tests/harness/**)",
+      "Edit(/src/passform/schemas/**)",
+      "Edit(/src/response_analysis/schemas/**)",
+      "Edit(/src/response_analysis/prompts/**)"
+    ]
+  }
+}

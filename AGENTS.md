@@ -51,7 +51,7 @@
 
 ## 3. 절대 규칙 (위반한 결과물은 수용하지 않는다)
 
-1. 개인정보는 허용한 만큼만 저장·사용하고 권한 있는 사람만 본다 — `personal_info`에는 허용 키만 저장하고, 자동채우기 요청은 `Response`를 만들거나 바꾸지 않는다. 미완성 폼은 초안으로 저장할 수 있지만 모든 폼은 동의 템플릿이 있어야 배포되며, 응답 제출에는 동의가 필요하다. 프로필·로그인 응답 초안·제출 이력·내 폼함·알림은 해당 사용자만, 비로그인 응답 초안은 해당 브라우저에서만, 응답 첨부는 그 폼의 제작자와 제출한 로그인 사용자만, 받은 제출 응답·결과·분석은 그 폼의 제작자만 접근한다. (↔ AC2, AC3, AC5, AC6, AC12, AC13, AC14, AC38, AC56, AC64, AC82, AC83 — 추가 개발 착수 시 AC55)
+1. 개인정보는 허용한 만큼만 저장·사용하고 권한 있는 사람만 본다 — `personal_info`에는 허용 키만 저장하고, 자동채우기 요청은 `Response`를 만들거나 바꾸지 않는다. 미완성 폼은 초안으로 저장할 수 있지만 모든 폼은 동의 템플릿이 있어야 배포되며, 응답 제출에는 동의가 필요하다. 프로필·로그인 응답 초안·제출 이력·내 폼함·알림은 해당 사용자만, 비로그인 응답 초안은 해당 브라우저에서만, 응답 첨부는 그 폼의 제작자와 제출한 로그인 사용자만, 받은 제출 응답·결과·분석은 그 폼의 제작자만 접근한다. 개인정보 문항(`profile_key`가 있거나 `input_format.kind`가 `name`·`mobile_phone`·`landline_phone`·`address`·`student_id`·`email`인 문항)의 값은 서버 안의 필터·집계·정렬에만 쓰고, LLM 프롬프트와 임베딩 요청으로 보내지 않는다. 응답 원문을 외부 LLM·임베딩 제공사로 보내는 것은 SPEC이 정한 동의 범위 안에서만 한다. (↔ AC2, AC3, AC5, AC6, AC12, AC13, AC14, AC38, AC56, AC64, AC82, AC83 — 추가 개발 착수 시 AC55)
 2. 송금은 링크로만 — Passform은 송금을 처리하거나 송금 완료 여부를 저장하지 않는다. (↔ AC11)
 3. 숫자를 지어내지 않는다 — 결과 집계와 `count`·`list`·`summarize`의 대상 응답은 코드가 현재 남은 `submitted` 응답에서 결정한다. AI 분석은 폼의 모든 제출 버전을 대상으로 각 응답의 제출 당시 정의에서 조건을 판정하고, 조건·버전별 `matched` 근거와 판정 불가 범위 `coverage`를 붙인다. 어느 버전에도 매칭되지 않은 조건을 0건으로 처리하지 않는다. (↔ AC19~AC24, AC48, AC49, AC75, AC78)
 4. 모르면 되묻는다 — 분석 요청을 확정할 수 없으면 추측하지 않고 `clarify`를 반환한다. 파서 재호출은 형식 오류에만 1회 한다. (↔ AC25~AC30, AC32, AC77)
@@ -59,9 +59,10 @@
 
 ## 4. 금지 사항 (에이전트에게 위임할 때 항상 걸린다)
 
-1. **테스트, 골든 케이스, 판정 기준 파일을 고치지 않는다.** 기존 테스트(`src/test/`, `frontend/src/**/*.test.*`), `tests/harness/golden_cases.yaml`, `src/passform/schemas/form.schema.json`, `src/response_analysis/schemas/request_context.schema.json`, `src/response_analysis/prompts/parse_query.md`(파일 전체), `evals/evalset.jsonl`, `load/`의 목표값은 사람이 승인한다. 실패하면 테스트가 아니라 구현을 고친다. 사람이 지시한 변경과 포매터 정리는 승인된 변경으로 보되, 판정에 쓰이는 것(단언문, 케이스, 기대값, `@Disabled`, enum, 임계값)은 건드리지 않는다.
+1. **테스트, 골든 케이스, 판정 기준 파일을 고치지 않는다.** 기존 테스트(`src/test/`, `tests/java/`(골든 테스트), `frontend/src/**/*.test.*`), `tests/harness/golden_cases.yaml`, `data/seed/`(골든 테스트 fixture), `src/passform/schemas/form.schema.json`, `src/response_analysis/schemas/request_context.schema.json`, `src/response_analysis/prompts/`의 모든 프롬프트 파일(파일 전체), `config/rag.yaml`, `evals/evalset.jsonl`, `load/`의 목표값은 사람이 승인한다. 실패하면 테스트가 아니라 구현을 고친다. 사람이 지시한 변경과 포매터 정리는 승인된 변경으로 보되, 판정에 쓰이는 것(단언문, 케이스, 기대값, `@Disabled`, enum, 임계값)은 건드리지 않는다.
 2. **완료 조건을 임의로 좁히지 않는다.** `@Disabled`, skip, 케이스 삭제, 커버리지 제외 범위 확대로 통과시키지 않는다.
 3. **근거 없는 결과를 내놓지 않는다.** 통과했다면 각 케이스를 왜 통과하는지 한 줄씩 설명한다.
+4. **막히면 멈추고 보고한다.** 같은 실패로 3회차를 넘기거나, SPEC·AGENTS에 없는 판단이 필요하거나, 판정 기준 파일을 바꿔야만 통과할 수 있으면 더 진행하지 않는다. 무엇을 시도했고 어디서 막혔는지, 사람이 정해야 할 것이 무엇인지 보고한다.
 
 ## 5. 코딩 컨벤션
 
@@ -99,7 +100,7 @@
 
 - 백엔드: Java 17+, Spring Boot 3, Spring Security(OAuth 2.0 소셜 로그인), Spring Data JPA, PostgreSQL
 - 프론트엔드: Node 20+, React, TypeScript, Tailwind CSS
-- AI: LLM API + JSON Schema 기반 구조화 출력
+- AI: OpenAI API + JSON Schema 기반 구조화 출력. 파서·조건 매처·주제 분류는 `gpt-6-luna`(reasoning effort `none`, temperature 0), 요약문 생성은 `gpt-6.1-terra`(reasoning effort `none`), 임베딩은 `text-embedding-3-small`. 모델 ID를 바꾸면 SPEC과 evals 측정 기록에 함께 적는다. 개발용 API 키에는 월 사용 한도를 건다.
 - 파일: AWS S3 Presigned URL — 폼 설명란·문항 첨부와 응답자 파일 업로드는 MVP 범위다(형식·용량·권한은 SPEC 5절과 AC63~AC70).
 - evals 러너만 Python 3.11+
 - 배포: Vercel(프론트엔드, 루트 디렉터리 `frontend/`), AWS(백엔드·DB). CI: GitHub Actions
@@ -109,6 +110,7 @@
 
 - DB: `docker compose up -d db`
 - 백엔드: `./gradlew bootRun` → `GET /health` / 테스트: `./gradlew test` / 커버리지: `./gradlew jacocoTestReport`
+- 골든 테스트: `./gradlew test --tests '*GoldenTest'`
 - 프론트엔드: `cd frontend && npm run dev` / `npm test`
 - evals: `python evals/run_evals.py` (실행 중인 백엔드 API를 호출)
 
@@ -116,7 +118,7 @@
 
 - `src/main/java/.../passform/` — 백엔드 코드. `src/test/java/` — JUnit 테스트
 - `src/response_analysis/schemas/`, `src/response_analysis/prompts/` — 강의 3 정본. Gradle 리소스 경로에 포함해 서버가 읽는다. `src/passform/schemas/form.schema.json`은 SPEC의 폼 정의 스키마이며 같은 방식으로 서버가 읽는다
-- `tests/harness/golden_cases.yaml` — 골든 케이스(판정 기준). 실행기는 `src/test/java/.../golden/`의 JUnit 테스트이며, 이 YAML을 읽어 케이스마다 실행한다
+- `tests/harness/golden_cases.yaml` — 골든 케이스(판정 기준). 실행기는 `tests/java/.../golden/`(Gradle 테스트 소스 경로로 등록)의 JUnit 테스트이며, 이 YAML을 읽어 케이스마다 실행한다
 - `frontend/` — React 앱
 - `data/seed/` — 가상 폼·문항 템플릿·프로필·응답. 일부 응답에 인젝션 함정이 심겨 있다(레드티밍 실습용)
 - `evals/` — AI 결과 탐색 평가. `load/` — 부하 테스트 스크립트

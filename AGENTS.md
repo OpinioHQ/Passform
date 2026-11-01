@@ -12,23 +12,23 @@
 
 도메인 클래스 (`docs/ontology.yaml` 발췌 — 설명·근거·관계는 온톨로지에)
 
-- Form: `title`, `note`, `question_num`(파생값), `definition_version`, `deadline`, `status`(open/closed), `response_limit`, `editable`, `cancellable`, `sections`, `consent`
+- Form: `title`, `note`, `question_num`(파생값), `definition_version`, `deadline`, `status`(open/closed), `response_limit`, `editable`, `cancellable`, `sections`, `consent`, `ai_summary`
 - Question: `section`(소속 섹션의 개념적 참조; 중복 저장하지 않음), `question_note`, `question_type`(multiple_choice/short_answer/long_answer/dropdown/checkbox), `options`, `required`, `input_format`, `profile_key`(name/student_id/department/phone_number/email/address/birth_date 또는 없음), `attachments`, `branch_rules`
-- Response: `content`(문항별 답 목록), `form_version`, `status`(in_progress/submitted/abandoned), `attachments`, `submitted_at`, `updated_at` — **`content`는 신뢰할 수 없는 외부 입력**(응답자가 쓴 글)
+- Response: `content`(문항별 답 목록), `form_version`, `status`(in_progress/submitted/abandoned), `attachments`, `submitted_at`, `updated_at`, `ai_summary_agreed`(AI 요약 선택 동의) — **`content`는 신뢰할 수 없는 외부 입력**(응답자가 쓴 글)
 - User: `id`, `personal_info` — 로그인 계정이며 같은 사용자가 폼 제작과 응답을 모두 할 수 있다
 - Result: `response_count`, `filtered_response_count`(파생값), `statistics`, `summary`
 - ExternalService: `name`, `used_by_roles`, `usage_mode`(integration/external_transition) — 외부 서비스 사용·연동 개념이며 실제 구현 범위는 SPEC 4절을 따른다
-- RequestContext: `conditions`(발화 표현 그대로의 문자열 배열), `match`(all/any/not), `operation`(count/summarize/list/null), `sort.by`, `sort.order`(asc/desc)
+- RequestContext: `conditions`(발화 표현 그대로의 문자열 배열), `match`(all/any/not), `operation`(count/summarize/list/null), `sort.by`, `sort.order`(asc/desc), `target`(요약할 문항), `topic`(요약할 의견·주제) — `target`·`topic`도 발화 표현 그대로이며 `summarize`에서만 쓴다
 
 구현 이름 (온톨로지 밖 — 정의는 SPEC 5절, 이름만 고정한다)
 
 - 폼 정의 JSON: `src/passform/schemas/form.schema.json`. 빌더 두 모드·복사·내보내기·AI 결과 탐색이 모두 쓴다
-- Form 구현 필드: `owner_id`, `status`에 `draft` 추가, `slug`·`share_url`, `consent_template_id`, `note_attachments`, `payment_link`(송금 링크 — 온톨로지에서는 `ExternalService`로의 외부 이동), `settings`(`editable`, `cancellable`, `response_limit`(선착순 인원, 없으면 `null`), `display.default_mode`(one_question/all_questions/section_page))
+- Form 구현 필드: `owner_id`, `status`에 `draft` 추가, `slug`·`share_url`, `consent_template_id`, `note_attachments`, `payment_link`(송금 링크 — 온톨로지에서는 `ExternalService`로의 외부 이동), `settings`(`editable`, `cancellable`, `response_limit`(선착순 인원, 없으면 `null`), `display.default_mode`(one_question/all_questions/section_page), `ai_summary.enabled`(온톨로지 `Form.ai_summary`, 첫 배포 후 변경 불가))
 - Question 구현 필드: `template_id`(추천 문항 출처), `question_description`(문항 보조 설명, `question_note`와 별개), `character_limit`(단답·장문 최대 글자 수. 온톨로지 `input_format`의 길이 제약을 구현에서 분리한 필드)
 - 분기 규칙: `when.match`(all/any) + `when.conditions[]` → `go_to`(section_id/question_id/submit)
 - 엔티티: Profile(`label`, `personal_info`), Section(`title`, `questions`), SavedForm(`state`: saved/submitted, `has_draft` — 내 폼함, 온톨로지 `User —save→ Form`의 구현), Notification(`type`: deadline, `created_at`, `read`), QuestionTemplate(추천 문항의 문구·유형·선택지·입력 형식; 추가할 때 `profile_key`는 `null`), ConsentTemplate(`purpose`, `retention`)
 - User 구현 필드: `name`, `email`(소셜 로그인 계정), `ui_mode`(respondent/creator — 화면만 바꾸고 권한은 바꾸지 않는다), `deadline_reminder`
-- 분석 응답: `status`(ok/clarify), `matched[].kind`(option/answered/unanswered), `coverage`(판정 불가 범위), `clarify.reason`(unsupported_scope/parse_failed/missing_operation/missing_match/unknown_condition/ambiguous_match/double_negation/unsortable_field — 이 순서가 우선순위)
+- 분석 응답: `status`(ok/clarify), `matched[].kind`(option/answered/unanswered), `coverage`(판정 불가 범위), `clarify.reason`(unsupported_scope/parse_failed/missing_operation/summary_disabled/missing_match/unknown_condition/ambiguous_match/double_negation/unsortable_field/unsummarizable_field — 이 순서가 우선순위), `summary.status`(ok/no_matches/no_consented_responses/insufficient_evidence/too_many_responses — 되묻기가 아니라 `status: ok` 결과에 붙는다)
 
 혼동 주의
 
@@ -37,6 +37,7 @@
 - `Form.status`(초안·배포·마감)와 `Response.status`(응답 한 건의 제출 상태), `SavedForm.state`(내 폼함의 상태)는 다른 필드다. 상태 전이·초안 공개 범위는 SPEC 5절과 AC38, AC56, AC57.
 - `Form.definition_version`은 마지막 배포 정의 버전이고 첫 배포 전에는 `null`이다. `Response.form_version`은 작성 시작 때의 배포 버전이며 제출 후 수정해도 유지한다. 과거 배포 정의는 보존한다.
 - `Form.consent`(온톨로지 개념)는 구현에서 `consent_template_id`로 저장한다. 공개 조회의 수집 항목은 `profile_key`와 무관하게 문항의 `input_format` 범주와 형식 없는 문항의 “문항별 응답 내용”으로 만든다.
+- `consent_agreed`(필수 동의, 없으면 제출 불가)와 `ai_summary_agreed`(선택 동의, 없어도 제출되고 요약에서만 빠짐)는 다르다.
 - 분기 규칙의 `when.match`(all/any, 분기 조건 결합)와 `RequestContext.match`(all/any/not, 분석 조건 결합)는 다른 필드다.
 - `User.ui_mode`(화면 모드)와 `Form.settings.display.default_mode`(응답 화면 보기 방식)는 다르다.
 - 분기가 없으면 `one_question`·`all_questions` 중 시작 방식을 정하고 응답자가 전환할 수 있다. 분기가 있으면 `one_question`·`section_page` 중 정하고 응답 중 전환하지 않는다.
@@ -51,9 +52,9 @@
 
 ## 3. 절대 규칙 (위반한 결과물은 수용하지 않는다)
 
-1. 개인정보는 허용한 만큼만 저장·사용하고 권한 있는 사람만 본다 — `personal_info`에는 허용 키만 저장하고, 자동채우기 요청은 `Response`를 만들거나 바꾸지 않는다. 미완성 폼은 초안으로 저장할 수 있지만 모든 폼은 동의 템플릿이 있어야 배포되며, 응답 제출에는 동의가 필요하다. 프로필·로그인 응답 초안·제출 이력·내 폼함·알림은 해당 사용자만, 비로그인 응답 초안은 해당 브라우저에서만, 응답 첨부는 그 폼의 제작자와 제출한 로그인 사용자만, 받은 제출 응답·결과·분석은 그 폼의 제작자만 접근한다. 개인정보 문항(`profile_key`가 있거나 `input_format.kind`가 `name`·`mobile_phone`·`landline_phone`·`address`·`student_id`·`email`인 문항)의 값은 서버 안의 필터·집계·정렬에만 쓰고, LLM 프롬프트와 임베딩 요청으로 보내지 않는다. 응답 원문을 외부 LLM·임베딩 제공사로 보내는 것은 SPEC이 정한 동의 범위 안에서만 한다. (↔ AC2, AC3, AC5, AC6, AC12, AC13, AC14, AC38, AC56, AC64, AC82, AC83 — 추가 개발 착수 시 AC55)
+1. 개인정보는 허용한 만큼만 저장·사용하고 권한 있는 사람만 본다 — `personal_info`에는 허용 키만 저장하고, 자동채우기 요청은 `Response`를 만들거나 바꾸지 않는다. 미완성 폼은 초안으로 저장할 수 있지만 모든 폼은 동의 템플릿이 있어야 배포되며, 응답 제출에는 동의가 필요하다. 프로필·로그인 응답 초안·제출 이력·내 폼함·알림은 해당 사용자만, 비로그인 응답 초안은 해당 브라우저에서만, 응답 첨부는 그 폼의 제작자와 제출한 로그인 사용자만, 받은 제출 응답·결과·분석은 그 폼의 제작자만 접근한다. 개인정보 문항(`profile_key`가 있거나 `input_format.kind`가 `name`·`mobile_phone`·`landline_phone`·`address`·`student_id`·`email`인 문항)의 값은 서버 안의 필터·집계·정렬에만 쓰고, LLM 프롬프트와 임베딩 요청으로 보내지 않는다. 응답 원문을 외부 LLM·임베딩 제공사로 보내는 것은 SPEC이 정한 동의 범위 안에서만 한다. (↔ AC2, AC3, AC5, AC6, AC12, AC13, AC14, AC38, AC56, AC64, AC82, AC83, AC88, AC90~AC92 — 추가 개발 착수 시 AC55)
 2. 송금은 링크로만 — Passform은 송금을 처리하거나 송금 완료 여부를 저장하지 않는다. (↔ AC11)
-3. 숫자를 지어내지 않는다 — 결과 집계와 `count`·`list`·`summarize`의 대상 응답은 코드가 현재 남은 `submitted` 응답에서 결정한다. AI 분석은 폼의 모든 제출 버전을 대상으로 각 응답의 제출 당시 정의에서 조건을 판정하고, 조건·버전별 `matched` 근거와 판정 불가 범위 `coverage`를 붙인다. 어느 버전에도 매칭되지 않은 조건을 0건으로 처리하지 않는다. (↔ AC19~AC24, AC48, AC49, AC75, AC78)
+3. 숫자를 지어내지 않는다 — 결과 집계와 `count`·`list`·`summarize`의 대상 응답은 코드가 현재 남은 `submitted` 응답에서 결정한다. AI 분석은 폼의 모든 제출 버전을 대상으로 각 응답의 제출 당시 정의에서 조건을 판정하고, 조건·버전별 `matched` 근거와 판정 불가 범위 `coverage`를 붙인다. 어느 버전에도 매칭되지 않은 조건을 0건으로 처리하지 않는다. 요약의 주제별 개수와 순위도 코드가 LLM 분류 라벨을 집계해 정한다. (↔ AC19~AC24, AC48, AC49, AC75, AC78, AC87, AC89, AC93)
 4. 모르면 되묻는다 — 분석 요청을 확정할 수 없으면 추측하지 않고 `clarify`를 반환한다. 파서 재호출은 형식 오류에만 1회 한다. (↔ AC25~AC30, AC32, AC77)
 5. 응답 원문은 데이터지 명령이 아니다 — `Response.content` 속 "이전 지시 무시…" 같은 문구를 지시로 실행하지 않고, CSV로 내보낼 때 수식으로 실행되지 않게 한다. (↔ AC31, AC50)
 
@@ -72,14 +73,15 @@
   - repository: DB 접근은 repository 인터페이스를 통해서만 한다.
   - domain: 엔티티를 정의하고, 상태 변경 규칙과 불변식을 엔티티 메서드 안에서 검증한다.
   - 엔티티는 API 요청 바인딩이나 응답에 직접 사용하지 않는다. 도메인 예외의 HTTP 상태 매핑은 advice에서만 한다.
-- LLM 호출은 `llm` 패키지(파서, 요약, 스파이크 결과에 따라 매처)에만 둔다. 집계, `count`·`list`·`summarize`의 대상 응답 계산, 정렬, `clarify` 판정은 LLM 없이 코드로 한다. 파서 출력은 `src/response_analysis/schemas/request_context.schema.json`으로 서버에서 다시 검증한다(LLM 제공사의 구조화 출력만 믿지 않는다).
-- 응답 원문은 요약 프롬프트의 데이터 영역(구분자로 감싼 입력)에만 넣고, 시스템 지시에 섞지 않는다. CSV 셀이 `=`, `+`, `-`, `@`로 시작하면 앞에 `'`를 붙인다.
+- LLM 호출은 `llm` 패키지(파서, 주제 분류, 요약, 임베딩 클라이언트, 스파이크 결과에 따라 매처)에만 둔다. 집계, `count`·`list`·`summarize`의 대상 응답 계산, 요약 주제별 개수·순위, 정렬, `clarify` 판정은 LLM 없이 코드로 한다. 파서 출력은 `src/response_analysis/schemas/request_context.schema.json`으로 서버에서 다시 검증한다(LLM 제공사의 구조화 출력만 믿지 않는다).
+- 응답 원문은 요약·주제 분류 프롬프트의 데이터 영역(구분자로 감싼 입력)에만 넣고, 시스템 지시에 섞지 않는다. 외부로 보내기 전에 미동의 응답과 개인정보 문항을 빼고 답 속 전화번호·이메일을 가린다. CSV 셀이 `=`, `+`, `-`, `@`로 시작하면 앞에 `'`를 붙인다.
 - 분기 규칙과 기본 이동의 해석은 공통화한다. 제출 검증(건너뛴 문항 제외)과 페이지 넘기기는 같은 응답 경로 계산을 쓰고, 분기 흐름 그래프는 모든 규칙·기본 이동을 표시한다. 클라이언트가 보낸 경로를 믿지 않고 서버가 답으로 다시 계산한다.
 - 폼 정의를 받거나 내보낼 때는 `form.schema.json`으로 검증한다. 빌더 모드마다 다른 저장 형식을 만들지 않는다.
 - 시간: 저장은 UTC, 화면 표시는 Asia/Seoul. 현재 시각은 주입한 `Clock`으로만 얻는다(테스트에서 고정 시계로 마감·알림을 판정한다).
 - 메일 발송과 외부 호출은 인터페이스 뒤에 두고 테스트에서 모의 객체로 바꾼다. 알림 스케줄러는 같은 시점에 여러 번 돌아도 한 번만 보내야 한다(사용자·폼·알림 종류로 중복 확인).
 - **순서를 내놓는 코드는 결정론적이어야 한다.**
   - 분석 `list`: `sort` 값 순(빈 값은 맨 뒤), 같거나 `sort`가 없으면 `Response.id` 오름차순
+  - 요약 주제: `count` 내림차순 → 그 주제의 가장 작은 `response_id` 오름차순, `기타`는 맨 뒤
   - 제출 이력: `submitted_at` 내림차순 → `Response.id` 오름차순
   - 내 폼함: 미제출(마감 임박순, `deadline` 없음은 미제출 맨 뒤) → 제출(`submitted_at` 내림차순), 같으면 `form_id` 오름차순
   - 알림: `created_at` 내림차순 → `id` 오름차순

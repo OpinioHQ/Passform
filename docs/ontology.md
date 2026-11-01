@@ -53,6 +53,7 @@ classes:
       response_limit: {type: int, nullable: true, note: '선착순으로 받을 최대 제출 응답 수. 도달하면 응답 접수를 마감(status: closed)하며, 없으면 제한하지 않는다', evidence: [로그 3]}
       sections: {type: list, note: 순서가 있는 문항 묶음. 응답 중 남은 분량은 섹션과 분기 경로에서 계산한다, evidence: [관찰 1, 로그 3, 로그 4, 로그 9]}
       consent: {type: object, note: '배포된 모든 폼에서 수집 항목·목적·보유 기간·동의 거부 안내를 보여 주는 문구.', evidence: [로그 4, 로그 9, 관찰 1]}
+      ai_summary: {type: boolean, note: 'AI 요약 사용 여부. 첫 배포 후 변경 불가', evidence: [기획상 추가]}
     relations:
       - made_by: User
         required: true
@@ -109,6 +110,7 @@ classes:
       attachments: {type: list, example: [jpg, mp4, pdf], note: 응답자가 업로드한 파일. 허용 형식과 용량 제한은 SPEC에서 정의한다, evidence: [로그 1, 로그 2]}
       submitted_at: {type: datetime, nullable: true, note: '작성 중에는 null이며 최초 제출 시각을 기록한다', evidence: [로그 3, 로그 4, 로그 6, 로그 10]}
       updated_at: {type: datetime, nullable: true, note: '제출 후 응답을 수정한 최근 시각. 수정 전에는 null이다', evidence: [기획상 추가]}
+      ai_summary_agreed: {type: boolean, note: 'AI 요약 선택 동의. 거부해도 제출되며 AI 요약에서만 빠진다', evidence: [기획상 추가]}
     relations:
       - belongs_to: Form
         evidence: [로그 2, 로그 6]
@@ -126,7 +128,7 @@ classes:
       response_count: {type: int, note: '필터·폼 버전과 무관하게 현재 남은 Form 전체 제출 응답 수', evidence: [관찰 1]}
       filtered_response_count: {type: int, derived: true, note: '해당 Form의 모든 제출 버전에서 RequestContext 조건에 맞는 응답 수. 조건을 판정할 수 없는 응답은 별도로 알리고 집계하지 않으며 조건이 없으면 Form 전체 제출 응답 수와 같다', evidence: [로그 1, 관찰 1, 기획상 추가]}
       statistics: {type: list, note: '통합 조회와 버전별 조회를 모두 제공한다. 통합 시 동일한 문항·선택지만 합산하고 바뀐 항목은 구분한다', evidence: [로그 1, 관찰 1, 기획상 추가]}
-      summary: {type: string, evidence: [로그 1, 관찰 1]}
+      summary: {type: object, note: '주제별 개수는 코드가 라벨을 집계, 근거는 응답 ID로 연결', evidence: [로그 1, 관찰 1]}
     relations:
       - aggregates: Response
         evidence: [로그 1, 관찰 1]
@@ -154,13 +156,15 @@ classes:
 
   RequestContext:
     description: 제작자가 자연어로 요청한 응답 조회 조건(요청 1회 단위). 해당 Form의 모든 제출 버전에서 Result를 변경하지 않고 보여 줄 응답을 고른다.
-    note: 근거는 응답 결과를 확인·정리하며 도구를 오가는 문제를 뒷받침한다. 자연어 요청과 conditions·match·operation·sort의 구체적 구조는 이를 해결하기 위한 설계 가설로, 인터뷰에서 사용성이 검증된 것은 아니다
+    note: 근거는 응답 결과를 확인·정리하며 도구를 오가는 문제를 뒷받침한다. 자연어 요청과 conditions·match·operation·sort·target·topic의 구체적 구조는 이를 해결하기 위한 설계 가설로, 인터뷰에서 사용성이 검증된 것은 아니다
     evidence: [로그 1, 로그 2, 관찰 1]
     attributes:
       conditions: {type: list, example: [소프트웨어학과, 4학년, '3번 문항 - 예'], evidence: [로그 1, 관찰 1]}
       match: {type: enum, values: [all, any, not], evidence: [관찰 1]}
       operation: {type: enum, values: [count, summarize, list, null], note: 'null은 출력 방식을 판별할 수 없는 파서 결과이며 분석하지 않고 되묻는다', evidence: [로그 1, 로그 2, 기획상 추가]}
       sort: {type: object, example: {by: 나이, order: asc}, evidence: [관찰 1]}
+      target: {type: string, example: 지원동기, note: '요약할 문항의 발화 표현. summarize에서만 쓰고 응답을 거르지 않는다', evidence: [관찰 1, 기획상 추가]}
+      topic: {type: string, example: 비용이 부담된다, note: '요약해 달라는 의견·주제의 발화 표현. summarize에서만 쓰고 개수를 내지 않는다', evidence: [관찰 1, 기획상 추가]}
     relations:
       - made_by: User
         evidence: [로그 1, 로그 2]

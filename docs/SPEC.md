@@ -324,9 +324,9 @@
 
 - `result.summary`는 객체 `{status, excluded_no_consent_count, items, topic}`다(`count`·`list`에서는 `null`). `items[].type`은 `themes`(요약 가능 문항의 주제 요약) 또는 `option_stats`(선택형 문항의 선택지 통계, 유형 A에서만, 코드 계산)이고, `items[].target`은 `{question_id, question_note, form_versions}`다. 문항은 통합 보기처럼 `question_id`·문구·유형이 같은 것끼리 한 항목으로 묶고, 다르면 별도 항목으로 둔다. `option_stats`는 외부로 보내지 않으므로 AI 요약 동의와 무관하게 일치 응답 전체로 센다.
 - 주제 분류: LLM이 AI 요약에 동의한 일치 응답마다 대상 문항의 답에 주제 라벨 **하나**를 붙인다(어디에도 맞지 않으면 `기타`). 그 문항에 답이 없는 응답(빈 답·분기로 건너뜀)은 분류하지 않는다. 주제 수 상한은 설정값이다. `themes[].count`·`response_ids`는 코드가 그 요청에서 보낸 응답의 라벨만 집계한 값이며 동의한 일치 응답의 부분집합이다. 주제 순서는 `count` 내림차순 → 같으면 그 주제의 가장 작은 `response_id` 오름차순이고, `기타`는 항상 맨 뒤다.
-- 근거: `themes[].evidence`는 그 주제의 `response_ids` 안에서 임베딩 검색으로 고른 근거 `{response_id, form_version, question_id, excerpt}` 목록이다(`top_k`, `min_score`는 설정값). `text`는 evidence만 보고 작성한다. `min_score` 이상인 근거가 없으면 그 주제는 `text: null`, `evidence: []`다.
+- 근거: `themes[].evidence`는 그 주제의 `response_ids` 안에서 임베딩 검색으로 고른 근거 `{response_id, form_version, question_id, excerpt}` 목록이다(`top_k`, `min_score`는 설정값). `text`는 evidence만 보고 작성한다. `min_score` 이상인 근거가 없으면 그 주제는 `text: null`, `evidence: []`다. 근거가 없는 주제가 있거나 모든 주제에 근거가 없어도 `summary.status`는 `ok`이고 `items`(각 주제의 `label`·`count`·`response_ids`)를 그대로 반환한다. 주제별 개수는 코드가 센 값이라 근거 유무와 무관하다.
 - 유형 D: `items: []`, `topic: {query, text, evidence}`. `query`는 `topic` 표현 그대로이고, 근거는 동의한 일치 응답의 요약 가능 문항 답(`target`이 있으면 그 문항의 답) 안에서 검색한다. evidence는 근거일 뿐 개수가 아니며, 몇 명인지 묻는 질문에 쓰지 않는다.
-- `summary.status`: `ok` / `no_matches`(일치 응답 0건) / `no_consented_responses`(일치 응답은 있으나 전부 AI 요약 미동의) / `insufficient_evidence`(유형 D에서 `min_score` 이상 근거 없음, 또는 모든 주제의 근거 없음) / `too_many_responses`(동의한 일치 응답이 요청당 상한을 넘음 — LLM을 부르지 않고 조건을 좁히라고 안내). 판정 순서는 `no_matches` → `no_consented_responses` → `too_many_responses` → `insufficient_evidence`다(상한 초과는 LLM·임베딩 호출 전에 판정한다). `ok`가 아니면 `items: []`이고, `topic`은 유형 D면 `{query, text: null, evidence: []}`, 그 밖에는 `null`이다. 이 상태들은 되묻기가 아니므로 분석 응답의 `status`는 `ok`이고 `result.count`·`response_ids`는 코드가 정한 값 그대로다.
+- `summary.status`: `ok` / `no_matches`(일치 응답 0건) / `no_consented_responses`(일치 응답은 있으나 전부 AI 요약 미동의) / `insufficient_evidence`(유형 D에서 `min_score` 이상 근거 없음) / `too_many_responses`(동의한 일치 응답이 요청당 상한을 넘음 — LLM을 부르지 않고 조건을 좁히라고 안내). 판정 순서는 `no_matches` → `no_consented_responses` → `too_many_responses` → `insufficient_evidence`다(상한 초과는 LLM·임베딩 호출 전에 판정한다). `ok`가 아니면 `items: []`이고, `topic`은 유형 D면 `{query, text: null, evidence: []}`, 그 밖에는 `null`이다. 이 상태들은 되묻기가 아니므로 분석 응답의 `status`는 `ok`이고 `result.count`·`response_ids`는 코드가 정한 값 그대로다.
 - `summary.excluded_no_consent_count`는 일치 응답 중 AI 요약 미동의 수다.
 - `target`이 일부 버전에만 있으면 있는 버전만 요약하고, 나머지 버전의 일치 응답 수를 `coverage.summary_unavailable_by_version`에 적는다(`sort_unavailable_by_version`과 같은 방식). `target`이 어느 버전에도 없거나, 뜻이 다른 여러 문항에 걸리거나, 요약할 수 없는 문항이면 아래 `clarify` 표대로 되묻는다.
 - 전송 범위: 주제 분류·임베딩에는 대상 문항의 답 전체(AI 요약 동의 응답만, 개인정보 문항 제외, 마스킹)를 보낸다. 요약문 작성에는 근거(evidence)와 코드가 센 주제별 개수만 보낸다. 외부로 보내는 모든 답(단답·장문)은 전화번호·이메일 패턴을 정규식으로 가린 뒤 보낸다. 요약 프롬프트에는 각 응답의 제출 버전과 그 버전의 문항 문구를 데이터로 전달하며 수치 집계는 LLM에 맡기지 않는다. 응답 원문은 구분자로 감싼 데이터 영역에만 넣는다(AC31). 분류는 설정값 단위(임시 50건)로 나눠 호출하고, 요청당 상한은 설정값(임시 300건)이다. 두 값은 시드 데이터로 측정한 뒤 확정한다.
@@ -337,7 +337,7 @@
 |---|---|---|---|---|
 | 1 | `unsupported_scope` | 자연어에서 특정 버전만 분석하거나 버전별 AI 결과를 비교하도록 요청함. 쿼리를 파서에 보내기 전에 판정 | 전체 버전 AI 분석·대시보드 버전별 보기 안내 | 제품 정책 |
 | 2 | `parse_failed` | 형식 오류 재요청 후에도 스키마 검증 실패 | `[]` | 4, 9, 10 |
-| 3 | `missing_operation` | `operation`이 `null`이거나 평균·비율·그룹별 집계·문항별 통계처럼 지원하지 않는 동작을 요청함 | `["count", "list", "summarize"]`와 대시보드 안내 | 2, 5 |
+| 3 | `missing_operation` | `operation`이 `null`이거나 평균·비율·그룹별 집계·문항별 통계처럼 지원하지 않는 동작을 요청함 | `["count", "list", "summarize"]`(AI 요약이 꺼진 폼은 `["count", "list"]`)와 대시보드 안내 | 2, 5 |
 | 4 | `summary_disabled` | `operation`이 `summarize`인데 폼의 AI 요약(`settings.ai_summary.enabled`)이 꺼져 있음 | `["count", "list"]`. 메시지로 배포 시 설정 때문이며 배포 후에는 바꿀 수 없음(폼 복사로 새로 정함)을 안내 | 제품 정책 |
 | 5 | `missing_match` | 조건이 2개 이상인데 `match`가 없음. 또는 원문 요청에 긍정·부정 조건이 섞여 단일 `match`로 표현할 수 없음 | 일반: `["all", "any"]`; 혼합 부정: `[]`와 요청을 나누어 달라는 안내 | (필드 표: match 수집 필수) |
 | 6 | `unknown_condition` | 조건이나 `list`의 `sort.by`, `summarize`의 `target`이 현재 응답이 남은 모든 폼 버전에서 문항·선택지에 매칭되지 않음 | 조건·`sort.by`: 버전 번호를 붙인 선택형 문항 목록 `[{form_version, question_id, question_note, options}]`; `target`: 버전 번호를 붙인 요약 가능 문항 목록 `[{form_version, question_id, question_note}]` | 7, 13 |
@@ -521,8 +521,8 @@
   - 테스트: 소프트웨어학과·컴퓨터공학과(dropdown) + `all` → `ambiguous_match` / 기획·디자인(checkbox) + `all` → `ok` / 한 버전의 “소속 학과”와 다른 버전의 “희망 학과”가 같은 조건 후보가 됨 → 버전별 후보를 제시하며 되묻기
 - **AC26 [예외 대응]**: 조건이 2개 이상인데 `match`가 없으면, Passform은 결과를 내지 않고 `clarify.reason: missing_match`로 "모두 해당"인지 "하나라도 해당"인지 되묻는다. 자연어 요청에 긍정·부정 조건이 섞여 단일 `match`로 표현할 수 없을 때도 같은 사유로 결과 없이 요청을 나누어 달라고 안내한다. 조건이 0개 또는 1개이고 `match`가 없으면 이 사유로 되묻지 않는다.
   - 테스트: "소프트웨어학과가 아닌 4학년 수" → `missing_match`, `result` 없음, `options: []`, 요청 분리 안내 / 조건 0개·1개에서 `match` 생략 → `missing_match` 아님
-- **AC27 [예외 대응]**: 파서 출력의 `operation`이 `null`이거나 원문이 지원하지 않는 통계 동작을 명시하면, Passform은 이를 다른 동작으로 바꾸지 않고 `clarify.reason: missing_operation`과 지원하는 동작 `count`·`list`·`summarize`를 반환한다. 문항별 통계 요청에는 대시보드도 안내한다.
-  - 테스트: 모의 파서가 `{"conditions":[],"operation":null}` 반환 → 파서 호출 1회, `missing_operation`, `options`에 세 동작 포함 / “학과별 통계”를 파서가 `summarize`로 잘못 해석해도 결과 없이 대시보드 안내
+- **AC27 [예외 대응]**: 파서 출력의 `operation`이 `null`이거나 원문이 지원하지 않는 통계 동작을 명시하면, Passform은 이를 다른 동작으로 바꾸지 않고 `clarify.reason: missing_operation`과 지원하는 동작 `count`·`list`·`summarize`를 반환한다. 폼의 `settings.ai_summary.enabled`가 `false`이면 `summarize`는 넣지 않고 `count`·`list`만 반환한다. 문항별 통계 요청에는 대시보드도 안내한다.
+  - 테스트: 모의 파서가 `{"conditions":[],"operation":null}` 반환 → 파서 호출 1회, `missing_operation`, `options`에 세 동작 포함 / “학과별 통계”를 파서가 `summarize`로 잘못 해석해도 결과 없이 대시보드 안내 / AI 요약이 꺼진 폼 → `options`에 `summarize` 없음(`["count", "list"]`)
 - **AC28 [예외 대응]**: `list`에서 `sort.by`가 `long_answer`·`checkbox` 문항이거나, `short_answer` 값이 정규화 가능한 숫자·날짜가 아니거나, 버전 사이에서 값 형식·선택지 순서를 비교할 수 없으면, Passform은 정렬하지 않고 `clarify.reason: unsortable_field`와 정렬 가능한 문항 목록을 반환한다. 선택형 문항은 선택지 정의 순서로 정렬한다. 일부 제출 버전에만 정렬 문항이 없으면 그 버전 응답은 맨 뒤에 두고 범위를 알린다.
   - 테스트: `sort.by` = 자기소개(long_answer) → `unsortable_field`, `options`에 자기소개 없음 / 나이 값에 "23살" 포함 → `unsortable_field` / `input_format`이 날짜인 `YYYY-MM-DD` 값은 날짜순으로 정렬 / 버전 간 같은 선택지의 정의 순서가 달라 비교 불가 → `unsortable_field` / 버전 2에 나이 문항 없음 → 버전 2 응답을 맨 뒤에 놓고 `coverage.sort_unavailable_by_version`에 버전 2 표시
 - **AC61 [이벤트 기반]**: `list` 요청에 `sort.by`가 있으면, Passform은 모든 제출 버전의 응답을 해당 문항의 값과 `sort.order`로 한꺼번에 정렬하고 방향이 없으면 `asc`로 처리한다. 빈 값이나 그 버전에 정렬 문항이 없는 응답은 맨 뒤, 같은 값은 `response_id` 오름차순이다. `count`·`summarize`에 붙은 `sort`는 무시한다.
@@ -541,8 +541,8 @@
   - 테스트: 모의 분류기가 응답 6건에 라벨 A·B·A·기타·B·A를 붙임 → `themes` 순서 A(3)·B(2)·기타(1), 각 `response_ids`가 라벨 집계와 일치 / 개수가 같은 두 주제는 가장 작은 `response_id`가 앞선 주제 먼저 / `기타`가 가장 많아도 맨 뒤 / 모의 분류기가 보내지 않은 응답 ID에 라벨을 붙여도 집계에 없음, 미동의·불일치 응답 ID는 어떤 `themes[].response_ids`에도 없음
 - **AC88 [상시 적용]**: Passform은 항상 요약 근거(`evidence`)를 일치하고 AI 요약에 동의한 응답의 요약 가능 문항 답에서만 고른다. 주제 근거는 그 주제의 `response_ids` 안에서, 유형 D 근거는 동의한 일치 응답(`target`이 있으면 그 문항) 안에서 고르며, 검색 결과로 `count`·`list`·`result.response_ids`를 바꾸지 않는다.
   - 테스트: 모의 임베딩이 불일치·미동의 응답과 개인정보 문항 답에 가장 높은 점수를 주도록 설정 → `evidence`의 `response_id`는 모두 해당 주제의 `response_ids`(유형 D는 동의한 일치 응답) 안에 있고 `question_id`는 요약 가능 문항뿐 / 모의 임베딩 클라이언트가 받은 요청 본문에 불일치·미동의 응답과 개인정보 문항 값 없음 / 같은 조건의 `result.count`·`response_ids`는 `topic` 유무와 무관하게 같음
-- **AC89 [예외 대응]**: 유형 D(`topic`) 요약을 요청하면, Passform은 관련 의견의 개수를 반환하지 않고 근거와 요약 문장만 반환한다. `min_score` 이상인 근거가 없으면 요약 문장을 만들지 않고 `summary.status: insufficient_evidence`, `topic.text: null`, `topic.evidence: []`를 반환한다. 주제 요약에서 근거가 없는 주제는 `text: null`, `evidence: []`이고, 모든 주제에 근거가 없으면 `insufficient_evidence`다.
-  - 테스트: "비용이 부담된다는 의견 요약해줘" → `summary.items: []`, `summary.topic`에 개수 필드 없음, `result.count`는 조건 일치 응답 수 그대로 / 모의 임베딩 점수가 모두 `min_score` 미만 → `insufficient_evidence`, 요약문 작성 호출 0회 / 일부 주제만 근거 없음 → 그 주제만 `text: null`, 나머지 주제는 요약 문장 있음
+- **AC89 [예외 대응]**: 유형 D(`topic`) 요약을 요청하면, Passform은 관련 의견의 개수를 반환하지 않고 근거와 요약 문장만 반환한다. `min_score` 이상인 근거가 없으면 요약 문장을 만들지 않고 `summary.status: insufficient_evidence`, `topic.text: null`, `topic.evidence: []`를 반환한다. 주제 요약(`themes`)은 근거가 없는 주제가 있거나 모든 주제에 근거가 없어도 `summary.status: ok`를 유지하고 `items`(각 주제의 `label`·`count`·`response_ids`)를 그대로 반환하며, 근거가 없는 주제만 `text: null`, `evidence: []`다.
+  - 테스트: "비용이 부담된다는 의견 요약해줘" → `summary.items: []`, `summary.topic`에 개수 필드 없음, `result.count`는 조건 일치 응답 수 그대로 / 모의 임베딩 점수가 모두 `min_score` 미만 → `insufficient_evidence`, 요약문 작성 호출 0회 / 주제 요약에서 일부 주제만 근거 없음 → `status: ok`, `items` 유지, 그 주제만 `text: null`·`evidence: []`, 나머지 주제는 요약 문장 있음 / 주제 요약에서 모든 주제의 근거 없음 → `status: ok`, 모든 주제의 `label`·`count`·`response_ids` 유지, 모든 주제가 `text: null`·`evidence: []`
 - **AC92 [상시 적용]**: Passform은 항상 개인정보 문항(5절 폼 제작)의 값을 LLM·임베딩 요청 본문에 넣지 않고, 외부로 보내는 단답·장문 답 속 전화번호·이메일을 가린 뒤 보낸다. `summarize`의 `target`이 선택형 문항이나 개인정보 문항에 매칭되면 요약하지 않고 `clarify.reason: unsummarizable_field`와 버전 번호가 붙은 요약 가능 문항 목록을 반환한다.
   - 테스트: 모의 LLM·임베딩 클라이언트가 받은 요청 본문으로 판정 — 이름 형식·전화번호 형식·`profile_key: birth_date` 날짜 문항과 장문 문항이 있는 폼의 전체 요약 → 모든 요청 본문에 앞의 세 문항 값 없음 / 장문 답 "연락은 010-1234-5678, a@example.com으로" → 요청 본문에 두 값 없음 / "이름 요약해줘"·"지원 분야 요약해줘" → `unsummarizable_field`, `options`에 해당 문항 없음 / `profile_key` 없는 예약 날짜 문항은 개인정보 문항으로 보지 않음
 - **AC93 [예외 대응]**: `summarize`의 요약 대상이 없거나 처리 범위를 넘으면, Passform은 되묻지 않고 `status: ok` 결과에 `summary.status`로 표시한다 — 일치 응답 0건은 `no_matches`, 일치 응답이 모두 AI 요약 미동의면 `no_consented_responses`, 동의한 일치 응답이 요청당 상한을 넘으면 LLM·임베딩을 부르지 않고 `too_many_responses`다. 이때 `summary.items: []`이고 `result.count`·`response_ids`는 코드가 정한 일치 응답 그대로다.
@@ -603,7 +603,7 @@
 | AC24 | `match_not_excludes_unknown`, `match_any_known_true_with_unknown` | 미구현 |
 | AC25 | `ambiguous_single_choice`, `checkbox_all_ok`, `ambiguous_question_meaning_across_versions` | 미구현 |
 | AC26 | `missing_match_two_conditions` | 미구현 |
-| AC27 | `missing_operation`, `unsupported_statistics_not_mapped_to_summary` | 미구현 |
+| AC27 | `missing_operation`, `unsupported_statistics_not_mapped_to_summary`, `missing_operation_without_summary_option` | 미구현 |
 | AC28 | `unsortable_long_answer`, `unsortable_text_age`, `sort_missing_version_last` | 미구현 |
 | AC29 | `double_negation_unanswered` | 미구현 |
 | AC30 | `extra_key_retry_once` | 미구현 |

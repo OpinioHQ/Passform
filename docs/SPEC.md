@@ -597,7 +597,7 @@
 | AC18 | `deadline_reminder_once`, `reminder_saved_within_window`, `reminder_opt_out` | 미구현 |
 | AC19 | `results_option_counts_combined_and_by_version`, `results_changed_question_separate` | 미구현 |
 | AC20 | `submitted_only`, `response_count_across_versions` | 미구현 |
-| AC21 | `matching_labeled_set` (규칙이면 골든 / LLM이면 evals) | 스파이크 대기 |
+| AC21 | `matching_labeled_set` (규칙이면 골든 / LLM이면 evals) | 스파이크 1차 미달(2026-11-02), 재도전 예정 |
 | AC22 | `unknown_condition_all_versions`, `unknown_sort_field`, `condition_missing_one_version_keeps_matches` | 미구현 |
 | AC23 | `matched_for_applicable_versions`, `coverage_for_unavailable_version` | 미구현 |
 | AC24 | `match_not_excludes_unknown`, `match_any_known_true_with_unknown` | 미구현 |

@@ -1,0 +1,140 @@
+{
+  "form_id": "club",
+  "title": "동아리 지원서",
+  "source": "data/seed/forms/form_b_mixed.json(PR #30)의 버전 1·2 문항 정의",
+  "versions": [
+    {
+      "form_version": 1,
+      "questions": [
+        {
+          "number": 1,
+          "question_id": "q1",
+          "question_note": "소속 학과",
+          "question_type": "dropdown",
+          "options": [
+            "소프트웨어학과",
+            "컴퓨터공학과",
+            "경영학과"
+          ]
+        },
+        {
+          "number": 2,
+          "question_id": "q2",
+          "question_note": "학년",
+          "question_type": "multiple_choice",
+          "options": [
+            "1학년",
+            "2학년",
+            "3학년",
+            "4학년"
+          ]
+        },
+        {
+          "number": 3,
+          "question_id": "q5",
+          "question_note": "프로젝트 경험이 있나요?",
+          "question_type": "multiple_choice",
+          "options": [
+            "예",
+            "아니요"
+          ]
+        },
+        {
+          "number": 4,
+          "question_id": "q6",
+          "question_note": "프로젝트에서 맡은 역할",
+          "question_type": "multiple_choice",
+          "options": [
+            "팀장",
+            "팀원"
+          ]
+        },
+        {
+          "number": 5,
+          "question_id": "q3",
+          "question_note": "관심 분야",
+          "question_type": "checkbox",
+          "options": [
+            "기획",
+            "디자인",
+            "개발"
+          ]
+        },
+        {
+          "number": 6,
+          "question_id": "q4",
+          "question_note": "자기소개",
+          "question_type": "long_answer",
+          "options": []
+        }
+      ]
+    },
+    {
+      "form_version": 2,
+      "questions": [
+        {
+          "number": 1,
+          "question_id": "q1",
+          "question_note": "소속 학과",
+          "question_type": "dropdown",
+          "options": [
+            "소프트웨어학과",
+            "컴퓨터공학부",
+            "경영학과"
+          ]
+        },
+        {
+          "number": 2,
+          "question_id": "q2",
+          "question_note": "현재 학년",
+          "question_type": "multiple_choice",
+          "options": [
+            "1학년",
+            "2학년",
+            "3학년",
+            "4학년"
+          ]
+        },
+        {
+          "number": 3,
+          "question_id": "q5",
+          "question_note": "프로젝트 경험이 있나요?",
+          "question_type": "multiple_choice",
+          "options": [
+            "예",
+            "아니요"
+          ]
+        },
+        {
+          "number": 4,
+          "question_id": "q6",
+          "question_note": "프로젝트에서 맡은 역할",
+          "question_type": "multiple_choice",
+          "options": [
+            "팀장",
+            "팀원"
+          ]
+        },
+        {
+          "number": 5,
+          "question_id": "q3",
+          "question_note": "관심 분야",
+          "question_type": "checkbox",
+          "options": [
+            "기획",
+            "디자인",
+            "개발",
+            "데이터 분석"
+          ]
+        },
+        {
+          "number": 6,
+          "question_id": "q4",
+          "question_note": "자기소개",
+          "question_type": "long_answer",
+          "options": []
+        }
+      ]
+    }
+  ]
+}

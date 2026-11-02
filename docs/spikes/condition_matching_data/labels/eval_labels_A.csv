@@ -1,0 +1,103 @@
+﻿request_id,form_id,cond_idx,condition,form_version,label,note
+E01,club,0,소프트웨어학과,1,q1|option|소프트웨어학과,
+E01,club,0,소프트웨어학과,2,q1|option|소프트웨어학과,
+E01,club,1,4학년,1,q2|option|4학년,
+E01,club,1,4학년,2,q2|option|4학년,
+E02,club,0,소프트웨어,1,q1|option|소프트웨어학과,
+E02,club,0,소프트웨어,2,q1|option|소프트웨어학과,
+E03,club,0,컴퓨터공학부,1,NONE,학부와 학과는 다를 수 있음. 예를들어 컴퓨터공학부의 소프트웨어학과일 수도 있음. (규칙 점검 후 수정)
+E03,club,0,컴퓨터공학부,2,q1|option|컴퓨터공학부,
+E04,club,0,경영,1,q1|option|경영학과,
+E04,club,0,경영,2,q1|option|경영학과,
+E05,club,0,경제학과,1,NONE,경영학과와 경제학과는 명확히 다름.
+E05,club,0,경제학과,2,NONE,
+E06,club,0,2학년,1,q2|option|2학년,
+E06,club,0,2학년,2,q2|option|2학년,
+E07,club,0,1학년,1,q2|option|1학년,
+E07,club,0,1학년,2,q2|option|1학년,
+E07,club,1,디자인,1,q3|option|디자인,
+E07,club,1,디자인,2,q3|option|디자인,
+E08,club,0,2번 문항 - 3학년,1,q2|option|3학년,2번 문항이 뭔지 명확히 모름. 2번 문항이 과거 동아리 활동이 몇학년이냐는 질문일 수도 있음.
+E08,club,0,2번 문항 - 3학년,2,q2|option|3학년,
+E09,club,0,프로젝트 경험 없음,1,q5|option|아니요,"실제라면 따로 프로젝트 경험 없음이 객관식 문항으로 있을 확률이 높고, 그런 객관식 문항이 없다면 자기소개에 들어가 있을거임."
+E09,club,0,프로젝트 경험 없음,2,q5|option|아니요,
+E10,club,0,5번 문항 - 미응답,1,q3|unanswered,(규칙 점검 후 수정)
+E10,club,0,5번 문항 - 미응답,2,q3|unanswered,(규칙 점검 후 수정)
+E11,club,0,팀원으로 참여,1,q6|option|팀원,과거 팀원으로 참여한 경험을 묻는 걸 수도  있고. 앞으로 이번 동아리의 프로젝트에 팀원으로 참여할 건지 의향을 묻는 걸 수도 있음.
+E11,club,0,팀원으로 참여,2,q6|option|팀원,
+E12,club,0,개발,1,q3|option|개발,
+E12,club,0,개발,2,q3|option|개발,
+E12,club,1,기획,1,q3|option|기획,
+E12,club,1,기획,2,q3|option|기획,
+E13,club,0,데이터 분석에 관심 있는 사람,1,NONE,"버전1에서 선택지에 데이터 분석이 없으므로, 관심분야에서 기타 객관식 선택지를 골랐거나, 자기소개에 관심분야가 적혀있을거임. (규칙 점검 후 수정)"
+E13,club,0,데이터 분석에 관심 있는 사람,2,q3|option|데이터 분석,
+E14,club,0,자기소개 - 응답,1,q4|answered,
+E14,club,0,자기소개 - 응답,2,q4|answered,
+E15,club,0,자기소개에 '프로젝트'라고 쓴 사람,1,NONE,(규칙 점검 후 수정)
+E15,club,0,자기소개에 '프로젝트'라고 쓴 사람,2,NONE,(규칙 점검 후 수정)
+E16,club,0,타학과,1,NONE,해당 동아리가 소학회처럼 특정 학과에 특화된 동아리일 경우 '타학과' 는 그 타학과에 해당하는 학과가 매번 달라질 수 있음. (규칙 점검 후 수정)
+E16,club,0,타학과,2,NONE,(규칙 점검 후 수정)
+E17,club,0,컴공,1,q1|option|컴퓨터공학과,
+E17,club,0,컴공,2,q1|option|컴퓨터공학부,
+E17,club,1,팀장,1,q6|option|팀장,과거 팀장으로 참여한 경험을 묻는 걸 수도  있고. 앞으로 이번 동아리의 프로젝트에 팀장으로 참여할 건지 의향을 묻는 걸 수도 있음.
+E17,club,1,팀장,2,q6|option|팀장,
+E18,club,0,7번 문항 - 응답,1,NONE,
+E18,club,0,7번 문항 - 응답,2,NONE,
+E19,club,0,편입생,1,NONE,편입생임을 알 수 있을만한 문항이 딱히 없지만 있다면 자기소개 문항임. (규칙 점검 후 수정)
+E19,club,0,편입생,2,NONE,(규칙 점검 후 수정)
+E19,club,1,활동 중단 부원,1,NONE,활동 중단 부원임을 알 수 있을만한 문항이 딱히 없지만 있다면 자기소개 문항임. (규칙 점검 후 수정)
+E19,club,1,활동 중단 부원,2,NONE,(규칙 점검 후 수정)
+E20,club,0,소웨,1,q1|option|소프트웨어학과,
+E20,club,0,소웨,2,q1|option|소프트웨어학과,
+E20,club,1,3번 문항 - 아니요,1,q5|option|아니요,
+E20,club,1,3번 문항 - 아니요,2,q5|option|아니요,
+E21,event,0,재학생,1,q2|option|재학생,
+E21,event,0,재학생,2,q2|option|재학생,
+E21,event,1,숙박 신청,1,NONE,그 외에 기타 정보로 종합적으로 판단해야 할 듯. (규칙 점검 후 수정)
+E21,event,1,숙박 신청,2,NONE,(규칙 점검 후 수정)
+E22,event,0,휴학 중,1,q2|option|휴학생,
+E22,event,0,휴학 중,2,q2|option|휴학생,
+E23,event,0,일반인,1,NONE,(규칙 점검 후 수정)
+E23,event,0,일반인,2,q2|option|일반인,
+E24,event,0,일요일만 참가,1,q3|option|11월 16일(일),
+E24,event,0,일요일만 참가,2,q3|option|11월 16일(일),
+E25,event,0,15일,1,q3|option|11월 15일(토),
+E25,event,0,15일,2,q3|option|11월 15일(토),
+E26,event,0,특강,1,q4|option|특강,
+E26,event,0,특강,2,q4|option|특강,
+E26,event,1,포트폴리오 리뷰,1,NONE,매칭이 어렵지만 굳이 매칭을 시도해서 찾아본다면 문의사항에 적혀있을 확률이 높음. (규칙 점검 후 수정)
+E26,event,1,포트폴리오 리뷰,2,q4|option|포트폴리오 리뷰,(규칙 점검 후 수정)
+E27,event,0,식사 신청,1,q5|option|신청,식사 신청을 안한 사람을 물어볼 수도 있음. (규칙 점검 후 수정)
+E27,event,0,식사 신청,2,NONE,(규칙 점검 후 수정)
+E28,event,0,일반식,1,NONE,일반식 신청을 안한 사람을 물어볼 수도 있는 걸 고려해야 함. (규칙 점검 후 수정)
+E28,event,0,일반식,2,q8|option|일반식,(규칙 점검 후 수정)
+E29,event,0,문의사항 적은 사람,1,q7|answered,
+E29,event,0,문의사항 적은 사람,2,q7|answered,
+E30,event,0,XXL,1,NONE,
+E30,event,0,XXL,2,q6|option|XXL,
+E31,event,0,개인 참가,1,NONE,
+E31,event,0,개인 참가,2,q9|option|개인,
+E32,event,0,이름 - 미응답,1,q1|unanswered,
+E32,event,0,이름 - 미응답,2,q1|unanswered,
+E33,event,0,8번 문항 - 응답,1,q7|answered,(규칙 점검 후 수정)
+E33,event,0,8번 문항 - 응답,2,q7|answered,
+E34,event,0,문의사항에 주차를 물어본 사람,1,NONE,(규칙 점검 후 수정)
+E34,event,0,문의사항에 주차를 물어본 사람,2,NONE,(규칙 점검 후 수정)
+E35,event,0,타학교,1,NONE,(규칙 점검 후 수정)
+E35,event,0,타학교,2,NONE,(규칙 점검 후 수정)
+E36,event,0,납부 완료,1,NONE,
+E36,event,0,납부 완료,2,NONE,
+E36,event,1,지난 회차 참가,1,NONE,
+E36,event,1,지난 회차 참가,2,NONE,
+E37,event,0,해커톤,1,q4|option|해커톤,
+E37,event,0,해커톤,2,q4|option|해커톤,
+E37,event,1,단체,1,NONE,
+E37,event,1,단체,2,q9|option|단체(3인 이상),
+E38,event,0,졸업생,1,q2|option|졸업생,
+E38,event,0,졸업생,2,q2|option|졸업생,
+E38,event,1,양일 모두,1,q3|option|양일 모두,
+E38,event,1,양일 모두,2,q3|option|양일 모두,
+E39,event,0,2XL,1,NONE,만약 사이즈 선택에서 기타 선택지로 직접 입력할 수 있는 란이 있었다면 버전1 매칭도 가능하긴 함.
+E39,event,0,2XL,2,q6|option|XXL,
+E40,event,0,학생,1,NONE,
+E40,event,0,학생,2,NONE,

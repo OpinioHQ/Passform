@@ -1,0 +1,40 @@
+{"request_id": "E01", "set": "eval", "form_id": "club", "conditions": ["소프트웨어학과", "4학년"]}
+{"request_id": "E02", "set": "eval", "form_id": "club", "conditions": ["소프트웨어"]}
+{"request_id": "E03", "set": "eval", "form_id": "club", "conditions": ["컴퓨터공학부"]}
+{"request_id": "E04", "set": "eval", "form_id": "club", "conditions": ["경영"]}
+{"request_id": "E05", "set": "eval", "form_id": "club", "conditions": ["경제학과"]}
+{"request_id": "E06", "set": "eval", "form_id": "club", "conditions": ["2학년"]}
+{"request_id": "E07", "set": "eval", "form_id": "club", "conditions": ["1학년", "디자인"]}
+{"request_id": "E08", "set": "eval", "form_id": "club", "conditions": ["2번 문항 - 3학년"]}
+{"request_id": "E09", "set": "eval", "form_id": "club", "conditions": ["프로젝트 경험 없음"]}
+{"request_id": "E10", "set": "eval", "form_id": "club", "conditions": ["5번 문항 - 미응답"]}
+{"request_id": "E11", "set": "eval", "form_id": "club", "conditions": ["팀원으로 참여"]}
+{"request_id": "E12", "set": "eval", "form_id": "club", "conditions": ["개발", "기획"]}
+{"request_id": "E13", "set": "eval", "form_id": "club", "conditions": ["데이터 분석에 관심 있는 사람"]}
+{"request_id": "E14", "set": "eval", "form_id": "club", "conditions": ["자기소개 - 응답"]}
+{"request_id": "E15", "set": "eval", "form_id": "club", "conditions": ["자기소개에 '프로젝트'라고 쓴 사람"]}
+{"request_id": "E16", "set": "eval", "form_id": "club", "conditions": ["타학과"]}
+{"request_id": "E17", "set": "eval", "form_id": "club", "conditions": ["컴공", "팀장"]}
+{"request_id": "E18", "set": "eval", "form_id": "club", "conditions": ["7번 문항 - 응답"]}
+{"request_id": "E19", "set": "eval", "form_id": "club", "conditions": ["편입생", "활동 중단 부원"]}
+{"request_id": "E20", "set": "eval", "form_id": "club", "conditions": ["소웨", "3번 문항 - 아니요"]}
+{"request_id": "E21", "set": "eval", "form_id": "event", "conditions": ["재학생", "숙박 신청"]}
+{"request_id": "E22", "set": "eval", "form_id": "event", "conditions": ["휴학 중"]}
+{"request_id": "E23", "set": "eval", "form_id": "event", "conditions": ["일반인"]}
+{"request_id": "E24", "set": "eval", "form_id": "event", "conditions": ["일요일만 참가"]}
+{"request_id": "E25", "set": "eval", "form_id": "event", "conditions": ["15일"]}
+{"request_id": "E26", "set": "eval", "form_id": "event", "conditions": ["특강", "포트폴리오 리뷰"]}
+{"request_id": "E27", "set": "eval", "form_id": "event", "conditions": ["식사 신청"]}
+{"request_id": "E28", "set": "eval", "form_id": "event", "conditions": ["일반식"]}
+{"request_id": "E29", "set": "eval", "form_id": "event", "conditions": ["문의사항 적은 사람"]}
+{"request_id": "E30", "set": "eval", "form_id": "event", "conditions": ["XXL"]}
+{"request_id": "E31", "set": "eval", "form_id": "event", "conditions": ["개인 참가"]}
+{"request_id": "E32", "set": "eval", "form_id": "event", "conditions": ["이름 - 미응답"]}
+{"request_id": "E33", "set": "eval", "form_id": "event", "conditions": ["8번 문항 - 응답"]}
+{"request_id": "E34", "set": "eval", "form_id": "event", "conditions": ["문의사항에 주차를 물어본 사람"]}
+{"request_id": "E35", "set": "eval", "form_id": "event", "conditions": ["타학교"]}
+{"request_id": "E36", "set": "eval", "form_id": "event", "conditions": ["납부 완료", "지난 회차 참가"]}
+{"request_id": "E37", "set": "eval", "form_id": "event", "conditions": ["해커톤", "단체"]}
+{"request_id": "E38", "set": "eval", "form_id": "event", "conditions": ["졸업생", "양일 모두"]}
+{"request_id": "E39", "set": "eval", "form_id": "event", "conditions": ["2XL"]}
+{"request_id": "E40", "set": "eval", "form_id": "event", "conditions": ["학생"]}

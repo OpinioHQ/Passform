@@ -24,7 +24,10 @@
       "Edit(/tests/harness/**)",
       "Edit(/src/passform/schemas/**)",
       "Edit(/src/response_analysis/schemas/**)",
-      "Edit(/src/response_analysis/prompts/**)"
+      "Edit(/src/response_analysis/prompts/**)",
+      "Edit(/data/seed/**)",
+      "Edit(/evals/evalset.jsonl)",
+      "Edit(/config/rag.yaml)"
     ]
   }
 }

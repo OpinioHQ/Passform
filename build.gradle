@@ -1,0 +1,94 @@
+plugins {
+	id 'java'
+	id 'jacoco'
+	id 'org.springframework.boot' version '4.1.2'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.opinio'
+version = '0.0.1-SNAPSHOT'
+
+// 로컬 JDK(17 이상)와 CI JDK 17에서 같은 Java 17 바이트코드·API로 컴파일한다.
+tasks.withType(JavaCompile).configureEach {
+	options.release = 17
+}
+
+repositories {
+	mavenCentral()
+}
+
+sourceSets {
+	test {
+		java {
+			// 골든 테스트 실행기 위치 (AGENTS.md 7절). 일반 단위 테스트는 src/test/java.
+			srcDir 'tests/java'
+		}
+	}
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-security-oauth2-client'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'com.networknt:json-schema-validator:3.0.8'
+	runtimeOnly 'org.postgresql:postgresql'
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-security-oauth2-client-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// 접두 경로를 유지해 클래스패스에 넣는다. 폴더가 없거나 비어 있어도 실패하지 않는다.
+tasks.named('processResources') {
+	from('src/response_analysis/schemas') { into 'response_analysis/schemas' }
+	from('src/response_analysis/prompts') { into 'response_analysis/prompts' }
+	from('src/passform/schemas') { into 'passform/schemas' }
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+	finalizedBy tasks.named('jacocoTestReport')
+	// *GoldenTest 파일이 생기기 전에만 필터 미일치를 허용한다. 파일이 생기면 자동으로 다시 엄격해진다.
+	filter {
+		failOnNoMatchingTests = !fileTree('tests/java').matching { include '**/*GoldenTest.java' }.isEmpty()
+	}
+}
+
+// AC36의 대상 계층만 측정한다.
+def coverageTargets = { task ->
+	task.classDirectories.setFrom(files(sourceSets.main.output.classesDirs).asFileTree.matching {
+		include 'com/opinio/passform/service/**'
+		include 'com/opinio/passform/domain/**'
+	})
+}
+
+tasks.named('jacocoTestReport') {
+	dependsOn tasks.named('test')
+	reports {
+		xml.required = true
+		html.required = true
+	}
+	coverageTargets(it)
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+	dependsOn tasks.named('test')
+	violationRules {
+		rule {
+			limit {
+				counter = 'LINE'
+				value = 'COVEREDRATIO'
+				minimum = 0.70
+			}
+		}
+	}
+	coverageTargets(it)
+}
+
+tasks.named('check') {
+	dependsOn tasks.named('jacocoTestReport'), tasks.named('jacocoTestCoverageVerification')
+}

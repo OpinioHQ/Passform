@@ -1,0 +1,20 @@
+{"request_id": "D01", "set": "dev", "form_id": "club", "conditions": ["소프트웨어학과"]}
+{"request_id": "D02", "set": "dev", "form_id": "club", "conditions": ["컴퓨터공학과"]}
+{"request_id": "D03", "set": "dev", "form_id": "club", "conditions": ["컴공"]}
+{"request_id": "D04", "set": "dev", "form_id": "club", "conditions": ["4학년"]}
+{"request_id": "D05", "set": "dev", "form_id": "club", "conditions": ["소웨", "3학년"]}
+{"request_id": "D06", "set": "dev", "form_id": "club", "conditions": ["3번 문항 - 예"]}
+{"request_id": "D07", "set": "dev", "form_id": "club", "conditions": ["자기소개 - 미응답"]}
+{"request_id": "D08", "set": "dev", "form_id": "club", "conditions": ["데이터 분석"]}
+{"request_id": "D09", "set": "dev", "form_id": "club", "conditions": ["팀장"]}
+{"request_id": "D10", "set": "dev", "form_id": "club", "conditions": ["공대"]}
+{"request_id": "D11", "set": "dev", "form_id": "club", "conditions": ["자기소개에 리더십이 들어간 사람"]}
+{"request_id": "D12", "set": "dev", "form_id": "club", "conditions": ["관심 분야 - 응답"]}
+{"request_id": "D13", "set": "dev", "form_id": "event", "conditions": ["양일 모두"]}
+{"request_id": "D14", "set": "dev", "form_id": "event", "conditions": ["토요일 참가"]}
+{"request_id": "D15", "set": "dev", "form_id": "event", "conditions": ["외부인"]}
+{"request_id": "D16", "set": "dev", "form_id": "event", "conditions": ["채식"]}
+{"request_id": "D17", "set": "dev", "form_id": "event", "conditions": ["해커톤", "네트워킹"]}
+{"request_id": "D18", "set": "dev", "form_id": "event", "conditions": ["XL 사이즈"]}
+{"request_id": "D19", "set": "dev", "form_id": "event", "conditions": ["문의사항 - 응답"]}
+{"request_id": "D20", "set": "dev", "form_id": "event", "conditions": ["4번 문항 - 단체"]}

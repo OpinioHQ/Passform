@@ -1,0 +1,45 @@
+﻿request_id,form_id,cond_idx,condition,form_version,label,note
+D01,club,0,소프트웨어학과,1,q1|option|소프트웨어학과,Claude 초안 — 팀 검토
+D01,club,0,소프트웨어학과,2,q1|option|소프트웨어학과,Claude 초안 — 팀 검토
+D02,club,0,컴퓨터공학과,1,q1|option|컴퓨터공학과,Claude 초안 — 팀 검토
+D02,club,0,컴퓨터공학과,2,NONE,Claude 초안 — 팀 검토
+D03,club,0,컴공,1,q1|option|컴퓨터공학과,Claude 초안 — 팀 검토
+D03,club,0,컴공,2,q1|option|컴퓨터공학부,Claude 초안 — 팀 검토
+D04,club,0,4학년,1,q2|option|4학년,Claude 초안 — 팀 검토
+D04,club,0,4학년,2,q2|option|4학년,Claude 초안 — 팀 검토
+D05,club,0,소웨,1,q1|option|소프트웨어학과,Claude 초안 — 팀 검토
+D05,club,0,소웨,2,q1|option|소프트웨어학과,Claude 초안 — 팀 검토
+D05,club,1,3학년,1,q2|option|3학년,Claude 초안 — 팀 검토
+D05,club,1,3학년,2,q2|option|3학년,Claude 초안 — 팀 검토
+D06,club,0,3번 문항 - 예,1,q5|option|예,Claude 초안 — 팀 검토
+D06,club,0,3번 문항 - 예,2,q5|option|예,Claude 초안 — 팀 검토
+D07,club,0,자기소개 - 미응답,1,q4|unanswered,Claude 초안 — 팀 검토
+D07,club,0,자기소개 - 미응답,2,q4|unanswered,Claude 초안 — 팀 검토
+D08,club,0,데이터 분석,1,NONE,Claude 초안 — 팀 검토
+D08,club,0,데이터 분석,2,q3|option|데이터 분석,Claude 초안 — 팀 검토
+D09,club,0,팀장,1,q6|option|팀장,Claude 초안 — 팀 검토
+D09,club,0,팀장,2,q6|option|팀장,Claude 초안 — 팀 검토
+D10,club,0,공대,1,NONE,Claude 초안 — 팀 검토
+D10,club,0,공대,2,NONE,Claude 초안 — 팀 검토
+D11,club,0,자기소개에 리더십이 들어간 사람,1,NONE,Claude 초안 — 팀 검토
+D11,club,0,자기소개에 리더십이 들어간 사람,2,NONE,Claude 초안 — 팀 검토
+D12,club,0,관심 분야 - 응답,1,q3|answered,Claude 초안 — 팀 검토
+D12,club,0,관심 분야 - 응답,2,q3|answered,Claude 초안 — 팀 검토
+D13,event,0,양일 모두,1,q3|option|양일 모두,Claude 초안 — 팀 검토
+D13,event,0,양일 모두,2,q3|option|양일 모두,Claude 초안 — 팀 검토
+D14,event,0,토요일 참가,1,q3|option|11월 15일(토),Claude 초안 — 팀 검토
+D14,event,0,토요일 참가,2,q3|option|11월 15일(토),Claude 초안 — 팀 검토
+D15,event,0,외부인,1,q2|option|외부인,Claude 초안 — 팀 검토
+D15,event,0,외부인,2,NONE,Claude 초안 — 팀 검토
+D16,event,0,채식,1,NONE,Claude 초안 — 팀 검토
+D16,event,0,채식,2,q8|option|채식,Claude 초안 — 팀 검토
+D17,event,0,해커톤,1,q4|option|해커톤,Claude 초안 — 팀 검토
+D17,event,0,해커톤,2,q4|option|해커톤,Claude 초안 — 팀 검토
+D17,event,1,네트워킹,1,q4|option|네트워킹,Claude 초안 — 팀 검토
+D17,event,1,네트워킹,2,q4|option|네트워킹,Claude 초안 — 팀 검토
+D18,event,0,XL 사이즈,1,q6|option|XL,Claude 초안 — 팀 검토
+D18,event,0,XL 사이즈,2,q6|option|XL,Claude 초안 — 팀 검토
+D19,event,0,문의사항 - 응답,1,q7|answered,Claude 초안 — 팀 검토
+D19,event,0,문의사항 - 응답,2,q7|answered,Claude 초안 — 팀 검토
+D20,event,0,4번 문항 - 단체,1,NONE,Claude 초안 — 팀 검토
+D20,event,0,4번 문항 - 단체,2,q9|option|단체(3인 이상),Claude 초안 — 팀 검토

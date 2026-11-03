@@ -86,6 +86,8 @@ docs/SPEC.md 6절 AC 표에서, golden_cases.yaml의 ac 태그와 맞도록 기�
 - skip을 메시지 `not implemented`일 때로 좁힘 — 구현이 수정 불가 컬렉션을 건드려 같은 예외가 나도 skip으로 숨지 않고 실패로 드러나게 하려고.
 - 로더 검사 추가(YAML 중복 키, 빈 `cases`, `name` 없음, `input`·`input.context`의 허용 키 밖의 키) — 같은 키를 두 번 쓰면 YAML이 뒤 값으로 조용히 덮어쓰고, 빈 파일이나 입력 키 오타는 검사가 비거나 입력이 바뀐 채로 통과할 수 있어서.
 - 5-5를 deny 때문에 worktree 사본에서 수행 — 저장소의 `golden_cases.yaml`은 `Edit(/tests/harness/**)` deny 대상이라, 셸 명령으로 deny를 우회하지 않고 같은 하니스로 로더 검사를 확인하려고.
+- 입력을 수정 불가 컬렉션으로 넘김 — 구현이 입력을 바꾸지 못하게 하려고.
+- 기대값을 평가 호출 전에 읽음 — 케이스 형식 오류가 구현 결과와 섞이지 않게 하려고.
 
 ### (1) 수집과 실행 확인
 
@@ -157,11 +159,14 @@ docs/SPEC.md 6절 AC 표에서, golden_cases.yaml의 ac 태그와 맞도록 기�
 
 작성: 팀(사람), 2026-11-03. 실행은 새 세션에서 이 블록을 그대로 쓴다.
 
+2026-11-03 실행 전 [0] 보완(되돌리기 절차 추가)
+
 ```text
 ConditionEvaluator.evaluate를 구현해 골든 케이스 15건을 통과시켜줘. 저장소 C:\Opinio, 브랜치 feat/condition-evaluator, 셸 Windows PowerShell. 하니스 기준 커밋 2df1c02.
 
 [0. 시작 전 확인]
-- tests/java/com/opinio/passform/golden/ConditionEvaluatorGoldenTest.java를 Edit 도구로 바꾸려 하면 거부되는지 확인한다(내용은 바꾸지 않는다). 거부되지 않으면 멈추고 보고한다.
+- tests/java/com/opinio/passform/golden/ConditionEvaluatorGoldenTest.java 끝에 빈 줄 하나를 추가하는 Edit를 시도한다. 거부되면 통과다.
+- 거부되지 않고 파일이 바뀌었다면 `git checkout -- tests/java/com/opinio/passform/golden/ConditionEvaluatorGoldenTest.java`로 그 파일만 되돌리고, git diff가 비었는지 확인한 뒤 멈추고 보고한다.
 
 [1. 목표와 읽을 것]
 - 목표: 조건 목록과 매칭 결과로 제출 응답을 3값(참/거짓/판정 불가)으로 평가해 개수, 응답 ID, 근거(matched), coverage를 돌려준다.

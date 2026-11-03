@@ -27,7 +27,16 @@
       "Edit(/src/response_analysis/prompts/**)",
       "Edit(/data/seed/**)",
       "Edit(/evals/evalset.jsonl)",
-      "Edit(/config/rag.yaml)"
+      "Edit(/config/rag.yaml)",
+      "Edit(/tests/java/com/opinio/passform/golden/**)",
+      "Edit(/src/main/java/com/opinio/passform/domain/analysis/MatchMode.java)",
+      "Edit(/src/main/java/com/opinio/passform/domain/analysis/MatchKind.java)",
+      "Edit(/src/main/java/com/opinio/passform/domain/analysis/ResponseStatus.java)",
+      "Edit(/src/main/java/com/opinio/passform/domain/analysis/ConditionMatch.java)",
+      "Edit(/src/main/java/com/opinio/passform/domain/analysis/ResponseRecord.java)",
+      "Edit(/src/main/java/com/opinio/passform/domain/analysis/VersionCoverage.java)",
+      "Edit(/src/main/java/com/opinio/passform/domain/analysis/Coverage.java)",
+      "Edit(/src/main/java/com/opinio/passform/domain/analysis/EvaluationResult.java)"
     ]
   }
 }

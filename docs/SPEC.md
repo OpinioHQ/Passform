@@ -598,9 +598,9 @@
 | AC19 | `results_option_counts_combined_and_by_version`, `results_changed_question_separate` | 미구현 |
 | AC20 | `submitted_only`, `response_count_across_versions` | 미구현 |
 | AC21 | `matching_labeled_set` (규칙이면 골든 / LLM이면 evals) | 스파이크 1차 미달(2026-11-02), 재도전 예정 |
-| AC22 | `unknown_condition_all_versions`, `unknown_sort_field`, `condition_missing_one_version_keeps_matches` | 미구현 |
+| AC22 | `unknown_condition_all_versions`, `unknown_sort_field`, `condition_missing_one_version_keeps_matches`, `option_renamed_version_not_evaluable` | 미구현 |
 | AC23 | `matched_for_applicable_versions`, `coverage_for_unavailable_version` | 미구현 |
-| AC24 | `match_not_excludes_unknown`, `match_any_known_true_with_unknown` | 미구현 |
+| AC24 | `match_not_excludes_unknown`, `match_any_known_true_with_unknown`, `checkbox_all_requires_both_options`, `unanswered_kind_counts_blank_only`, `answered_kind_excludes_blank`, `match_all_unknown_when_no_false` | 미구현 |
 | AC25 | `ambiguous_single_choice`, `checkbox_all_ok`, `ambiguous_question_meaning_across_versions` | 미구현 |
 | AC26 | `missing_match_two_conditions` | 미구현 |
 | AC27 | `missing_operation`, `unsupported_statistics_not_mapped_to_summary`, `missing_operation_without_summary_option` | 미구현 |

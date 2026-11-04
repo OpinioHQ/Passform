@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FormQuestionInfo",
+  "description": "분석 흐름이 쓰는 폼 문항 정보. 저장하지 않고 요청 때마다 폼 버전 정의에서 코드로 만든다. 매처, 되묻기 후보, target·sort.by 해석, 개인정보 판정이 함께 쓴다. 대상 버전은 현재 제출 응답이 남은 버전이고, 응답이 없으면 최신 버전 하나다(SPEC 5절 343행, AC22).",
+  "type": "object",
+  "properties": {
+    "form_id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string" },
+    "latest_version": { "type": "integer", "minimum": 1, "description": "'N번 문항'의 기준이 되는 최신 배포 버전(팀 결정 2026-11-02, label_rules.md 4절)." },
+    "versions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "form_version": { "type": "integer", "minimum": 1 },
+          "questions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "number": { "type": "integer", "minimum": 1, "description": "그 버전에서의 번호. 섹션 순서대로 이어서 센다." },
+                "latest_number": { "type": ["integer", "null"], "minimum": 1, "description": "최신 버전에서의 번호. 최신 버전에 없으면 null." },
+                "question_id": { "type": "string", "minLength": 1 },
+                "question_note": { "type": "string" },
+                "question_type": { "type": "string", "enum": ["multiple_choice", "dropdown", "checkbox", "short_answer", "long_answer"] },
+                "options": { "type": "array", "items": { "type": "string" } },
+                "is_personal": { "type": "boolean", "description": "서버 판정 값(SPEC 5절 168행). profile_key가 있거나 input_format.kind가 name, mobile_phone, landline_phone, address, student_id, email이면 true. LLM 요청에는 보내지 않는다." }
+              },
+              "required": ["number", "latest_number", "question_id", "question_note", "question_type", "options", "is_personal"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["form_version", "questions"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["form_id", "title", "latest_version", "versions"],
+  "additionalProperties": false
+}

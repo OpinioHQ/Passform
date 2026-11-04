@@ -28,7 +28,7 @@
       "Edit(/data/seed/**)",
       "Edit(/evals/evalset.jsonl)",
       "Edit(/config/rag.yaml)",
-      "Edit(/tests/java/com/opinio/passform/golden/**)",
+      "Edit(/tests/java/com/opinio/passform/golden/ConditionEvaluatorGoldenTest.java)",
       "Edit(/src/main/java/com/opinio/passform/domain/analysis/MatchMode.java)",
       "Edit(/src/main/java/com/opinio/passform/domain/analysis/MatchKind.java)",
       "Edit(/src/main/java/com/opinio/passform/domain/analysis/ResponseStatus.java)",

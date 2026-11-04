@@ -177,9 +177,25 @@ SPEC 4절 비포함과 같다. 주관식 내용으로 `count`·`list` 거르기,
 | # | 내용 | 제안 | 근거 |
 |---|---|---|---|
 | G1 | `golden_cases.yaml` 안에서 기능 나누기 | `cases`는 조건 평가 전용으로 두고 기능별 최상위 키 추가(`analysis_cases`, `submission_cases` 등) | 현재 하니스는 `cases`만 읽어 전부 평가 함수 케이스로 처리한다(`ConditionEvaluatorGoldenTest.java:228`). 다른 최상위 키는 읽지 않는다 |
-| G2 | 실행 수준 | service 수준. LLM과 저장소는 모의 객체 | CI에 DB가 없다(`ci.yml`). 실제 DB 시험은 별도 결정 |
+| G2 | 실행 수준 | service 수준. LLM과 저장소는 모의 객체. `access_cases`만 MVC 슬라이스 | 케이스를 빠르게 돌린다. 권한은 필터와 컨트롤러를 지나야 판정된다. 모의 저장소로는 동시성을 판정할 수 없어 동시 제출은 T3 완료 조건에서 따로 시험한다 |
 | G3 | 파서 입력 | 모의 파서에 고정 출력을 준다 | 테스트에서 실제 LLM을 부르지 않는다(AGENTS 5절). 실제 출력 패턴은 `docs/spikes/2026-11-04_test_demo.md` 3-1절 |
 
 **골든 작성 시점**
 
-- **결정(2026-11-05, 사용자):** 1순위 골든은 담당자가 기능 세션을 열기 직전에 사람이 쓴다. 에이전트는 기대값을 쓰지 않는다.
+- **결정(2026-11-05, 사용자):** 1순위 42건을 필수 29건, 추가 12건, 통합 시험 1건으로 나눈다. 필수 29건은 구현 전에 구현 담당자가 한 번에 쓴다. 빨리 끝나면 추가 12건도 구현 전에 쓴다. 추가 건은 구현을 막지 않고, 못 쓰면 X2에서 쓰며 구현 뒤 작성임을 위임 기록에 밝힌다. `response_limit_concurrent_submit`은 YAML이 아니라 T3의 실제 DB 통합 시험으로 둔다. 에이전트는 기대값을 쓰지 않는다.
+
+**골든 형식 (리뷰에서 팀 확정)**
+
+공통: 케이스마다 `name`, `ac`, `type`(정상/경계/금지 행동), `input`, `note`와 판정 키 1개 이상. 정해진 키 밖의 키는 로더가 거부한다. 판정 키는 케이스에 있는 것만 검사한다. 시드 폼의 소유자는 `owner`, 시드 응답의 제출자는 `respondent`로 본다. `cases`는 조건 평가 전용으로 유지한다.
+
+| 최상위 키 | 이슈 | `input` | 판정 키 |
+|---|---|---|---|
+| `access_cases` | T2, E5, E6 | `fixture`, `actor`(`anonymous`·`owner`·`respondent`·`other_user`), `method`, `path` | `expect_status`, `must_not_contain` |
+| `form_cases` | E2 | `fixture`, `actor`, `change`(바꿀 최상위 키), `action` | `expect_status`, `expect_error`, `expect_unchanged` |
+| `submission_cases` | T3 | `fixture`, `now`, `form_version`, `answers`, `consent_agreed`, `ai_summary_agreed` | `expect_status`, `expect_error`, `expect_question_ids`, `expect_saved_answers`, `expect_response_count` |
+| `analysis_cases` | E6, E7 | `fixture`, `query` 또는 `context`, `parser_outputs`(호출 순서대로), `matching`(`cases`와 같은 형태) | `expect_status`, `expect_error`, `expect_reason`, `expect_options`, `expect_parser_calls`, `expect_count`, `expect_response_ids`, `expect_not_evaluable_count`, `expect_not_evaluable_by_version`, `must_not_include` |
+| `summary_cases` | T7 | `fixture`, `context`, `labels`, `scores` | `expect_summary_status`, `expect_count`, `expect_response_ids`, `expect_excluded_no_consent_count`, `expect_theme_counts`, `llm_must_not_contain`, `must_not_include` |
+
+`analysis_cases`의 `expect_status`는 HTTP 상태다. `expect_reason`이 있으면 `status: clarify`와 `result: null`까지 함께 검사한다.
+
+새 fixture 2개는 골든 작성의 맨 앞 단계이며 담당은 팀원이다: 요약용 폼(AI 요약 켬, 개인정보 문항, 이름·전화번호·이메일·날짜 입력 형식 문항 포함(생년월일 확인 문항 포함), 동의·미동의 혼합, 장문 속 연락처), 필수 문항 분기 폼(분기로 건너뛰는 문항이 필수). 사람이 `data/seed`에 추가하고 시드 README 표를 갱신한다.

@@ -297,3 +297,51 @@ cases:
     expect_total_submitted_count: 14
     must_not_include: [rb15, rb16]
     note: 결과와 coverage는 submitted 응답만 다룬다. in_progress(rb15)·abandoned(rb16)는 일치에도 전체 수에도 넣지 않는다.
+
+  - name: no_condition_match_any_counts_all
+    ac: [AC78, AC24]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      context: {conditions: [], match: any}
+      matching: []
+    expect_count: 9
+    expect_response_ids: [ra01, ra02, ra03, ra04, ra05, ra06, ra07, ra08, ra09]
+    expect_not_evaluable_count: 0
+    expect_not_evaluable_by_version: []
+    note: >-
+      SPEC 5절 "조건이 없으면 모든 제출 응답이 일치한다". match가 any여도 전체가 일치한다.
+      논리식대로 "조건 중 하나라도 참"을 계산하면 0건이 나오므로, SPEC 규칙이 논리식보다 우선함을 검사한다.
+
+  - name: no_condition_match_not_counts_all
+    ac: [AC78, AC24]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      context: {conditions: [], match: not}
+      matching: []
+    expect_count: 9
+    expect_response_ids: [ra01, ra02, ra03, ra04, ra05, ra06, ra07, ra08, ra09]
+    expect_not_evaluable_count: 0
+    expect_not_evaluable_by_version: []
+    note: SPEC 5절 "조건이 없으면 모든 제출 응답이 일치한다". match가 not이어도 전체가 일치한다.
+
+  - name: unavailable_version_without_unknown_omitted
+    ac: [AC23, AC24]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      context: {conditions: [소프트웨어학과, 3학년], match: all}
+      matching:
+        - {condition: 소프트웨어학과, form_version: 1, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 소프트웨어학과, form_version: 2, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 3학년, form_version: 1, question_id: q2, kind: option, option: 3학년}
+        - {condition: 3학년, form_version: 2, question_id: q2, kind: option, option: 3학년}
+        - {condition: 3학년, form_version: 3, question_id: q2, kind: option, option: 3학년}
+    expect_count: 1
+    expect_response_ids: [rb02]
+    expect_not_evaluable_count: 0
+    expect_not_evaluable_by_version: []
+    note: >-
+      버전 3에는 소속 학과 문항이 없지만 3학년이 모두 거짓이라 all의 결과가 거짓으로 확정된다.
+      판정 불가 응답이 없는 버전은 not_evaluable_by_version에 넣지 않는다(SPEC 5절, 팀 결정 2026-11-04).

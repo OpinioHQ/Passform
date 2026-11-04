@@ -214,4 +214,35 @@ ConditionEvaluator.evaluate를 구현해 골든 케이스 15건을 통과시켜�
 
 ## §3 검증 루프 기록
 
+- 시작 전 확인: `ConditionEvaluatorGoldenTest.java` 끝에 빈 줄을 추가하는 Edit가 `File is in a directory that is denied by your permission settings.`로 거부됐다(통과). 파일은 바뀌지 않았다.
+- 명령: `.\gradlew.bat test --console=plain`. `build/test-results/test/*.xml`에서 골든 케이스와 로더 검사를 나눠 집계했다.
+- 구현 커밋: `aaff7e1` (`feat: 조건 평가 함수 구현 (#36)`). 바꾼 파일은 `ConditionEvaluator.java` 하나이며 새 파일은 없다.
+
+| 회차 | 골든 통과·실패·skip | 실패한 케이스 | 원인 분류 | 고친 것 |
+|---|---|---|---|---|
+| 1 | 15 · 0 · 0 (로더 1 통과, 그 밖의 테스트 2 통과) | 없음 | 해당 없음 | 없음 |
+
+### 최종 확인
+
+- `.\gradlew.bat build` 성공. `service`·`domain` 줄 커버리지 75/75(기준 70% 그대로), `ConditionEvaluator` 분기 37/37.
+- `git diff 2df1c02 -- tests/ data/seed/`, 입출력 타입 8개 파일의 diff, `build.gradle`·`docs/SPEC.md`·`AGENTS.md`의 diff가 모두 비어 있다. `tests/`·`data/seed/` 아래 미추적 파일도 없다.
+
+### 에이전트가 SPEC이 애매해서 해석한 곳(팀 검토 필요)
+
+- 판정 불가 응답이 0건인 버전은 `not_evaluable_by_version`에 넣지 않는다. 예: `all` + [그 버전에 없는 조건, 그 버전 응답이 모두 거짓인 조건]. SPEC 5절 314행의 "판정 불가의 버전·조건별 이유"로는 뺀 쪽이 자연스럽지만, AC23의 "매칭할 문항이 없는 버전은 `coverage`에 표시"는 `response_count: 0` 항목까지 요구하는 것으로도 읽힌다.
+- 같은 (조건, 버전)의 매칭이 둘 이상 들어오면 `IllegalStateException`으로 멈춘다. 골든 케이스 파일의 입력 설명(조건·제출 버전마다 하나)과 SPEC 5절 314행(특정할 수 없으면 되묻기)을 근거로, 어느 하나를 골라 숫자를 내지 않게 했다.
+- 응답 ID 오름차순은 문자열 사전순이다(`ResponseRecord.responseId`가 `String`). fixture처럼 자릿수가 같으면 문제없지만 `r9`와 `r10`은 `r10`이 앞에 온다.
+
+### 골든이 검사하지 않는 동작
+
+아래는 임시 프로그램으로 저장소 밖에서 확인했고 커밋하지 않았다. 커버리지 100%여도 이 동작을 잘못 바꾸면 골든은 잡지 못한다.
+
+- `any`·`not` + `conditions: []`: 모든 제출 응답이 일치한다(SPEC 5절 313행). 골든은 `match` 생략만 쓴다.
+- 제출 응답이 없는 버전의 매칭은 `matched`에서 뺀다(§1 팀 판단의 백로그와 같은 항목).
+- 위 "해석한 곳"의 판정 불가 0건 버전 생략, 중복 매칭 예외.
+
+### 알려진 한계
+
+분기로 건너뛴 문항은 범위 밖이라(§0) 지금은 비운 문항과 구분하지 못한다. `q6` 같은 문항을 조건으로 넘기면 건너뛴 응답을 판정 불가가 아니라 거짓(`option`, `answered`)이나 참(`unanswered`)으로 판정하고, `not`이면 일치로 센다. SPEC 5절 313행과 어긋나므로 2차 위임 전에는 분기 대상 문항에 쓰면 안 된다. 현재 입력에는 폼 정의나 응답 경로가 없어, 2차 위임에는 입력 추가(잠긴 타입 또는 시그니처 변경)가 필요하다.
+
 ## §4 수용 판단

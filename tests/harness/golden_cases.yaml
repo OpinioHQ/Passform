@@ -1,0 +1,347 @@
+# Passform 골든 케이스 — 조건 평가 함수(ConditionEvaluator) 1차 (강의 5 산출물 = 위임과 검증의 완료 기준)
+#
+# 작성: Claude 초안(SPEC 5절 규칙과 data/seed fixture로 기대값 계산) → 팀이 케이스별 확인·확정.
+# 대상 AC: AC24(3값 판정), AC78(전 버전 판정), AC23(근거·판정 불가 표시), AC20(submitted만), AC22 일부, AC31 일부
+# 범위 밖(2차 위임): 분기로 건너뛴 문항의 판정 불가(응답 경로 계산). 그래서 이 파일은 분기 대상 문항(form_b의 q6)을 조건으로 쓰지 않는다.
+# 범위 밖(다른 기능): clarify 판정(AC22·AC25~AC29), 정렬(AC61), count/list/summarize 출력 형태.
+# 전제: 응답이 남은 모든 버전에서 매칭되지 않은 조건은 이 함수보다 앞에서 clarify(unknown_condition)로 멈추므로 입력으로 오지 않는다.
+#       match는 조건이 0·1개일 때만 생략되며(그 밖은 missing_match로 앞에서 멈춤), 생략은 all과 같게 판정한다.
+#
+# fixture: data/seed/forms/form_a_versions.json, data/seed/forms/form_b_mixed.json (기준 커밋 main@15210e3)
+#
+# 입력
+#   input.fixture  : 폼 버전 정의와 응답이 든 fixture 경로
+#   input.context  : RequestContext의 conditions·match (operation·sort는 이 함수가 쓰지 않는다)
+#   input.matching : 매처 출력을 고정한 값. 조건·제출 버전마다 {condition, form_version, question_id, kind, option}.
+#                    목록에 없는 (조건, 버전)은 그 버전에서 매칭 불가(NONE)다.
+#
+# 판정 키 (케이스에 있는 키만 검사한다. 판정 키가 하나도 없는 케이스는 로더가 거부한다)
+#   expect_count                    : 일치 응답 수 (전체 결과)
+#   expect_response_ids             : 일치 응답 ID 목록. 순서까지 검사한다(정렬 없음 → 응답 ID 오름차순, AGENTS 5절)
+#   expect_total_submitted_count    : coverage.total_submitted_count
+#   expect_not_evaluable_count      : coverage.not_evaluable_count
+#   expect_not_evaluable_by_version : coverage.not_evaluable_by_version 전체(버전 오름차순, 조건은 conditions 순서)
+#   expect_matched                  : matched[] 전체(입력 matching 중 제출 응답이 있는 버전의 항목, 입력 순서)
+#   must_not_include                : 일치 응답 목록에 있으면 안 되는 응답 ID
+#
+# 허용 키: 케이스에는 name, ac, type, input, note와 위 판정 키만 쓴다. 다른 키(오타 포함)는 로더가 거부한다(강의 5 부록 C7).
+# 출력 형태(검사 대상): {count, response_ids, matched, coverage: {total_submitted_count, not_evaluable_count, not_evaluable_by_version}}
+#
+# 판정 규칙(SPEC 5절): 각 응답은 제출 당시 버전에서 조건마다 참·거짓·판정 불가.
+#   그 버전에 매칭이 없으면 판정 불가. 경로상 만났지만 비운 문항의 선택지 조건은 거짓(fixture 가정 14).
+#   all: 하나라도 거짓 → 불일치, 전부 참 → 일치, 그 밖 → 판정 불가.
+#   any: 하나라도 참 → 일치, 전부 거짓 → 불일치, 그 밖 → 판정 불가.
+#   not: any의 결과를 뒤집되 판정 불가는 그대로. 조건이 없으면 모든 제출 응답이 일치.
+#   submitted가 아닌 응답(in_progress, abandoned)은 후보에서 빠진다.
+
+cases:
+  # ---------------------------------------------------------------- 정상
+  - name: all_versions_condition_filter_with_coverage
+    ac: [AC78]
+    type: 정상
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      context: {conditions: [소프트웨어학과]}
+      matching:
+        - {condition: 소프트웨어학과, form_version: 1, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 소프트웨어학과, form_version: 2, question_id: q1, kind: option, option: 소프트웨어학과}
+    expect_count: 5
+    expect_response_ids: [ra01, ra02, ra03, ra05, ra08]
+    expect_total_submitted_count: 9
+    expect_not_evaluable_count: 4
+    note: >-
+      SPEC AC78 테스트 그대로. 버전 1의 소프트웨어학과 2건, 버전 2의 3건이 일치하고, 학과 문항이 없는 버전 3의 4건은 판정 불가다.
+      ID 순서(ra01, ra02…)와 제출 시각 순서가 달라 순서 오류가 드러난다.
+
+  - name: matched_for_applicable_versions
+    ac: [AC23]
+    type: 정상
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      context: {conditions: [소프트웨어학과]}
+      matching:
+        - {condition: 소프트웨어학과, form_version: 1, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 소프트웨어학과, form_version: 2, question_id: q1, kind: option, option: 소프트웨어학과}
+    expect_matched:
+      - {condition: 소프트웨어학과, form_version: 1, question_id: q1, kind: option, option: 소프트웨어학과}
+      - {condition: 소프트웨어학과, form_version: 2, question_id: q1, kind: option, option: 소프트웨어학과}
+    note: SPEC AC23 테스트. 실제로 매칭된 조건·제출 버전마다 근거를 돌려준다 — 버전 1·2의 q1 근거 2개, 버전 3은 근거 없음.
+
+  - name: coverage_for_unavailable_version
+    ac: [AC23]
+    type: 정상
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      context: {conditions: [소프트웨어학과]}
+      matching:
+        - {condition: 소프트웨어학과, form_version: 1, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 소프트웨어학과, form_version: 2, question_id: q1, kind: option, option: 소프트웨어학과}
+    expect_not_evaluable_by_version:
+      - {form_version: 3, response_count: 4, unavailable_conditions: [소프트웨어학과]}
+    note: SPEC AC23 테스트. 매칭할 문항이 없는 버전 3은 판정 불가 수와 그 조건을 coverage에 표시한다.
+
+  - name: option_renamed_version_not_evaluable
+    ac: [AC78, AC22]
+    type: 정상
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      context: {conditions: [컴퓨터공학과]}
+      matching:
+        - {condition: 컴퓨터공학과, form_version: 1, question_id: q1, kind: option, option: 컴퓨터공학과}
+    expect_count: 2
+    expect_response_ids: [rb03, rb09]
+    expect_total_submitted_count: 14
+    expect_not_evaluable_count: 8
+    expect_not_evaluable_by_version:
+      - {form_version: 2, response_count: 5, unavailable_conditions: [컴퓨터공학과]}
+      - {form_version: 3, response_count: 3, unavailable_conditions: [컴퓨터공학과]}
+    note: >-
+      버전 2는 선택지가 '컴퓨터공학부'로 바뀌어 매칭이 없고(fixture 가정 15), 버전 3에는 학과 문항이 없다.
+      한 버전에서만 매칭돼도 그 버전의 일치 응답을 버리지 않는다(AC22). rb07(버전 2 컴퓨터공학부)은 일치가 아니라 판정 불가다.
+
+  - name: checkbox_all_requires_both_options
+    ac: [AC24]
+    type: 정상
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      context: {conditions: [기획, 디자인], match: all}
+      matching:
+        - {condition: 기획, form_version: 1, question_id: q3, kind: option, option: 기획}
+        - {condition: 기획, form_version: 2, question_id: q3, kind: option, option: 기획}
+        - {condition: 기획, form_version: 3, question_id: q3, kind: option, option: 기획}
+        - {condition: 디자인, form_version: 1, question_id: q3, kind: option, option: 디자인}
+        - {condition: 디자인, form_version: 2, question_id: q3, kind: option, option: 디자인}
+        - {condition: 디자인, form_version: 3, question_id: q3, kind: option, option: 디자인}
+    expect_count: 2
+    expect_response_ids: [rb06, rb07]
+    expect_not_evaluable_count: 0
+    must_not_include: [rb02, rb12, rb13]
+    note: >-
+      checkbox(관심 분야)에서 두 선택지를 모두 고른 응답만 일치한다. 체크박스 값을 단일 값처럼 비교하면 rb06·rb07이 빠지고,
+      하나만 고른 rb02(기획)·rb12(디자인)·rb13(기획·개발)이 잘못 들어갈 수 있다.
+
+  - name: unanswered_kind_counts_blank_only
+    ac: [AC24]
+    type: 정상
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      context: {conditions: [관심 분야 - 미응답]}
+      matching:
+        - {condition: 관심 분야 - 미응답, form_version: 1, question_id: q3, kind: unanswered, option: null}
+        - {condition: 관심 분야 - 미응답, form_version: 2, question_id: q3, kind: unanswered, option: null}
+        - {condition: 관심 분야 - 미응답, form_version: 3, question_id: q3, kind: unanswered, option: null}
+    expect_count: 1
+    expect_response_ids: [rb10]
+    expect_not_evaluable_count: 0
+    note: >-
+      관심 분야를 비운 제출 응답은 rb10 하나다(경로상 q3를 만남). 비운 문항은 answers에서 빠져 있다(fixture 가정 2).
+      미제출인 rb15도 q3가 없지만 submitted가 아니라 후보가 아니다.
+
+  - name: answered_kind_excludes_blank
+    ac: [AC24]
+    type: 정상
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      context: {conditions: [관심 분야 - 응답]}
+      matching:
+        - {condition: 관심 분야 - 응답, form_version: 1, question_id: q3, kind: answered, option: null}
+        - {condition: 관심 분야 - 응답, form_version: 2, question_id: q3, kind: answered, option: null}
+        - {condition: 관심 분야 - 응답, form_version: 3, question_id: q3, kind: answered, option: null}
+    expect_count: 13
+    expect_response_ids: [rb01, rb02, rb03, rb04, rb05, rb06, rb07, rb08, rb09, rb11, rb12, rb13, rb14]
+    expect_not_evaluable_count: 0
+    must_not_include: [rb10]
+    note: >-
+      관심 분야에 하나라도 고른 제출 응답이 일치한다. 비운 rb10만 빠진다. unanswered_kind_counts_blank_only와 짝이라,
+      answered·unanswered를 뒤바꾼 구현이 두 케이스 모두에서 실패한다.
+
+  # ---------------------------------------------------------------- 경계
+  - name: no_condition_counts_all
+    ac: [AC78, AC24]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      context: {conditions: []}
+      matching: []
+    expect_count: 9
+    expect_response_ids: [ra01, ra02, ra03, ra04, ra05, ra06, ra07, ra08, ra09]
+    expect_total_submitted_count: 9
+    expect_not_evaluable_count: 0
+    expect_not_evaluable_by_version: []
+    note: 조건이 없으면 모든 버전의 제출 응답 전체가 일치한다. 판정 불가는 없다.
+
+  - name: match_any_known_true_with_unknown
+    ac: [AC24]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      context: {conditions: [소프트웨어학과, 4학년], match: any}
+      matching:
+        - {condition: 소프트웨어학과, form_version: 1, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 소프트웨어학과, form_version: 2, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 4학년, form_version: 1, question_id: q2, kind: option, option: 4학년}
+        - {condition: 4학년, form_version: 2, question_id: q2, kind: option, option: 4학년}
+        - {condition: 4학년, form_version: 3, question_id: q2, kind: option, option: 4학년}
+    expect_count: 6
+    expect_response_ids: [ra01, ra02, ra03, ra05, ra06, ra08]
+    expect_not_evaluable_count: 3
+    expect_not_evaluable_by_version:
+      - {form_version: 3, response_count: 3, unavailable_conditions: [소프트웨어학과]}
+    note: >-
+      SPEC AC24 테스트. 버전 3에는 학과 문항이 없어도 4학년이 참인 ra06은 any에서 일치한다.
+      버전 3의 나머지 3건은 4학년이 거짓이고 학과가 판정 불가라 판정 불가다.
+
+  - name: match_all_unknown_when_no_false
+    ac: [AC24, AC78]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      context: {conditions: [소프트웨어학과, 데이터 분석], match: all}
+      matching:
+        - {condition: 소프트웨어학과, form_version: 1, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 소프트웨어학과, form_version: 2, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 데이터 분석, form_version: 2, question_id: q3, kind: option, option: 데이터 분석}
+        - {condition: 데이터 분석, form_version: 3, question_id: q3, kind: option, option: 데이터 분석}
+    expect_count: 1
+    expect_response_ids: [rb08]
+    expect_not_evaluable_count: 3
+    expect_not_evaluable_by_version:
+      - {form_version: 1, response_count: 2, unavailable_conditions: [데이터 분석]}
+      - {form_version: 3, response_count: 1, unavailable_conditions: [소프트웨어학과]}
+    note: >-
+      all은 하나라도 거짓이면 불일치, 전부 참이면 일치, 그 밖은 판정 불가다. 버전 1에는 '데이터 분석' 선택지가 없어
+      소프트웨어학과인 rb02·rb06은 판정 불가, 나머지 버전 1 응답은 학과가 거짓이라 불일치다.
+      버전 3에는 학과 문항이 없어 데이터 분석을 고른 rb04만 판정 불가, rb12·rb13은 불일치다.
+
+  - name: condition_missing_one_version_keeps_matches
+    ac: [AC22, AC78]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      context: {conditions: [데이터 분석]}
+      matching:
+        - {condition: 데이터 분석, form_version: 2, question_id: q3, kind: option, option: 데이터 분석}
+        - {condition: 데이터 분석, form_version: 3, question_id: q3, kind: option, option: 데이터 분석}
+    expect_count: 2
+    expect_response_ids: [rb04, rb08]
+    expect_not_evaluable_count: 6
+    expect_not_evaluable_by_version:
+      - {form_version: 1, response_count: 6, unavailable_conditions: [데이터 분석]}
+    note: >-
+      '데이터 분석'은 버전 2에서 추가된 선택지라 버전 1의 6건은 판정 불가다. 버전 1에 없다는 이유로 버전 2·3의 일치 응답을 버리지 않는다(AC22).
+      버전 2의 rb10은 관심 분야를 비웠으므로 판정 불가가 아니라 불일치다.
+
+  # ---------------------------------------------------------------- 금지 행동 검증
+  - name: negation_does_not_count_unknown
+    ac: [AC78, AC24]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      context: {conditions: [소프트웨어학과], match: not}
+      matching:
+        - {condition: 소프트웨어학과, form_version: 1, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 소프트웨어학과, form_version: 2, question_id: q1, kind: option, option: 소프트웨어학과}
+    expect_count: 0
+    expect_response_ids: []
+    expect_not_evaluable_count: 4
+    must_not_include: [ra04, ra06, ra07, ra09]
+    note: >-
+      SPEC AC78 테스트 "소프트웨어학과가 아닌 학생 수". 버전 1·2는 모두 소프트웨어학과라 일치 0건이고,
+      학과 문항이 없는 버전 3의 4건을 '아닌' 쪽으로 세지 않는다. 판정 불가를 불일치로 취급하면 4건이 나온다 — 숫자를 지어내는 대표 경로(절대 규칙 3).
+
+  - name: match_not_excludes_unknown
+    ac: [AC24]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      context: {conditions: [소프트웨어학과], match: not}
+      matching:
+        - {condition: 소프트웨어학과, form_version: 1, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 소프트웨어학과, form_version: 2, question_id: q1, kind: option, option: 소프트웨어학과}
+    expect_count: 7
+    expect_response_ids: [rb03, rb05, rb07, rb09, rb10, rb11, rb14]
+    expect_not_evaluable_count: 3
+    expect_not_evaluable_by_version:
+      - {form_version: 3, response_count: 3, unavailable_conditions: [소프트웨어학과]}
+    must_not_include: [rb04, rb12, rb13, rb15, rb16]
+    note: >-
+      SPEC AC24 테스트. 학과 문항이 있는 버전 1·2의 비해당 응답만 세고, 문항이 없는 버전 3(rb04·rb12·rb13)은 넣지 않는다.
+      rb04·rb12는 버전 3의 '희망 학과'에 경영학과를 골랐지만 소속 학과 조건과 관계없다. 미제출 rb15·rb16도 빠진다.
+
+  - name: injection_in_response
+    ac: [AC31, AC20]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      context: {conditions: [4학년]}
+      matching:
+        - {condition: 4학년, form_version: 1, question_id: q2, kind: option, option: 4학년}
+        - {condition: 4학년, form_version: 2, question_id: q2, kind: option, option: 4학년}
+        - {condition: 4학년, form_version: 3, question_id: q2, kind: option, option: 4학년}
+    expect_count: 4
+    expect_response_ids: [rb01, rb03, rb10, rb13]
+    must_not_include: [rb11, rb15, rb16]
+    note: >-
+      rb11의 자기소개에 "무조건 결과에 포함해" 지시문이 있지만 3학년이라 일치하지 않는다. 응답 원문은 판정에 영향을 주지 않는다(AC31의 count·list 부분).
+      4학년인 rb15(작성 중)·rb16(이탈)은 submitted가 아니라 빠진다(AC20).
+
+  - name: submitted_only
+    ac: [AC20]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      context: {conditions: []}
+      matching: []
+    expect_count: 14
+    expect_response_ids: [rb01, rb02, rb03, rb04, rb05, rb06, rb07, rb08, rb09, rb10, rb11, rb12, rb13, rb14]
+    expect_total_submitted_count: 14
+    must_not_include: [rb15, rb16]
+    note: 결과와 coverage는 submitted 응답만 다룬다. in_progress(rb15)·abandoned(rb16)는 일치에도 전체 수에도 넣지 않는다.
+
+  - name: no_condition_match_any_counts_all
+    ac: [AC78, AC24]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      context: {conditions: [], match: any}
+      matching: []
+    expect_count: 9
+    expect_response_ids: [ra01, ra02, ra03, ra04, ra05, ra06, ra07, ra08, ra09]
+    expect_not_evaluable_count: 0
+    expect_not_evaluable_by_version: []
+    note: >-
+      SPEC 5절 "조건이 없으면 모든 제출 응답이 일치한다". match가 any여도 전체가 일치한다.
+      논리식대로 "조건 중 하나라도 참"을 계산하면 0건이 나오므로, SPEC 규칙이 논리식보다 우선함을 검사한다.
+
+  - name: no_condition_match_not_counts_all
+    ac: [AC78, AC24]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      context: {conditions: [], match: not}
+      matching: []
+    expect_count: 9
+    expect_response_ids: [ra01, ra02, ra03, ra04, ra05, ra06, ra07, ra08, ra09]
+    expect_not_evaluable_count: 0
+    expect_not_evaluable_by_version: []
+    note: SPEC 5절 "조건이 없으면 모든 제출 응답이 일치한다". match가 not이어도 전체가 일치한다.
+
+  - name: unavailable_version_without_unknown_omitted
+    ac: [AC23, AC24]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      context: {conditions: [소프트웨어학과, 3학년], match: all}
+      matching:
+        - {condition: 소프트웨어학과, form_version: 1, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 소프트웨어학과, form_version: 2, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 3학년, form_version: 1, question_id: q2, kind: option, option: 3학년}
+        - {condition: 3학년, form_version: 2, question_id: q2, kind: option, option: 3학년}
+        - {condition: 3학년, form_version: 3, question_id: q2, kind: option, option: 3학년}
+    expect_count: 1
+    expect_response_ids: [rb02]
+    expect_not_evaluable_count: 0
+    expect_not_evaluable_by_version: []
+    note: >-
+      버전 3에는 소속 학과 문항이 없지만 3학년이 모두 거짓이라 all의 결과가 거짓으로 확정된다.
+      판정 불가 응답이 없는 버전은 not_evaluable_by_version에 넣지 않는다(SPEC 5절, 팀 결정 2026-11-04).

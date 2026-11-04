@@ -311,7 +311,7 @@
 - `sort`는 `list`에만 적용한다. 다른 `operation`과 함께 오면 정렬을 적용하거나 `sort.by`를 검증하지 않고 무시한다. `sort.by`는 각 제출 버전의 정의에서 해석한다. 어느 버전에도 문항이 없거나 같은 표현이 뜻이 다른 문항에 걸리면 되묻는다. 숫자·날짜의 값 형식 또는 선택지 정의 순서가 버전 사이에서 비교 가능해야 하며 그렇지 않으면 `unsortable_field`로 되묻는다. 일부 버전에만 문항이 없으면 그 버전 응답을 빈 정렬값처럼 맨 뒤에 놓고 `coverage.sort_unavailable_by_version: [form_version, ...]`에 알린다. `sort.order`는 `asc` 또는 `desc`이며 방향을 말하지 않으면 `asc`다. 값이 같거나 `sort`가 없으면 모든 버전을 합쳐 `response_id` 오름차순이다.
 - `target`·`topic`은 `summarize`에만 적용한다. 다른 `operation`과 함께 오면 `sort`처럼 검증하지 않고 무시하며 되묻지 않는다. 두 키는 응답을 거르지 않으므로 `result.count`·`response_ids`를 바꾸지 않는다. 요약할 문항 표현은 `conditions`가 아니라 `target`에 담긴다.
 - 서버는 각 응답의 제출 당시 버전에서 각 조건을 `true`·`false`·`판정 불가`로 평가한다. 해당 문항·선택지가 그 버전에 없거나 분기로 그 문항을 접하지 않았다면 판정 불가다. `all`은 하나라도 `false`면 불일치, 전부 `true`면 일치이고 그 밖에는 판정 불가다. `any`는 하나라도 `true`면 일치, 전부 `false`면 불일치이고 그 밖에는 판정 불가다. `not`은 `any` 결과를 뒤집되 판정 불가는 그대로 둔다. 조건이 없으면 모든 제출 응답이 일치한다. 판정 불가 응답은 일치 응답으로 세거나 “아닌” 응답으로 취급하지 않는다.
-- `matched[]`에는 실제 문항·선택지에 매칭된 **조건·제출 버전별** 근거를 담고 `form_version`을 표시한다. `kind`는 `option`(선택지 일치, `option`에 선택지) / `answered`·`unanswered`(그 문항에 답했는지, `option`은 `null`)다. `coverage`는 `{total_submitted_count, not_evaluable_count, not_evaluable_by_version: [{form_version, response_count, unavailable_conditions}], sort_unavailable_by_version?, summary_unavailable_by_version?}`이며 판정 불가의 버전·조건별 이유를 담는다. `summary_unavailable_by_version: [{form_version, response_count}]`는 `summarize`의 `target` 문항이 없는 버전과 그 버전의 일치 응답 수다. 일부 버전에 해당 문항이 없어도 나머지 버전의 일치 응답은 반환한다. 어느 버전에서도 조건을 매칭할 수 없거나 같은 표현이 뜻이 다른 문항에 걸려 안전하게 특정할 수 없으면 되묻는다. AI 필터 결과를 내보낼 때도 다운로드 전에 같은 판정 불가 범위를 제작자에게 보여 준다.
+- `matched[]`에는 실제 문항·선택지에 매칭된 **조건·제출 버전별** 근거를 담고 `form_version`을 표시한다. `kind`는 `option`(선택지 일치, `option`에 선택지) / `answered`·`unanswered`(그 문항에 답했는지, `option`은 `null`)다. `coverage`는 `{total_submitted_count, not_evaluable_count, not_evaluable_by_version: [{form_version, response_count, unavailable_conditions}], sort_unavailable_by_version?, summary_unavailable_by_version?}`이며 판정 불가의 버전·조건별 이유를 담는다. `not_evaluable_by_version`에는 판정 불가 응답이 있는 버전만 담는다. `summary_unavailable_by_version: [{form_version, response_count}]`는 `summarize`의 `target` 문항이 없는 버전과 그 버전의 일치 응답 수다. 일부 버전에 해당 문항이 없어도 나머지 버전의 일치 응답은 반환한다. 어느 버전에서도 조건을 매칭할 수 없거나 같은 표현이 뜻이 다른 문항에 걸려 안전하게 특정할 수 없으면 되묻는다. AI 필터 결과를 내보낼 때도 다운로드 전에 같은 판정 불가 범위를 제작자에게 보여 준다.
 - `result.count`는 모든 제출 버전에서 조건에 **일치**한 응답 수(온톨로지의 파생값 `Result.filtered_response_count`)다. `result.response_ids`는 `list` 결과의 응답 ID 목록이고, `summarize`에서는 요약 대상이 된 일치 응답 전체(AI 요약 동의 여부와 무관)다. `count`에서는 `null`이다. 요약 ID 순서는 정렬 없는 `list`와 같다. 요약에 실제로 쓴 응답은 `summary.items[].themes[].response_ids`와 `evidence`가 보여 준다. 제작자 화면은 `list`의 `response_ids` 순서대로 상세 API를 조회한다. AI 필터·판정 불가 제외를 적용해도 폼 전체 `Result.response_count`는 바뀌지 않는다.
 - **AI 요약(`summarize`)**: 요약 대상 응답은 코드가 정한 일치 응답이다. 요약 가능 문항은 `short_answer`·`long_answer` 중 개인정보 문항(5절 폼 제작)이 아닌 것이다. 폼의 `settings.ai_summary.enabled`가 `false`이면 요약하지 않고 `summary_disabled`로 되묻는다. 요약 유형은 `target`·`topic`으로 정한다.
 
@@ -513,7 +513,7 @@
   - 판정: 평가셋과 라벨 규칙은 스파이크와 같다. 매칭을 규칙으로 구현하면 골든 테스트, LLM으로 구현하면 evals에서 잰다.
 - **AC22 [상시 적용]**: Passform은 항상 조건과 `list`의 `sort.by`를 제출 버전별 문항에 대조한다. 조건이 모든 응답 보유 버전에서 매칭되지 않거나 `sort.by`가 어느 버전에도 없으면 `count: 0`을 반환하지 않고 `clarify.reason: unknown_condition`과 후보 문항을 반환한다. 일부 버전에서만 조건이 없으면 판정 가능한 버전은 계산하고 판정 불가 범위를 밝힌다.
   - 테스트: 어느 버전에도 없는 "경영학과" 조건 → `result` 없음, `options`에 버전별 학과 문항·선택지 포함 / 버전 1에만 있는 "소프트웨어학과" 조건 → 버전 1의 일치 응답 반환, 다른 버전의 판정 불가 수 표시 / 폼에 없는 "키" 정렬 → `unknown_condition`
-- **AC23 [이벤트 기반]**: 분석 결과를 반환하면, Passform은 실제로 매칭된 조건·제출 버전마다 `matched` 근거와 `form_version`을 반환하고 매칭할 문항이 없는 버전은 `coverage`에 표시한다.
+- **AC23 [이벤트 기반]**: 분석 결과를 반환하면, Passform은 실제로 매칭된 조건·제출 버전마다 `matched` 근거와 `form_version`을 반환하고 매칭할 문항이 없어 판정 불가 응답이 생긴 버전은 `coverage`에 표시한다.
   - 테스트: 버전 1·2의 학과 문항에서 같은 조건이 매칭되고 버전 3에는 문항이 없음 → `matched`는 버전 1·2의 `question_id` 근거 2개, `coverage`는 버전 3의 판정 불가 수·조건을 표시
 - **AC24 [상시 적용]**: Passform은 항상 버전별로 각 조건을 참·거짓·판정 불가로 평가한다. `all`은 하나라도 거짓이면 거짓, 전부 참이면 참이고, `any`는 하나라도 참이면 참, 전부 거짓이면 거짓이다. 나머지는 판정 불가이며 `not`은 `any`의 참·거짓만 뒤집는다. 판정 불가 응답은 어느 결과에도 넣지 않는다.
   - 테스트: `not` + [소프트웨어학과] → 학과 문항이 있는 버전의 비해당 응답만 세고 문항이 없는 버전은 제외 / `any` + [소프트웨어학과, 4학년]에서 학과 문항이 없어도 4학년이 참이면 포함 / `conditions: []`의 `count`·`list` → 전체 `submitted` 수·ID 목록
@@ -596,23 +596,23 @@
 | AC17 | `save_form_once`, `submit_adds_to_inbox`, `partial_cancel_keeps_submitted`, `cancel_returns_to_saved`, `bulk_delete_keeps_submitted_history` | 미구현 |
 | AC18 | `deadline_reminder_once`, `reminder_saved_within_window`, `reminder_opt_out` | 미구현 |
 | AC19 | `results_option_counts_combined_and_by_version`, `results_changed_question_separate` | 미구현 |
-| AC20 | `submitted_only`, `response_count_across_versions` | 미구현 |
+| AC20 | `submitted_only`, `response_count_across_versions`, `injection_in_response` | 일부 구현 |
 | AC21 | `matching_labeled_set` (규칙이면 골든 / LLM이면 evals) | 스파이크 1차 미달(2026-11-02), 재도전 예정 |
-| AC22 | `unknown_condition_all_versions`, `unknown_sort_field`, `condition_missing_one_version_keeps_matches` | 미구현 |
-| AC23 | `matched_for_applicable_versions`, `coverage_for_unavailable_version` | 미구현 |
-| AC24 | `match_not_excludes_unknown`, `match_any_known_true_with_unknown` | 미구현 |
+| AC22 | `unknown_condition_all_versions`, `unknown_sort_field`, `condition_missing_one_version_keeps_matches`, `option_renamed_version_not_evaluable` | 일부 구현 |
+| AC23 | `matched_for_applicable_versions`, `coverage_for_unavailable_version`, `unavailable_version_without_unknown_omitted` | 일부 구현 |
+| AC24 | `match_not_excludes_unknown`, `match_any_known_true_with_unknown`, `checkbox_all_requires_both_options`, `unanswered_kind_counts_blank_only`, `answered_kind_excludes_blank`, `match_all_unknown_when_no_false`, `no_condition_counts_all`, `negation_does_not_count_unknown`, `no_condition_match_any_counts_all`, `no_condition_match_not_counts_all`, `unavailable_version_without_unknown_omitted` | 일부 구현 |
 | AC25 | `ambiguous_single_choice`, `checkbox_all_ok`, `ambiguous_question_meaning_across_versions` | 미구현 |
 | AC26 | `missing_match_two_conditions` | 미구현 |
 | AC27 | `missing_operation`, `unsupported_statistics_not_mapped_to_summary`, `missing_operation_without_summary_option` | 미구현 |
 | AC28 | `unsortable_long_answer`, `unsortable_text_age`, `sort_missing_version_last` | 미구현 |
 | AC29 | `double_negation_unanswered` | 미구현 |
 | AC30 | `extra_key_retry_once` | 미구현 |
-| AC31 | `injection_in_response` (+ 레드티밍) | 미구현 |
+| AC31 | `injection_in_response` (+ 레드티밍) | 일부 구현 |
 | AC32 | `confirmed_context_skips_parser`, `confirmed_context_all_versions`, `invalid_context_400` | 미구현 |
-| AC33 | `health` | 미구현 |
+| AC33 | `health` | 구현 |
 | AC34 | 부하 테스트 `load/` | 미구현 |
 | AC35 | evals `evals/evalset.jsonl` | 미구현 |
-| AC36 | CI 커버리지 리포트 | 미구현 |
+| AC36 | CI 커버리지 리포트 | 일부 구현 |
 | AC37 | `ui_mode_persists`, `ui_mode_no_permission_change` | 미구현 |
 | AC38 | `draft_hidden_from_others`, `first_draft_version_null`, `open_creates_share_url`, `first_open_creates_version_one` | 미구현 |
 | AC39 | `created_forms_owner_only` | 미구현 |
@@ -652,7 +652,7 @@
 | AC75 | `analyze_all_versions_fixed_scope`, `context_matches_lecture03_schema`, `full_export_groups_versions` | 미구현 |
 | AC76 | `stale_form_version_rejected`, `latest_form_version_submits` | 미구현 |
 | AC77 | `natural_language_version_scope_rejected`, `unsupported_statistics_explained`, `all_responses_count_supported` | 미구현 |
-| AC78 | `all_versions_condition_filter_with_coverage`, `negation_does_not_count_unknown`, `no_condition_counts_all` | 미구현 |
+| AC78 | `all_versions_condition_filter_with_coverage`, `negation_does_not_count_unknown`, `no_condition_counts_all`, `option_renamed_version_not_evaluable`, `match_all_unknown_when_no_false`, `condition_missing_one_version_keeps_matches`, `no_condition_match_any_counts_all`, `no_condition_match_not_counts_all` | 일부 구현 |
 | AC79 | `basic_builder_edit_save_reopen`, `question_and_section_duplicate_new_ids`, `duplicate_resets_branch_and_profile_key` (프론트엔드·E2E 테스트) | 미구현 |
 | AC80 | `basic_builder_five_question_types`, `basic_builder_settings_roundtrip`, `published_controls_match_builder` (프론트엔드·E2E 테스트) | 미구현 |
 | AC81 | `builder_preview_unsaved_definition`, `builder_preview_branch_path`, `builder_preview_no_response` (프론트엔드·E2E 테스트) | 미구현 |

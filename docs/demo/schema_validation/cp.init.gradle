@@ -1,0 +1,8 @@
+// 저장소를 고치지 않고 런타임 클래스패스만 출력한다.
+allprojects {
+	tasks.register('printRuntimeCp') {
+		doLast {
+			println project.sourceSets.main.runtimeClasspath.asPath
+		}
+	}
+}

@@ -1,0 +1,218 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FormDefinition",
+  "description": "폼 정의 (SPEC 5절 폼 제작). 빌더 두 모드의 저장, 복사, 내보내기, 응답 화면, AI 결과 탐색이 모두 이 구조를 읽고 쓴다. 형식 검증만 담는다. 초안은 미완성이어도 저장되므로 분기 대상·보기 방식·동의 템플릿 같은 의미 검증은 배포 때 서버가 따로 한다(SPEC 5절 174행). status, slug, share_url, owner_id, definition_version은 폼 정의가 아니라 이 구조 밖에 둔다(SPEC 5절 116행).",
+  "type": "object",
+  "properties": {
+    "title": { "type": "string", "description": "폼 제목. 초안에서는 빈 문자열을 허용한다." },
+    "note": { "type": "string", "description": "폼 설명." },
+    "deadline": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "마감. 선택. ISO 8601(타임존 포함)로 받아 UTC로 저장한다(SPEC 5절 181행)."
+    },
+    "settings": { "$ref": "#/definitions/settings" },
+    "payment_link": {
+      "type": ["string", "null"],
+      "pattern": "^https://\\S+$",
+      "description": "송금 링크. https만 허용한다(AC11)."
+    },
+    "consent_template_id": {
+      "type": ["string", "null"],
+      "description": "동의 템플릿. 초안에서는 null을 허용하고 배포 때 필수다(AC12)."
+    },
+    "note_attachments": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/attachment" },
+      "description": "폼 설명란 첨부(SPEC 5절 169행)."
+    },
+    "sections": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/section" }
+    }
+  },
+  "required": ["title", "note", "settings", "payment_link", "consent_template_id", "note_attachments", "sections"],
+  "additionalProperties": false,
+  "definitions": {
+    "settings": {
+      "type": "object",
+      "properties": {
+        "editable": { "type": "boolean", "description": "응답자의 제출 후 수정 허용. 기본 false." },
+        "cancellable": { "type": "boolean", "description": "응답자의 제출 취소 허용. 기본 false." },
+        "response_limit": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "선착순 인원. 없으면 null. 도달하면 서버가 closed로 바꾼다(SPEC 5절 176행)."
+        },
+        "display": {
+          "type": "object",
+          "properties": {
+            "default_mode": {
+              "type": "string",
+              "enum": ["one_question", "all_questions", "section_page"],
+              "description": "응답 화면 시작 방식. 분기 유무에 따른 허용 조합은 배포 때 검증한다(SPEC 5절 177행)."
+            }
+          },
+          "required": ["default_mode"],
+          "additionalProperties": false
+        },
+        "ai_summary": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "description": "AI 요약 사용. 첫 배포 후 변경 불가(SPEC 5절 157행)." }
+          },
+          "required": ["enabled"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["editable", "cancellable", "display"],
+      "additionalProperties": false
+    },
+    "attachment": {
+      "type": "object",
+      "properties": {
+        "attachment_id": { "type": "string", "minLength": 1 },
+        "filename": { "type": "string" },
+        "content_type": { "type": "string" },
+        "size_bytes": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["attachment_id", "filename", "content_type", "size_bytes"],
+      "additionalProperties": false
+    },
+    "section": {
+      "type": "object",
+      "properties": {
+        "section_id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "questions": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/question" }
+        }
+      },
+      "required": ["section_id", "title", "questions"],
+      "additionalProperties": false
+    },
+    "question": {
+      "type": "object",
+      "properties": {
+        "question_id": { "type": "string", "minLength": 1, "description": "버전을 넘어 같은 문항을 가리키는 식별자." },
+        "template_id": { "type": ["string", "null"], "description": "추천 문항 출처. 직접 만든 문항은 null." },
+        "question_note": { "type": "string", "description": "문항 문구." },
+        "question_description": { "type": ["string", "null"], "description": "문항 보조 설명. 선택." },
+        "question_type": {
+          "type": "string",
+          "enum": ["multiple_choice", "dropdown", "checkbox", "short_answer", "long_answer"]
+        },
+        "options": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true,
+          "description": "선택지. 선택형이 아니면 빈 배열이다. 같은 문구는 조건 판정이 갈리므로 중복을 막는다."
+        },
+        "required": { "type": "boolean" },
+        "input_format": { "$ref": "#/definitions/input_format" },
+        "profile_key": {
+          "type": ["string", "null"],
+          "enum": ["name", "student_id", "department", "phone_number", "email", "address", "birth_date", null],
+          "description": "제작자가 응답자 본인 정보라고 확인한 경우의 자동채우기 키. 동의 항목 기준이 아니다."
+        },
+        "character_limit": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "단답·장문 최대 글자 수. 선택."
+        },
+        "attachments": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/attachment" }
+        },
+        "branch_rules": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/branch_rule" },
+          "description": "위에서부터 검사해 처음 맞는 규칙으로 이동한다(SPEC 5절 178행)."
+        }
+      },
+      "required": ["question_id", "template_id", "question_note", "question_type", "options", "required", "profile_key", "attachments", "branch_rules"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "description": "선택형이 아니면 선택지를 두지 않는다.",
+          "if": { "properties": { "question_type": { "enum": ["short_answer", "long_answer"] } } },
+          "then": { "properties": { "options": { "maxItems": 0 } } }
+        },
+        {
+          "description": "입력 형식은 단답에만 적용한다(SPEC 5절 160행).",
+          "if": { "properties": { "question_type": { "enum": ["multiple_choice", "dropdown", "checkbox", "long_answer"] } } },
+          "then": { "properties": { "input_format": false } }
+        },
+        {
+          "description": "최대 글자 수는 단답·장문에만 적용한다(SPEC 5절 166행).",
+          "if": { "properties": { "question_type": { "enum": ["multiple_choice", "dropdown", "checkbox"] } } },
+          "then": { "properties": { "character_limit": false } }
+        }
+      ]
+    },
+    "input_format": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["name", "mobile_phone", "landline_phone", "address", "student_id", "email", "date"]
+        },
+        "placeholder": { "type": "string", "description": "안내용. 검증 기준이 아니다." }
+      },
+      "required": ["kind"],
+      "additionalProperties": false
+    },
+    "branch_rule": {
+      "type": "object",
+      "properties": {
+        "when": {
+          "type": "object",
+          "properties": {
+            "match": { "type": "string", "enum": ["all", "any"] },
+            "conditions": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "question_id": { "type": "string", "minLength": 1 },
+                  "option": { "type": "string" }
+                },
+                "required": ["question_id", "option"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["match", "conditions"],
+          "additionalProperties": false
+        },
+        "go_to": {
+          "description": "뒤쪽 섹션, 뒤쪽 문항, 제출 중 정확히 하나. 대상이 실제로 뒤쪽인지는 배포 때 검증한다(AC8).",
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": { "section_id": { "type": "string", "minLength": 1 } },
+              "required": ["section_id"],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": { "question_id": { "type": "string", "minLength": 1 } },
+              "required": ["question_id"],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": { "submit": { "const": true } },
+              "required": ["submit"],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": ["when", "go_to"],
+      "additionalProperties": false
+    }
+  }
+}

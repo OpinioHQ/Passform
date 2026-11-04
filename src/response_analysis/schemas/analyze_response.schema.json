@@ -1,0 +1,332 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AnalyzeResponse",
+  "description": "POST /forms/{form_id}/analyze의 200 응답(SPEC 5절 246~349행). 프론트 타입, 화면 가짜 데이터, API 테스트의 공통 기준이다. status가 ok이면 result·matched·coverage가 있고 clarify는 null, clarify이면 그 반대다.",
+  "type": "object",
+  "properties": {
+    "status": { "type": "string", "enum": ["ok", "clarify"] },
+    "context": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/definitions/context" }],
+      "description": "서버가 이해한 요청. 되묻기 뒤 이 값을 고쳐 {context}로 다시 보낸다. 파서를 부르기 전에 끝나거나(unsupported_scope) 파싱에 실패하면(parse_failed) null이다."
+    },
+    "matched": {
+      "type": ["array", "null"],
+      "items": { "$ref": "#/definitions/matched" }
+    },
+    "coverage": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/definitions/coverage" }]
+    },
+    "result": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/definitions/result" }]
+    },
+    "clarify": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/definitions/clarify" }]
+    }
+  },
+  "required": ["status", "context", "matched", "coverage", "result", "clarify"],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "ok" } } },
+      "then": {
+        "properties": {
+          "context": { "type": "object" },
+          "matched": { "type": "array" },
+          "coverage": { "type": "object" },
+          "result": { "type": "object" },
+          "clarify": { "type": "null" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "status": { "const": "clarify" } } },
+      "then": {
+        "properties": {
+          "matched": { "type": "null" },
+          "coverage": { "type": "null" },
+          "result": { "type": "null" },
+          "clarify": { "type": "object" }
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "context": {
+      "type": "object",
+      "description": "request_context.schema.json과 같은 여섯 키. operation은 null이어도 키를 둔다.",
+      "properties": {
+        "conditions": { "type": "array", "items": { "type": "string" } },
+        "match": { "type": "string", "enum": ["all", "any", "not"] },
+        "operation": { "type": ["string", "null"], "enum": ["count", "summarize", "list", null] },
+        "sort": {
+          "type": "object",
+          "properties": {
+            "by": { "type": "string" },
+            "order": { "type": "string", "enum": ["asc", "desc"] }
+          },
+          "required": ["by", "order"],
+          "additionalProperties": false
+        },
+        "target": { "type": "string" },
+        "topic": { "type": "string" }
+      },
+      "required": ["conditions", "operation"],
+      "additionalProperties": false
+    },
+    "matched": {
+      "type": "object",
+      "properties": {
+        "condition": { "type": "string" },
+        "form_version": { "type": "integer", "minimum": 1 },
+        "question_id": { "type": "string" },
+        "question_note": { "type": "string", "description": "SPEC 예시에는 없다. 제작자 화면에 q1 대신 문항 문구를 보여 주려고 더한다(결정 A4)." },
+        "kind": { "type": "string", "enum": ["option", "answered", "unanswered"] },
+        "option": { "type": ["string", "null"] }
+      },
+      "required": ["condition", "form_version", "question_id", "question_note", "kind", "option"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "option" } } },
+          "then": { "properties": { "option": { "type": "string" } } },
+          "else": { "properties": { "option": { "type": "null" } } }
+        }
+      ]
+    },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "total_submitted_count": { "type": "integer", "minimum": 0 },
+        "not_evaluable_count": { "type": "integer", "minimum": 0 },
+        "not_evaluable_by_version": {
+          "type": "array",
+          "description": "판정 불가 응답이 있는 버전만 담는다(SPEC 5절 314행).",
+          "items": {
+            "type": "object",
+            "properties": {
+              "form_version": { "type": "integer", "minimum": 1 },
+              "response_count": { "type": "integer", "minimum": 1 },
+              "unavailable_conditions": { "type": "array", "items": { "type": "string" } }
+            },
+            "required": ["form_version", "response_count", "unavailable_conditions"],
+            "additionalProperties": false
+          }
+        },
+        "sort_unavailable_by_version": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 }
+        },
+        "summary_unavailable_by_version": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "form_version": { "type": "integer", "minimum": 1 },
+              "response_count": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["form_version", "response_count"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["total_submitted_count", "not_evaluable_count", "not_evaluable_by_version"],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "operation": { "type": "string", "enum": ["count", "list", "summarize"] },
+        "count": { "type": "integer", "minimum": 0 },
+        "response_ids": { "type": ["array", "null"], "items": { "type": "string" } },
+        "summary": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/definitions/summary" }]
+        }
+      },
+      "required": ["operation", "count", "response_ids", "summary"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "operation": { "const": "count" } } },
+          "then": { "properties": { "response_ids": { "type": "null" }, "summary": { "type": "null" } } }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "list" } } },
+          "then": { "properties": { "response_ids": { "type": "array" }, "summary": { "type": "null" } } }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "summarize" } } },
+          "then": { "properties": { "response_ids": { "type": "array" }, "summary": { "type": "object" } } }
+        }
+      ]
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["ok", "no_matches", "no_consented_responses", "insufficient_evidence", "too_many_responses"]
+        },
+        "excluded_no_consent_count": { "type": "integer", "minimum": 0 },
+        "items": { "type": "array", "items": { "$ref": "#/definitions/summary_item" } },
+        "topic": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "description": "유형 D. 개수 필드를 두지 않는다(AC89).",
+              "properties": {
+                "query": { "type": "string" },
+                "text": { "type": ["string", "null"] },
+                "evidence": { "type": "array", "items": { "$ref": "#/definitions/evidence" } }
+              },
+              "required": ["query", "text", "evidence"],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": ["status", "excluded_no_consent_count", "items", "topic"],
+      "additionalProperties": false
+    },
+    "summary_item": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "themes" },
+            "target": { "$ref": "#/definitions/summary_target" },
+            "themes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "label": { "type": "string" },
+                  "count": { "type": "integer", "minimum": 0 },
+                  "response_ids": { "type": "array", "items": { "type": "string" } },
+                  "text": { "type": ["string", "null"] },
+                  "evidence": { "type": "array", "items": { "$ref": "#/definitions/evidence" } }
+                },
+                "required": ["label", "count", "response_ids", "text", "evidence"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["type", "target", "themes"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "option_stats" },
+            "target": { "$ref": "#/definitions/summary_target" },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "label": { "type": "string" },
+                  "count": { "type": "integer", "minimum": 0 },
+                  "form_versions": { "type": "array", "items": { "type": "integer", "minimum": 1 } }
+                },
+                "required": ["label", "count", "form_versions"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["type", "target", "options"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "summary_target": {
+      "type": "object",
+      "properties": {
+        "question_id": { "type": "string" },
+        "question_note": { "type": "string" },
+        "form_versions": { "type": "array", "items": { "type": "integer", "minimum": 1 } }
+      },
+      "required": ["question_id", "question_note", "form_versions"],
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "response_id": { "type": "string" },
+        "form_version": { "type": "integer", "minimum": 1 },
+        "question_id": { "type": "string" },
+        "excerpt": { "type": "string" }
+      },
+      "required": ["response_id", "form_version", "question_id", "excerpt"],
+      "additionalProperties": false
+    },
+    "question_option": {
+      "type": "object",
+      "description": "되묻기 후보 문항. 선택형 후보에만 options가 있다.",
+      "properties": {
+        "form_version": { "type": "integer", "minimum": 1 },
+        "question_id": { "type": "string" },
+        "question_note": { "type": "string" },
+        "options": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["form_version", "question_id", "question_note"],
+      "additionalProperties": false
+    },
+    "clarify": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string",
+          "enum": ["unsupported_scope", "parse_failed", "missing_operation", "summary_disabled", "missing_match", "unknown_condition", "ambiguous_match", "double_negation", "unsortable_field", "unsummarizable_field"],
+          "description": "이 순서가 우선순위다. 여러 사유가 해당하면 앞의 것 하나만 반환한다."
+        },
+        "message": { "type": "string", "minLength": 1 },
+        "options": { "type": "array" }
+      },
+      "required": ["reason", "message", "options"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "reason": { "const": "unsupported_scope" } } },
+          "then": { "properties": { "options": { "items": { "type": "string" } } } }
+        },
+        {
+          "if": { "properties": { "reason": { "const": "parse_failed" } } },
+          "then": { "properties": { "options": { "maxItems": 0 } } }
+        },
+        {
+          "if": { "properties": { "reason": { "const": "missing_operation" } } },
+          "then": { "properties": { "options": { "minItems": 2, "items": { "enum": ["count", "list", "summarize"] } } } }
+        },
+        {
+          "if": { "properties": { "reason": { "const": "summary_disabled" } } },
+          "then": { "properties": { "options": { "items": { "enum": ["count", "list"] } } } }
+        },
+        {
+          "if": { "properties": { "reason": { "const": "missing_match" } } },
+          "then": { "properties": { "options": { "items": { "enum": ["all", "any"] } } } }
+        },
+        {
+          "if": { "properties": { "reason": { "enum": ["unknown_condition", "unsortable_field", "unsummarizable_field"] } } },
+          "then": { "properties": { "options": { "items": { "$ref": "#/definitions/question_option" } } } }
+        },
+        {
+          "if": { "properties": { "reason": { "const": "ambiguous_match" } } },
+          "then": {
+            "properties": {
+              "options": {
+                "minItems": 1,
+                "items": {
+                  "oneOf": [{ "const": "any" }, { "$ref": "#/definitions/question_option" }]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "reason": { "const": "double_negation" } } },
+          "then": { "properties": { "options": { "minItems": 1, "maxItems": 1, "items": { "type": "string" } } } }
+        }
+      ]
+    }
+  }
+}

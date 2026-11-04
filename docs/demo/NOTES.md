@@ -17,7 +17,7 @@
 ```powershell
 docker compose up -d db
 .\gradlew.bat bootRun --args="--spring.profiles.active=demo"   # 백엔드 :8080
-cd frontend; npm install; npm run dev                          # 화면 http://127.0.0.1:5173
+cd frontend_demo; npm install; npm run dev                          # 화면 http://127.0.0.1:5173
 ```
 
 - 시드는 DB가 비어 있을 때만 들어간다. `data/seed`(골든 fixture)는 읽기만 하고 데모 전용 폼은 `data/demo/forms`에 있다.

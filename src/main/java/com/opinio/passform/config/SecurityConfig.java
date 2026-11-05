@@ -45,7 +45,9 @@ public class SecurityConfig {
 			.logout(AbstractHttpConfigurer::disable)
 			// 비로그인 요청의 응답을 401로 고정한다. oauth2Login을 켜도 로그인 페이지로 302 하지 않는다.
 			.exceptionHandling(handling -> handling
-				.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+				.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+				// 기본 처리는 sendError라 실제 서버에서 /error로 다시 전달되고, 비로그인이면 그 경로가 막혀 CSRF 거부가 401로 바뀐다.
+				.accessDeniedHandler((request, response, denied) -> response.setStatus(HttpStatus.FORBIDDEN.value())))
 			.build();
 	}
 

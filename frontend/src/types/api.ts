@@ -1,4 +1,5 @@
 /** Passform docs/SPEC.md §5 참고. 구체적인 검증은 서버가 권위 있는 판정자다. */
+export type UiMode = 'respondent' | 'creator';
 export type FormStatus = 'draft' | 'open' | 'closed';
 export type QuestionType =
   'short_answer' | 'long_answer' | 'multiple_choice' | 'checkbox' | 'dropdown';

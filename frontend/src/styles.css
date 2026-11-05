@@ -891,6 +891,10 @@ h3 {
   color: #3158d5;
   font-weight: 700;
 }
+.mode-switch button {
+  padding: 6px 12px;
+  font-size: 12px;
+}
 .builder-intro {
   padding: 30px;
 }
@@ -1208,6 +1212,16 @@ h3 {
   .account-actions .account-name,
   .account-actions .icon-btn:last-child {
     display: none;
+  }
+  .brand {
+    font-size: 18px;
+    gap: 6px;
+  }
+  .account-actions {
+    gap: 8px;
+  }
+  .mode-switch button {
+    padding: 6px 8px;
   }
   .page-shell {
     padding: 22px 18px 44px;

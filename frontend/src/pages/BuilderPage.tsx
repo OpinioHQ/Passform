@@ -3,12 +3,14 @@ import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
 import type { FormDefinition, Question } from '../types/api';
 export function BuilderPage({
   initial,
+  isNew = false,
   onPreview,
   onExplore,
 }: {
-  initial: FormDefinition;
-  onPreview: () => void;
-  onExplore: () => void;
+  initial: Pick<FormDefinition, 'title' | 'note' | 'sections'>;
+  isNew?: boolean;
+  onPreview?: () => void;
+  onExplore?: () => void;
 }) {
   const [title, setTitle] = React.useState(initial.title);
   const [note, setNote] = React.useState(initial.note);
@@ -42,7 +44,7 @@ export function BuilderPage({
         desc="질문을 구성하고, 확인한 뒤 배포할 수 있어요."
         action={
           <div className="button-row">
-            <Button variant="secondary" onClick={onPreview}>
+            <Button variant="secondary" onClick={onPreview} disabled={isNew}>
               미리보기
             </Button>
             <Button
@@ -64,12 +66,16 @@ export function BuilderPage({
             빠른 모드
           </button>
         </div>
-        <div className="button-row">
-          <Badge tone="green">배포 중 · v1</Badge>
-          <Button variant="secondary" onClick={onExplore}>
-            응답 6
-          </Button>
-        </div>
+        {isNew ? (
+          <Badge>초안</Badge>
+        ) : (
+          <div className="button-row">
+            <Badge tone="green">배포 중 · v1</Badge>
+            <Button variant="secondary" onClick={onExplore}>
+              응답 6
+            </Button>
+          </div>
+        )}
       </div>
       <Panel className="builder-intro">
         <input
@@ -90,7 +96,7 @@ export function BuilderPage({
       </Panel>
       <Panel className="builder-section">
         <div className="section-title">
-          <h3>섹션 01 · 함께 일하는 경험</h3>
+          {!isNew && <h3>섹션 01 · 함께 일하는 경험</h3>}
           <Badge tone="neutral">{mode === 'quick' ? '빠른 모드 미리보기' : '기본 모드'}</Badge>
         </div>
         {questions.map((q, i) => (

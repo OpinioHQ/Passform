@@ -1,9 +1,11 @@
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
 export function CreatedPage({
-  onBuilder,
+  onCreate,
+  onEdit,
   onExplore,
 }: {
-  onBuilder: () => void;
+  onCreate: () => void;
+  onEdit: () => void;
   onExplore: () => void;
 }) {
   return (
@@ -13,7 +15,7 @@ export function CreatedPage({
         title="내가 만든 폼"
         desc="폼을 만들고 배포한 뒤, 모인 답변을 살펴보세요."
         action={
-          <Button onClick={onBuilder}>
+          <Button onClick={onCreate}>
             <Icon name="plus" size={16} /> 새 폼 만들기
           </Button>
         }
@@ -36,7 +38,7 @@ export function CreatedPage({
             </div>
           </div>
           <div className="button-row">
-            <Button variant="secondary" onClick={onBuilder}>
+            <Button variant="secondary" onClick={onEdit}>
               <Icon name="edit" size={16} /> 폼 편집
             </Button>
             <Button onClick={onExplore}>
@@ -50,7 +52,7 @@ export function CreatedPage({
           </div>
           <h2>새로운 폼을 만들어보세요</h2>
           <p className="muted">기본 편집 화면에서 문항을 구성할 수 있어요.</p>
-          <Button variant="secondary" onClick={onBuilder}>
+          <Button variant="secondary" onClick={onCreate}>
             폼 제작 시작
           </Button>
         </Panel>

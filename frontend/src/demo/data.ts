@@ -1,4 +1,9 @@
-import type { FormDefinition, SavedFormSummary, SubmittedResponse } from '../types/api';
+import type {
+  FormDefinition,
+  SavedFormSummary,
+  SubmitResponseInput,
+  SubmittedResponse,
+} from '../types/api';
 
 /** Figma 무드보드의 예시 문구에 맞춘 가상 데이터. 실제 분석 수치가 아니다. */
 export const demoForm: FormDefinition = {
@@ -119,6 +124,32 @@ export const demoResponses: SubmittedResponse[] = names.map((name, i) => ({
     { question_id: 'q5', question_note: '더 나은 협업을 위해 바라는 점', value: opinions[i] },
   ],
 }));
+/** `/creator/forms/new`가 여는 빈 폼. */
+export const demoBlankForm: Pick<FormDefinition, 'title' | 'note' | 'sections'> = {
+  title: '',
+  note: '',
+  sections: [],
+};
+/** 서버 없이 제출 흐름을 보여 주려고 만드는 가상 제출 기록. */
+export function demoSubmission(
+  form: FormDefinition,
+  payload: SubmitResponseInput,
+): SubmittedResponse {
+  const questions = form.sections.flatMap((s) => s.questions);
+  return {
+    response_id: `demo-r${Date.now()}`,
+    form_version: payload.form_version,
+    status: 'submitted',
+    submitted_at: new Date().toISOString(),
+    updated_at: null,
+    content: payload.answers.map((a) => ({
+      question_id: a.question_id,
+      question_note:
+        questions.find((q) => q.question_id === a.question_id)?.question_note || a.question_id,
+      value: a.value,
+    })),
+  };
+}
 export function answerOf(r: SubmittedResponse, id: string): string {
   const x = r.content.find((v) => v.question_id === id)?.value;
   return Array.isArray(x) ? x.join(', ') : x || '—';

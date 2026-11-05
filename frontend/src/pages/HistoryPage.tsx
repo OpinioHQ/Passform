@@ -1,15 +1,18 @@
-import React from 'react';
 import { Badge, Button, Heading, Panel } from '../components/UI';
 import type { SubmittedResponse } from '../types/api';
 export function HistoryPage({
   responses,
+  selectedId,
+  onSelect,
   onNavigate,
 }: {
   responses: SubmittedResponse[];
+  selectedId?: string;
+  onSelect: (responseId: string) => void;
   onNavigate: () => void;
 }) {
-  const [selected, setSelected] = React.useState(0);
-  const r = responses[selected];
+  const r =
+    selectedId === undefined ? responses[0] : responses.find((x) => x.response_id === selectedId);
   return (
     <div className="page-shell">
       <Heading
@@ -23,8 +26,8 @@ export function HistoryPage({
           {responses.map((x, i) => (
             <button
               key={x.response_id}
-              className={`history-choice ${i === selected ? 'active' : ''}`}
-              onClick={() => setSelected(i)}
+              className={`history-choice ${x === r ? 'active' : ''}`}
+              onClick={() => onSelect(x.response_id)}
             >
               <strong>{i === 0 ? '10월 팀 경험 설문' : '팀 경험 설문 · 데모 응답'}</strong>
               <span>{new Date(x.submitted_at).toLocaleString('ko-KR')}</span>
@@ -33,26 +36,32 @@ export function HistoryPage({
           ))}
         </Panel>
         <Panel className="history-detail">
-          <div className="history-success">
-            <span className="success-icon">✓</span>
-            <div>
-              <h2>답변이 잘 전달됐어요.</h2>
-              <p className="muted">제출 당시 문항과 답변을 보여 드립니다.</p>
-            </div>
-            <Badge tone="green">제출 완료</Badge>
-          </div>
-          <h2>10월 팀 경험 설문</h2>
-          <p className="muted">제출 당시 문항 · v{r?.form_version || 1}</p>
-          <div className="answer-list">
-            {r?.content.map((a, i) => (
-              <div key={`${a.question_id}-${i}`} className="answer-line">
-                <small>
-                  {String(i + 1).padStart(2, '0')} · {a.question_note}
-                </small>
-                <b>{Array.isArray(a.value) ? a.value.join(', ') : a.value}</b>
+          {selectedId !== undefined && !r ? (
+            <p className="muted">이 제출 내역을 찾을 수 없어요.</p>
+          ) : (
+            <>
+              <div className="history-success">
+                <span className="success-icon">✓</span>
+                <div>
+                  <h2>답변이 잘 전달됐어요.</h2>
+                  <p className="muted">제출 당시 문항과 답변을 보여 드립니다.</p>
+                </div>
+                <Badge tone="green">제출 완료</Badge>
               </div>
-            ))}
-          </div>
+              <h2>10월 팀 경험 설문</h2>
+              <p className="muted">제출 당시 문항 · v{r?.form_version || 1}</p>
+              <div className="answer-list">
+                {r?.content.map((a, i) => (
+                  <div key={`${a.question_id}-${i}`} className="answer-line">
+                    <small>
+                      {String(i + 1).padStart(2, '0')} · {a.question_note}
+                    </small>
+                    <b>{Array.isArray(a.value) ? a.value.join(', ') : a.value}</b>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
           <div className="button-row">
             <Button variant="secondary" onClick={onNavigate}>
               내 폼함으로

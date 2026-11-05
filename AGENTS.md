@@ -6,7 +6,7 @@
 
 ## 1. 제품 맥락
 
-응답자 중심의 통합 폼 서비스. 응답자는 받은 폼의 마감·작성 진행·제출 내역을 한곳에서 관리하고, 제작자는 모인 응답을 자연어로 탐색해 근거와 함께 결과를 확인한다. 계정은 하나이고 화면만 응답자·제작자 모드로 바꾼다. 핵심 가치는 "응답자는 필요한 폼을 놓치지 않고 제출 내역을 확인하며, 제작자는 근거가 보이는 숫자를 받는다". 이 저장소는 AI캡스톤디자인 과목의 팀 오피니오 제품이다.
+응답자 중심의 통합 폼 서비스. 응답자는 받은 폼의 마감·작성 진행·제출 내역을 한곳에서 관리하고, 제작자는 모인 응답을 자연어로 탐색해 근거와 함께 결과를 확인한다. 계정은 하나이고 모든 사용자가 같은 화면을 쓴다. 핵심 가치는 "응답자는 필요한 폼을 놓치지 않고 제출 내역을 확인하며, 제작자는 근거가 보이는 숫자를 받는다". 이 저장소는 AI캡스톤디자인 과목의 팀 오피니오 제품이다.
 
 ## 2. 도메인 용어집
 
@@ -26,20 +26,19 @@
 - Form 구현 필드: `owner_id`, `status`에 `draft` 추가, `slug`·`share_url`, `consent_template_id`, `note_attachments`, `payment_link`(송금 링크 — 온톨로지에서는 `ExternalService`로의 외부 이동), `settings`(`editable`, `cancellable`, `response_limit`(선착순 인원, 없으면 `null`), `display.default_mode`(one_question/all_questions/section_page), `ai_summary.enabled`(온톨로지 `Form.ai_summary`, 첫 배포 후 변경 불가))
 - Question 구현 필드: `template_id`(추천 문항 출처), `question_description`(문항 보조 설명, `question_note`와 별개), `character_limit`(단답·장문 최대 글자 수. 온톨로지 `input_format`의 길이 제약을 구현에서 분리한 필드)
 - 분기 규칙: `when.match`(all/any) + `when.conditions[]` → `go_to`(section_id/question_id/submit)
-- 엔티티: Profile(`label`, `personal_info`), Section(`title`, `questions`), SavedForm(`state`: saved/submitted, `has_draft` — 내 폼함, 온톨로지 `User —save→ Form`의 구현), Notification(`type`: deadline, `created_at`, `read`), QuestionTemplate(추천 문항의 문구·유형·선택지·입력 형식; 추가할 때 `profile_key`는 `null`), ConsentTemplate(`purpose`, `retention`)
-- User 구현 필드: `name`, `email`(소셜 로그인 계정), `ui_mode`(respondent/creator — 화면만 바꾸고 권한은 바꾸지 않는다), `deadline_reminder`
+- 엔티티: Profile(`label`, `personal_info`), Section(`title`, `questions`), SavedForm(`state`: saved/submitted, `has_draft`, `saved_at`(내 폼함에 처음 들어간 시각) — 내 폼함, 온톨로지 `User —save→ Form`의 구현), Notification(`type`: deadline, `created_at`, `read`), QuestionTemplate(추천 문항의 문구·유형·선택지·입력 형식; 추가할 때 `profile_key`는 `null`), ConsentTemplate(`purpose`, `retention`)
+- User 구현 필드: `name`, `email`(소셜 로그인 계정), `deadline_reminder`
 - 분석 응답: `status`(ok/clarify), `matched[].kind`(option/answered/unanswered), `coverage`(판정 불가 범위), `clarify.reason`(unsupported_scope/parse_failed/missing_operation/summary_disabled/missing_match/unknown_condition/ambiguous_match/double_negation/unsortable_field/unsummarizable_field — 이 순서가 우선순위), `summary.status`(ok/no_matches/no_consented_responses/insufficient_evidence/too_many_responses — 되묻기가 아니라 `status: ok` 결과에 붙는다)
 
 혼동 주의
 
 - 식별자는 JSON·API에서 `<클래스>_id`로 쓴다(`form_id`, `section_id`, `question_id`, `response_id`, `profile_id`). 추천 문항 템플릿만 SPEC대로 `template_id`를 쓴다.
-- 제작자 권한은 `Form.owner_id`로, 개인 리소스 접근은 해당 사용자의 소유 관계로 판정한다. `ui_mode`로 권한을 판정하지 않는다.
+- 제작자 권한은 `Form.owner_id`로, 개인 리소스 접근은 해당 사용자의 소유 관계로 판정한다.
 - `Form.status`(초안·배포·마감)와 `Response.status`(응답 한 건의 제출 상태), `SavedForm.state`(내 폼함의 상태)는 다른 필드다. 상태 전이·초안 공개 범위는 SPEC 5절과 AC38, AC56, AC57.
 - `Form.definition_version`은 마지막 배포 정의 버전이고 첫 배포 전에는 `null`이다. `Response.form_version`은 작성 시작 때의 배포 버전이며 제출 후 수정해도 유지한다. 과거 배포 정의는 보존한다.
 - `Form.consent`(온톨로지 개념)는 구현에서 `consent_template_id`로 저장한다. 공개 조회의 수집 항목은 `profile_key`와 무관하게 문항의 `input_format` 범주와 형식 없는 문항의 “문항별 응답 내용”으로 만든다.
 - `consent_agreed`(필수 동의, 없으면 제출 불가)와 `ai_summary_agreed`(선택 동의, 없어도 제출되고 요약에서만 빠짐)는 다르다.
 - 분기 규칙의 `when.match`(all/any, 분기 조건 결합)와 `RequestContext.match`(all/any/not, 분석 조건 결합)는 다른 필드다.
-- `User.ui_mode`(화면 모드)와 `Form.settings.display.default_mode`(응답 화면 보기 방식)는 다르다.
 - 분기가 없으면 `one_question`·`all_questions` 중 시작 방식을 정하고 응답자가 전환할 수 있다. 분기가 있으면 `one_question`·`section_page` 중 정하고 응답 중 전환하지 않는다.
 - `deadline`이 지난 폼은 `Form.status`가 아직 `open`이어도 닫힌 것으로 처리한다. 선착순 인원(온톨로지 `Form.response_limit`, 구현 `settings.response_limit`)에 도달하면 서버가 `status`를 `closed`로 바꾼다.
 - `Form.editable`·`Form.cancellable`(온톨로지)은 구현에서 각각 `settings.editable`·`settings.cancellable`이다. 응답자의 제출 후 수정과 취소를 별도로 허용하며 제출 이력 조회와는 무관하다.
@@ -83,7 +82,7 @@
   - 분석 `list`: `sort` 값 순(빈 값은 맨 뒤), 같거나 `sort`가 없으면 `Response.id` 오름차순
   - 요약 주제: `count` 내림차순 → 그 주제의 가장 작은 `response_id` 오름차순, `기타`는 맨 뒤
   - 제출 이력: `submitted_at` 내림차순 → `Response.id` 오름차순
-  - 내 폼함: 미제출(마감 임박순, `deadline` 없음은 미제출 맨 뒤) → 제출(`submitted_at` 내림차순), 같으면 `form_id` 오름차순
+  - 내 폼함: 기본은 최근 저장순(`saved_at` 내림차순). 사용자가 고르는 순서는 마감 임박순(열린 미제출의 `deadline` 오름차순 → `deadline` 없는 열린 미제출 → 닫힌 미제출의 `deadline` 내림차순, 없으면 뒤 → 제출의 `submitted_at` 내림차순), 마감 늦은 순(열린 미제출의 `deadline` 내림차순 → 이후 같음), 제목순(`title` 가나다순). 모두 같으면 `form_id` 오름차순 (여기서 미제출은 `state`가 `saved`인 폼으로 `has_draft`와 무관하고, 제출은 `state`가 `submitted`인 폼이다)
   - 알림: `created_at` 내림차순 → `id` 오름차순
   - 내가 만든 폼·프로필 목록: 생성 시각 내림차순 → `id` 오름차순
   - 내보내기 행: `context.operation`이 `list`면 그 `result.response_ids` 순서, 아니면 `form_version` 오름차순 → 버전 안에서 `submitted_at` 오름차순 → `Response.id` 오름차순

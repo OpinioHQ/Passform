@@ -1,4 +1,5 @@
 import { Badge, Button, Heading, Panel } from '../components/UI';
+import { demoHistory } from '../demo/screens';
 import type { SubmittedResponse } from '../types/api';
 export function HistoryPage({
   responses,
@@ -29,7 +30,7 @@ export function HistoryPage({
               className={`history-choice ${x === r ? 'active' : ''}`}
               onClick={() => onSelect(x.response_id)}
             >
-              <strong>{i === 0 ? '10월 팀 경험 설문' : '팀 경험 설문 · 데모 응답'}</strong>
+              <strong>{i === 0 ? demoHistory.latestTitle : demoHistory.otherTitle}</strong>
               <span>{new Date(x.submitted_at).toLocaleString('ko-KR')}</span>
               <Badge tone="green">제출 완료</Badge>
             </button>
@@ -48,7 +49,7 @@ export function HistoryPage({
                 </div>
                 <Badge tone="green">제출 완료</Badge>
               </div>
-              <h2>10월 팀 경험 설문</h2>
+              <h2>{demoHistory.latestTitle}</h2>
               <p className="muted">제출 당시 문항 · v{r?.form_version || 1}</p>
               <div className="answer-list">
                 {r?.content.map((a, i) => (

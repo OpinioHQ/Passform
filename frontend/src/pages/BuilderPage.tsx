@@ -1,5 +1,6 @@
 import React from 'react';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
+import { demoBuilder } from '../demo/screens';
 import type { FormDefinition, Question } from '../types/api';
 export function BuilderPage({
   initial,
@@ -74,9 +75,9 @@ export function BuilderPage({
           <Badge>초안</Badge>
         ) : (
           <div className="button-row">
-            <Badge tone="green">배포 중 · v1</Badge>
+            <Badge tone="green">{demoBuilder.statusBadge}</Badge>
             <Button variant="secondary" onClick={onExplore}>
-              응답 6
+              {demoBuilder.responsesButton}
             </Button>
           </div>
         )}
@@ -100,7 +101,7 @@ export function BuilderPage({
       </Panel>
       <Panel className="builder-section">
         <div className="section-title">
-          {!isNew && <h3>섹션 01 · 함께 일하는 경험</h3>}
+          {!isNew && <h3>{demoBuilder.sectionTitle}</h3>}
           <Badge tone="neutral">{mode === 'quick' ? '빠른 모드 미리보기' : '기본 모드'}</Badge>
         </div>
         {questions.map((q, i) => (

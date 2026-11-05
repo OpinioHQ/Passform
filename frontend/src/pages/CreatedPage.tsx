@@ -1,4 +1,5 @@
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
+import { demoCreated } from '../demo/screens';
 export function CreatedPage({
   onCreate,
   onEdit,
@@ -23,18 +24,18 @@ export function CreatedPage({
       <div className="creator-grid">
         <Panel className="creator-card">
           <div className="creator-title">
-            <Badge tone="green">배포 중 · v1</Badge>
-            <h2>10월 팀 경험 설문</h2>
-            <p className="muted">함께 일하는 경험에 대한 설문</p>
+            <Badge tone="green">{demoCreated.statusBadge}</Badge>
+            <h2>{demoCreated.title}</h2>
+            <p className="muted">{demoCreated.description}</p>
           </div>
           <div className="creator-metrics">
             <div>
               <small>전체 응답</small>
-              <strong>6</strong>
+              <strong>{demoCreated.responseCount}</strong>
             </div>
             <div>
               <small>폼 상태</small>
-              <strong>열림</strong>
+              <strong>{demoCreated.statusLabel}</strong>
             </div>
           </div>
           <div className="button-row">

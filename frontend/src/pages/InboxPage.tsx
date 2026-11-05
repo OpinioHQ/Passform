@@ -1,5 +1,6 @@
 import React from 'react';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
+import { demoInbox } from '../demo/screens';
 import type { SavedFormSummary } from '../types/api';
 
 interface Props {
@@ -7,7 +8,6 @@ interface Props {
   onOpen: (id: string) => void;
   onCreated: () => void;
 }
-const owners = ['아틀리에 · 피플팀', '아틀리에 · 피플팀', '아틀리에 · 운영팀', '아틀리에 · 컬처팀'];
 export function InboxPage({ forms, onOpen, onCreated }: Props) {
   const [tab, setTab] = React.useState<'all' | 'pending' | 'draft'>('all');
   const [filter, setFilter] = React.useState('');
@@ -34,8 +34,8 @@ export function InboxPage({ forms, onOpen, onCreated }: Props) {
         {[
           ['저장한 폼', String(forms.length), '내게 도착한 질문'],
           ['작성 중', String(forms.filter((f) => f.has_draft).length), '이어서 작성할 수 있어요'],
-          ['마감 임박', '2', '이번 주에 마감돼요'],
-          ['제출 완료', '8', '답변을 다시 볼 수 있어요'],
+          ['마감 임박', demoInbox.closingSoonCount, '이번 주에 마감돼요'],
+          ['제출 완료', demoInbox.submittedCount, '답변을 다시 볼 수 있어요'],
         ].map(([t, v, d]) => (
           <Panel key={t} className="metric">
             <div className="metric-top">
@@ -84,7 +84,7 @@ export function InboxPage({ forms, onOpen, onCreated }: Props) {
             {f.has_draft && (
               <div className="card-status">
                 <Badge tone="blue">작성 중</Badge>
-                <Badge tone="amber">마감 임박 · D-2</Badge>
+                <Badge tone="amber">{demoInbox.draftDeadlineBadge}</Badge>
                 <span className="corner-bookmark">
                   <Icon name="bookmark" size={17} />
                 </span>
@@ -94,12 +94,12 @@ export function InboxPage({ forms, onOpen, onCreated }: Props) {
               <div>
                 <h3>{f.title}</h3>
                 <div className="muted small">
-                  {owners[forms.indexOf(f)] || 'Passform 데모팀'} ·{' '}
+                  {demoInbox.owners[forms.indexOf(f)] || demoInbox.fallbackOwner} ·{' '}
                   {f.deadline ? new Date(f.deadline).toLocaleDateString('ko-KR') : '마감 없음'} 마감
                 </div>
                 {!f.has_draft && (
                   <div className="small muted" style={{ marginTop: 10 }}>
-                    {i === 2 ? '약 3분 · 6문항' : '아직 작성하지 않았어요'}
+                    {i === 2 ? demoInbox.estimatedEffort : '아직 작성하지 않았어요'}
                   </div>
                 )}
               </div>
@@ -114,13 +114,15 @@ export function InboxPage({ forms, onOpen, onCreated }: Props) {
             {f.has_draft && (
               <div className="progress-wrap">
                 <div className="progress-label">
-                  <span>3 / 5문항 작성</span>
-                  <b>60%</b>
+                  <span>{demoInbox.draftProgress.label}</span>
+                  <b>{demoInbox.draftProgress.percent}</b>
                 </div>
                 <div className="track">
-                  <div style={{ width: '60%' }} />
+                  <div style={{ width: demoInbox.draftProgress.percent }} />
                 </div>
-                <small className="muted">오늘 10:32 저장됨 · 작성한 내용부터 이어집니다</small>
+                <small className="muted">
+                  {demoInbox.draftProgress.savedAt} · 작성한 내용부터 이어집니다
+                </small>
               </div>
             )}
           </Panel>

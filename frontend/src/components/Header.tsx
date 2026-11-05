@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useLiveApi } from '../api/client';
+import { demoUser } from '../demo/screens';
 import { paths } from '../routes/paths';
 import type { UiMode } from '../types/api';
 import { Brand, Icon, Badge } from './UI';
@@ -77,12 +78,12 @@ export function Header() {
           </Link>
         ) : (
           <>
-            <Badge>데모 워크스페이스</Badge>
+            <Badge>{demoUser.workspace}</Badge>
             <button className="icon-btn" aria-label="알림 보기" onClick={() => setOpen(!open)}>
               <Icon name="bell" />
             </button>
-            <span className="avatar">지</span>
-            <span className="account-name">김지윤</span>
+            <span className="avatar">{demoUser.initial}</span>
+            <span className="account-name">{demoUser.name}</span>
             <button className="icon-btn" aria-label="계정 메뉴" onClick={() => setOpen(!open)}>
               <Icon name="chevron" size={15} />
             </button>

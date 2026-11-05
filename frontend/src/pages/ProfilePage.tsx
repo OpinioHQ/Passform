@@ -1,9 +1,10 @@
 import React from 'react';
 import { Badge, Button, Heading, Panel } from '../components/UI';
+import { demoUser } from '../demo/screens';
 export function ProfilePage() {
   const [editing, setEditing] = React.useState(false);
-  const [name, setName] = React.useState('김지윤');
-  const [email, setEmail] = React.useState('jiyun@atelier.team');
+  const [name, setName] = React.useState(demoUser.name);
+  const [email, setEmail] = React.useState(demoUser.email);
   return (
     <div className="page-shell">
       <Heading
@@ -18,7 +19,7 @@ export function ProfilePage() {
       />
       <Panel className="profile-card">
         <div className="profile-title">
-          <h2>업무용 프로필</h2>
+          <h2>{demoUser.profileLabel}</h2>
           <Badge tone="blue">데모</Badge>
         </div>
         <p className="muted small">`SPEC.md`의 허용된 본인 정보 항목만 사용합니다.</p>

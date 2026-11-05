@@ -1,7 +1,9 @@
 import React from 'react';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
 import { answerOf } from '../demo/data';
+import { demoExplore } from '../demo/screens';
 import type { SubmittedResponse } from '../types/api';
+const { questionIds } = demoExplore;
 export function ExplorePage({
   responses,
   onBuilder,
@@ -16,20 +18,18 @@ export function ExplorePage({
   const filtered =
     mode === 'satisfied'
       ? responses.filter(
-          (x) => answerOf(x, 'q4') === '만족해요' && answerOf(x, 'q3') === '프로덕트디자인',
+          (x) =>
+            answerOf(x, questionIds.experience) === demoExplore.satisfiedAnswer &&
+            answerOf(x, questionIds.team) === demoExplore.team,
         )
       : responses;
   function run() {
     if (!query.trim()) return;
-    if (/만족|프로덕트디자인/.test(query)) {
+    if (demoExplore.queryPattern.test(query)) {
       setMode('satisfied');
-      setMessage(
-        '데모 응답에서 ‘프로덕트디자인’·‘만족해요’를 선택한 응답만 보여 줍니다. 실제 자연어 해석은 서버 분석 API를 연결해야 합니다.',
-      );
+      setMessage(demoExplore.matchedMessage);
     } else {
-      setMessage(
-        '이 요청은 데모 모드에서 판단할 수 없습니다. 실제 서비스에서는 파서·매처·clarify 결과로 연결하세요.',
-      );
+      setMessage(demoExplore.unknownMessage);
     }
   }
   function downloadCsv() {
@@ -41,21 +41,21 @@ export function ExplorePage({
         })
         .join(',');
     const text = [
-      cells(['이름', '소속 팀', '협업 경험', '제출일시', '바라는 점']),
+      cells(demoExplore.columns),
       ...filtered.map((r) =>
         cells([
-          answerOf(r, 'q1'),
-          answerOf(r, 'q3'),
-          answerOf(r, 'q4'),
+          answerOf(r, questionIds.name),
+          answerOf(r, questionIds.team),
+          answerOf(r, questionIds.experience),
           r.submitted_at,
-          answerOf(r, 'q5'),
+          answerOf(r, questionIds.wish),
         ]),
       ),
     ].join('\r\n');
     const blob = new Blob(['\ufeff' + text], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'passform_demo.csv';
+    a.download = demoExplore.csvFilename;
     a.click();
     URL.revokeObjectURL(a.href);
   }
@@ -64,10 +64,10 @@ export function ExplorePage({
       <Heading
         eyebrow="제작자 워크스페이스 / 응답 탐색"
         title="모인 답변을 살펴보세요"
-        desc="10월 팀 경험 설문 · 가상 데이터 결과 탐색"
+        desc={demoExplore.description}
         action={
           <div className="button-row">
-            <Badge tone="green">열림</Badge>
+            <Badge tone="green">{demoExplore.statusBadge}</Badge>
             <Button variant="secondary" onClick={onBuilder}>
               폼 편집
             </Button>
@@ -78,11 +78,15 @@ export function ExplorePage({
         {[
           ['전체 응답', String(responses.length), '저장된 데모 제출 건'],
           [
-            '만족해요',
-            String(responses.filter((x) => answerOf(x, 'q4') === '만족해요').length),
+            demoExplore.satisfiedAnswer,
+            String(
+              responses.filter(
+                (x) => answerOf(x, questionIds.experience) === demoExplore.satisfiedAnswer,
+              ).length,
+            ),
             '가상 응답 기준',
           ],
-          ['응답 버전', '1', '데모 폼 v1'],
+          ['응답 버전', demoExplore.versionCount, demoExplore.versionNote],
           ['현재 탐색 결과', String(filtered.length), '확정된 데모 조건'],
         ].map(([k, v, d]) => (
           <Panel className="metric" key={k}>
@@ -114,7 +118,7 @@ export function ExplorePage({
               </Button>
               {mode === 'satisfied' && (
                 <button className="filter-chip" onClick={() => setMode('all')}>
-                  팀: 프로덕트디자인 · 협업: 만족해요 ×
+                  {demoExplore.filterChip}
                 </button>
               )}
             </div>
@@ -122,23 +126,21 @@ export function ExplorePage({
               <table>
                 <thead>
                   <tr>
-                    <th>이름</th>
-                    <th>소속 팀</th>
-                    <th>협업 경험</th>
-                    <th>제출일시</th>
-                    <th>바라는 점</th>
+                    {demoExplore.columns.map((column) => (
+                      <th key={column}>{column}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((x) => (
                     <tr key={x.response_id}>
-                      <td>{answerOf(x, 'q1')}</td>
-                      <td>{answerOf(x, 'q3')}</td>
+                      <td>{answerOf(x, questionIds.name)}</td>
+                      <td>{answerOf(x, questionIds.team)}</td>
                       <td>
-                        <Badge tone="green">{answerOf(x, 'q4')}</Badge>
+                        <Badge tone="green">{answerOf(x, questionIds.experience)}</Badge>
                       </td>
                       <td>{new Date(x.submitted_at).toLocaleDateString('ko-KR')}</td>
-                      <td>{answerOf(x, 'q5')}</td>
+                      <td>{answerOf(x, questionIds.wish)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -183,7 +185,7 @@ export function ExplorePage({
               </button>
             </div>
             <div className="chat-body">
-              <div className="chat-bubble user">프로덕트디자인팀 중 ‘만족해요’ 응답만 보여줘.</div>
+              <div className="chat-bubble user">{demoExplore.exampleQuestion}</div>
               <div className="chat-bubble bot">
                 <b>Passform · 답변 도우미</b>
                 <p>조건에 맞는 응답을 왼쪽 목록에서 확인할 수 있어요.</p>

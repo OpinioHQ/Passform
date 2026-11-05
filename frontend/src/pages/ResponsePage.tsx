@@ -1,5 +1,6 @@
 import React from 'react';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
+import { demoResponseScreen } from '../demo/screens';
 import type { PublicForm, Question, ResponseAnswer, SubmitResponseInput } from '../types/api';
 
 interface Props {
@@ -24,7 +25,7 @@ export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange }: 
     onDraftChange?.(next);
   }
   function applyProfile() {
-    setAnswers((p) => ({ ...p, q1: '김지윤', q2: 'jiyun@atelier.team' }));
+    setAnswers((p) => ({ ...p, ...demoResponseScreen.autofillAnswers }));
     setAutofill(false);
     setSaved(false);
   }
@@ -89,7 +90,7 @@ export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange }: 
           <textarea
             value={value}
             maxLength={q.character_limit || undefined}
-            placeholder="작은 제안도 좋아요. 다음 달에 함께 바꿔갈 점을 알려주세요."
+            placeholder={demoResponseScreen.longAnswerPlaceholder}
             onChange={(e) => update(q.question_id, e.target.value)}
             rows={4}
           />
@@ -130,7 +131,7 @@ export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange }: 
           <Badge tone="amber">작성 중 · 데모</Badge>
           <h2>{form.title}</h2>
           <p className="muted">
-            아틀리에 · 피플팀 ·{' '}
+            {demoResponseScreen.owner} ·{' '}
             {form.deadline ? new Date(form.deadline).toLocaleDateString('ko-KR') : ''} 마감
           </p>
         </div>
@@ -152,7 +153,7 @@ export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange }: 
           <div className="section-title">
             <div>
               <span className="overline">01 · {section.title}</span>
-              <h3>함께 일하는 경험</h3>
+              <h3>{demoResponseScreen.sectionHeading}</h3>
             </div>
             <Button variant="secondary" onClick={() => setAutofill(true)}>
               내 정보로 채우기
@@ -179,7 +180,7 @@ export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange }: 
           개인정보 수집 및 이용에 동의합니다. (필수)
         </label>
         <p className="small muted">
-          수집 항목: 문항별 응답 내용 · 목적: {form.consent.purpose} · 보유:{' '}
+          수집 항목: {form.consent.items.join(', ')} · 목적: {form.consent.purpose} · 보유:{' '}
           {form.consent.retention}
         </p>
       </Panel>
@@ -211,20 +212,20 @@ export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange }: 
             <h2>내 정보로 채우기</h2>
             <p className="muted">프로필에서 가져온 값을 확인하고 수정해 주세요.</p>
             <Panel>
-              <div className="profile-row">
-                <b>이름</b>
-                <span>김지윤</span>
-              </div>
-              <div className="profile-row">
-                <b>이메일</b>
-                <span>jiyun@atelier.team</span>
-              </div>
+              {demoResponseScreen.autofillRows.map((row) => (
+                <div className="profile-row" key={row.label}>
+                  <b>{row.label}</b>
+                  <span>{row.value}</span>
+                </div>
+              ))}
             </Panel>
             <p className="small muted">
               제작자가 본인 정보로 지정한 문항에만 적용합니다. 실제 프로필 API와는 아직 연결되지
               않았어요.
             </p>
-            <Button onClick={applyProfile}>확인한 2개 값 적용</Button>
+            <Button onClick={applyProfile}>
+              확인한 {demoResponseScreen.autofillRows.length}개 값 적용
+            </Button>
           </div>
         </div>
       )}

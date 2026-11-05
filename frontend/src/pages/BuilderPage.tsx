@@ -24,10 +24,14 @@ export function BuilderPage({
       ...q,
       {
         question_id: `draft-${q.length + 1}`,
+        template_id: null,
         question_note: '새 질문',
         question_type: 'short_answer',
         required: false,
         options: [],
+        profile_key: null,
+        attachments: [],
+        branch_rules: [],
       },
     ]);
     setSaved('');

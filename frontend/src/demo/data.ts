@@ -1,18 +1,28 @@
 import type {
   FormDefinition,
+  PublicForm,
   SavedFormSummary,
   SubmitResponseInput,
   SubmittedResponse,
 } from '../types/api';
 
+const questionDefaults = {
+  template_id: null,
+  profile_key: null,
+  attachments: [],
+  branch_rules: [],
+};
+
 /** Figma 무드보드의 예시 문구에 맞춘 가상 데이터. 실제 분석 수치가 아니다. */
-export const demoForm: FormDefinition = {
+export const demoForm: PublicForm = {
   form_id: 'demo-form-team-experience',
   title: '10월 팀 경험 설문',
   note: '이번 달 함께 일한 경험을 나눠주세요. 약 3분이 걸려요.',
+  note_attachments: [],
   definition_version: 1,
   deadline: '2026-11-10T18:00:00+09:00',
-  status: 'open',
+  display: { default_mode: 'all_questions', allowed_modes: ['one_question', 'all_questions'] },
+  payment_link: null,
   consent: {
     items: ['문항별 응답 내용'],
     purpose: '팀 업무 경험 개선',
@@ -26,6 +36,7 @@ export const demoForm: FormDefinition = {
       title: '함께 일하는 경험',
       questions: [
         {
+          ...questionDefaults,
           question_id: 'q1',
           question_note: '이름',
           question_type: 'short_answer',
@@ -36,6 +47,7 @@ export const demoForm: FormDefinition = {
           question_description: '이름을 입력해 주세요',
         },
         {
+          ...questionDefaults,
           question_id: 'q2',
           question_note: '이메일',
           question_type: 'short_answer',
@@ -46,6 +58,7 @@ export const demoForm: FormDefinition = {
           question_description: '이메일을 입력해 주세요',
         },
         {
+          ...questionDefaults,
           question_id: 'q3',
           question_note: '소속 팀',
           question_type: 'dropdown',
@@ -53,6 +66,7 @@ export const demoForm: FormDefinition = {
           options: ['프로덕트디자인', '개발', '피플', '운영'],
         },
         {
+          ...questionDefaults,
           question_id: 'q4',
           question_note: '이번 달의 협업 경험은 어땠나요?',
           question_type: 'multiple_choice',
@@ -60,6 +74,7 @@ export const demoForm: FormDefinition = {
           options: ['아쉬워요', '보통이에요', '만족해요'],
         },
         {
+          ...questionDefaults,
           question_id: 'q5',
           question_note: '더 나은 협업을 위해 바라는 점',
           question_type: 'long_answer',
@@ -116,6 +131,7 @@ export const demoResponses: SubmittedResponse[] = names.map((name, i) => ({
   status: 'submitted',
   submitted_at: `2026-10-${28 - Math.floor(i / 2)}T${10 + i}:42:00+09:00`,
   updated_at: null,
+  attachments: [],
   content: [
     { question_id: 'q1', question_note: '이름', value: name },
     { question_id: 'q2', question_note: '이메일', value: `demo${i + 1}@example.test` },
@@ -131,10 +147,7 @@ export const demoBlankForm: Pick<FormDefinition, 'title' | 'note' | 'sections'> 
   sections: [],
 };
 /** 서버 없이 제출 흐름을 보여 주려고 만드는 가상 제출 기록. */
-export function demoSubmission(
-  form: FormDefinition,
-  payload: SubmitResponseInput,
-): SubmittedResponse {
+export function demoSubmission(form: PublicForm, payload: SubmitResponseInput): SubmittedResponse {
   const questions = form.sections.flatMap((s) => s.questions);
   return {
     response_id: `demo-r${Date.now()}`,
@@ -142,6 +155,7 @@ export function demoSubmission(
     status: 'submitted',
     submitted_at: new Date().toISOString(),
     updated_at: null,
+    attachments: [],
     content: payload.answers.map((a) => ({
       question_id: a.question_id,
       question_note:

@@ -1,0 +1,54 @@
+/** 응답 제출과 내 폼함·제출 이력. SPEC 5절 188~200행의 입출력과 같은 이름을 쓴다. */
+import type { Attachment } from './form';
+
+export type AnswerValue = string | string[];
+export interface ResponseAnswer {
+  question_id: string;
+  value: AnswerValue;
+}
+export interface ResponseContentItem {
+  question_id: string;
+  question_note: string;
+  value: AnswerValue;
+}
+/** `Response.attachments`(SPEC 222행). */
+export interface ResponseAttachment extends Attachment {
+  question_id: string;
+  available: boolean;
+}
+export interface SubmitResponseInput {
+  form_version: number;
+  answers: ResponseAnswer[];
+  consent_agreed: true;
+  ai_summary_agreed?: boolean;
+  draft_response_id?: string;
+}
+/** `POST /forms/{form_id}/responses`의 201(SPEC 188행). */
+export interface SubmittedResponse {
+  response_id: string;
+  form_version: number;
+  status: 'submitted';
+  content: ResponseContentItem[];
+  attachments: ResponseAttachment[];
+  submitted_at: string;
+  updated_at: null;
+}
+/** `GET /me/forms`(SPEC 200행). */
+export interface SavedFormSummary {
+  form_id: string;
+  title: string;
+  deadline: string | null;
+  state: 'saved' | 'submitted';
+  has_draft: boolean;
+}
+/** `GET /me/responses`의 항목(SPEC 192행). */
+export interface ResponseHistoryItem {
+  response_id: string;
+  form_id: string;
+  form_title: string;
+  form_version: number;
+  submitted_at: string;
+  updated_at: string | null;
+  editable: boolean;
+  cancellable: boolean;
+}

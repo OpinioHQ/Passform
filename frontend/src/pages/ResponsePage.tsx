@@ -1,9 +1,9 @@
 import React from 'react';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
-import type { FormDefinition, Question, ResponseAnswer, SubmitResponseInput } from '../types/api';
+import type { PublicForm, Question, ResponseAnswer, SubmitResponseInput } from '../types/api';
 
 interface Props {
-  form: FormDefinition;
+  form: PublicForm;
   onBack: () => void;
   onSubmit: (data: SubmitResponseInput) => Promise<void>;
   saving: boolean;

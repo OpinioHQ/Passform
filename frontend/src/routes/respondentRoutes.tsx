@@ -8,7 +8,7 @@ import { demoForm, demoSavedForms, demoSubmission } from '../demo/data';
 import { HistoryPage } from '../pages/HistoryPage';
 import { InboxPage } from '../pages/InboxPage';
 import { ResponsePage } from '../pages/ResponsePage';
-import type { FormDefinition, SavedFormSummary, SubmitResponseInput } from '../types/api';
+import type { PublicForm, SavedFormSummary, SubmitResponseInput } from '../types/api';
 import { paths } from './paths';
 
 export function MyFormsRoute() {
@@ -49,7 +49,7 @@ export function FormResponseRoute() {
   const navigate = useNavigate();
   const { setNotice } = useNotice();
   const { addResponse } = useDemoData();
-  const [form, setForm] = React.useState<FormDefinition | null>(useLiveApi ? null : demoForm);
+  const [form, setForm] = React.useState<PublicForm | null>(useLiveApi ? null : demoForm);
   const [failed, setFailed] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   React.useEffect(() => {

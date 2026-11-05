@@ -3,7 +3,6 @@
  * 정본: 폼은 `form.schema.json`, 분석은 `analyze_response.schema.json`, 나머지는 `docs/SPEC.md` 5절.
  * 화면 전용 축약 타입을 만들면 `...ViewModel`로 이름을 구분해 이곳 밖에 둔다.
  */
-export * from './user';
 export * from './form';
 export * from './response';
 export * from './analyze';

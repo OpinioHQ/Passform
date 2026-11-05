@@ -27,7 +27,7 @@
 - 경로는 `src/routes/paths.ts` 한 곳에 두고, 라우트 등록은 `src/App.tsx`에 한다. 화면에서 주소를 문자열로 쓰지 않고 `paths`를 쓴다.
 - 라우트와 화면의 연결은 `src/routes/respondentRoutes.tsx`(응답자)와 `src/routes/creatorRoutes.tsx`(제작자)에 둔다.
 - 공통 레이아웃은 `src/components/AppLayout.tsx`다. 화면이 상단 알림을 띄울 때는 `useNotice()`를 쓴다.
-- 화면 모드는 헤더의 메뉴와 첫 화면만 바꾼다. 권한을 판정하지 않고 라우트 접근도 막지 않는다. 계정 저장과 로그인 상태는 T2에서 연결한다.
+- 헤더 메뉴는 모든 사용자에게 같다. 화면에서 권한을 판정하지 않고 라우트 접근도 막지 않는다. 로그인 상태는 T2에서 연결한다.
 - API 호출은 `src/api/client.ts`에만 둔다. CSRF 헤더는 `csrfHeaders()` 한 곳에 넣는다(T2).
 - 가짜 데이터는 `src/demo/`에만 둔다. 화면을 서버 데이터로 바꾼 담당자는 그 값을 지우고, 가짜 값이 없어진 경로를 `src/demo/demoRoutes.ts`에서 뺀다.
 - 타입 필드 이름은 백엔드 DTO와 같은 snake_case를 쓴다. 화면 전용 축약 타입은 `...ViewModel`로 이름을 구분해 `src/types/` 밖에 둔다.

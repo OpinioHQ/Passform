@@ -1,0 +1,317 @@
+{
+  "form_id": "form_required_branch",
+  "form_versions": [
+    {
+      "form_version": 1,
+      "form": {
+        "title": "행사 참석 신청",
+        "note": "행사 참석 신청 폼입니다.",
+        "deadline": "2026-11-30T14:59:00Z",
+        "settings": {
+          "editable": false,
+          "cancellable": false,
+          "response_limit": null,
+          "display": {
+            "default_mode": "section_page"
+          }
+        },
+        "payment_link": null,
+        "consent_template_id": "consent_default",
+        "note_attachments": [],
+        "sections": [
+          {
+            "section_id": "s1",
+            "title": "참석 여부",
+            "questions": [
+              {
+                "question_id": "q1",
+                "template_id": null,
+                "question_note": "행사에 참석하나요?",
+                "question_type": "multiple_choice",
+                "options": [
+                  "예",
+                  "아니요"
+                ],
+                "required": true,
+                "profile_key": null,
+                "attachments": [],
+                "branch_rules": [
+                  {
+                    "when": {
+                      "match": "all",
+                      "conditions": [
+                        {
+                          "question_id": "q1",
+                          "option": "아니요"
+                        }
+                      ]
+                    },
+                    "go_to": {
+                      "section_id": "s3"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "section_id": "s2",
+            "title": "참석 정보",
+            "questions": [
+              {
+                "question_id": "q2",
+                "template_id": null,
+                "question_note": "참석 날짜",
+                "question_type": "short_answer",
+                "options": [],
+                "required": true,
+                "input_format": {
+                  "kind": "date"
+                },
+                "profile_key": null,
+                "attachments": [],
+                "branch_rules": []
+              },
+              {
+                "question_id": "q3",
+                "template_id": null,
+                "question_note": "식사 신청",
+                "question_type": "multiple_choice",
+                "options": [
+                  "신청",
+                  "미신청"
+                ],
+                "required": true,
+                "profile_key": null,
+                "attachments": [],
+                "branch_rules": []
+              }
+            ]
+          },
+          {
+            "section_id": "s3",
+            "title": "마무리",
+            "questions": [
+              {
+                "question_id": "q4",
+                "template_id": null,
+                "question_note": "소속",
+                "question_type": "dropdown",
+                "options": [
+                  "학생회",
+                  "동아리",
+                  "일반"
+                ],
+                "required": true,
+                "profile_key": null,
+                "attachments": [],
+                "branch_rules": []
+              },
+              {
+                "question_id": "q5",
+                "template_id": null,
+                "question_note": "하고 싶은 말",
+                "question_type": "long_answer",
+                "options": [],
+                "required": false,
+                "profile_key": null,
+                "attachments": [],
+                "branch_rules": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "form_version": 2,
+      "form": {
+        "title": "행사 참석 신청",
+        "note": "행사 참석 신청 폼입니다.",
+        "deadline": "2026-11-30T14:59:00Z",
+        "settings": {
+          "editable": false,
+          "cancellable": false,
+          "response_limit": null,
+          "display": {
+            "default_mode": "section_page"
+          }
+        },
+        "payment_link": null,
+        "consent_template_id": "consent_default",
+        "note_attachments": [],
+        "sections": [
+          {
+            "section_id": "s1",
+            "title": "참석 여부",
+            "questions": [
+              {
+                "question_id": "q1",
+                "template_id": null,
+                "question_note": "행사에 직접 참석하나요?",
+                "question_type": "multiple_choice",
+                "options": [
+                  "예",
+                  "아니요"
+                ],
+                "required": true,
+                "profile_key": null,
+                "attachments": [],
+                "branch_rules": [
+                  {
+                    "when": {
+                      "match": "all",
+                      "conditions": [
+                        {
+                          "question_id": "q1",
+                          "option": "아니요"
+                        }
+                      ]
+                    },
+                    "go_to": {
+                      "section_id": "s3"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "section_id": "s2",
+            "title": "참석 정보",
+            "questions": [
+              {
+                "question_id": "q2",
+                "template_id": null,
+                "question_note": "참석 날짜",
+                "question_type": "short_answer",
+                "options": [],
+                "required": true,
+                "input_format": {
+                  "kind": "date"
+                },
+                "profile_key": null,
+                "attachments": [],
+                "branch_rules": []
+              },
+              {
+                "question_id": "q3",
+                "template_id": null,
+                "question_note": "식사 신청",
+                "question_type": "multiple_choice",
+                "options": [
+                  "신청",
+                  "미신청"
+                ],
+                "required": true,
+                "profile_key": null,
+                "attachments": [],
+                "branch_rules": []
+              }
+            ]
+          },
+          {
+            "section_id": "s3",
+            "title": "마무리",
+            "questions": [
+              {
+                "question_id": "q4",
+                "template_id": null,
+                "question_note": "소속",
+                "question_type": "dropdown",
+                "options": [
+                  "학생회",
+                  "동아리",
+                  "일반"
+                ],
+                "required": true,
+                "profile_key": null,
+                "attachments": [],
+                "branch_rules": []
+              },
+              {
+                "question_id": "q5",
+                "template_id": null,
+                "question_note": "하고 싶은 말",
+                "question_type": "long_answer",
+                "options": [],
+                "required": false,
+                "profile_key": null,
+                "attachments": [],
+                "branch_rules": []
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "responses": [
+    {
+      "response_id": "rr01",
+      "form_version": 1,
+      "status": "submitted",
+      "submitted_at": "2026-10-12T02:00:00Z",
+      "updated_at": null,
+      "ai_summary_agreed": false,
+      "answers": [
+        {
+          "question_id": "q1",
+          "value": "예"
+        },
+        {
+          "question_id": "q2",
+          "value": "2026-11-20"
+        },
+        {
+          "question_id": "q3",
+          "value": "신청"
+        },
+        {
+          "question_id": "q4",
+          "value": "학생회"
+        }
+      ]
+    },
+    {
+      "response_id": "rr02",
+      "form_version": 1,
+      "status": "submitted",
+      "submitted_at": "2026-10-10T02:00:00Z",
+      "updated_at": null,
+      "ai_summary_agreed": false,
+      "answers": [
+        {
+          "question_id": "q1",
+          "value": "아니요"
+        },
+        {
+          "question_id": "q4",
+          "value": "일반"
+        }
+      ]
+    },
+    {
+      "response_id": "rr03",
+      "form_version": 2,
+      "status": "submitted",
+      "submitted_at": "2026-10-25T02:00:00Z",
+      "updated_at": null,
+      "ai_summary_agreed": false,
+      "answers": [
+        {
+          "question_id": "q1",
+          "value": "아니요"
+        },
+        {
+          "question_id": "q4",
+          "value": "동아리"
+        },
+        {
+          "question_id": "q5",
+          "value": "다음에 참석하겠습니다."
+        }
+      ]
+    }
+  ]
+}

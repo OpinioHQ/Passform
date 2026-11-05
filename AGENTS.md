@@ -122,7 +122,7 @@
 
 자주 쓰는 명령
 
-- DB: `docker compose up -d db`
+- DB: `docker compose up -d db` — `./gradlew build`와 `./gradlew test`에 필요하다. 없으면 DB 테스트가 안내 메시지와 함께 실패한다. 테스트는 `passform_test` 스키마만 비우고 쓴다
 - 백엔드: `./gradlew bootRun` → `GET /health` / 테스트: `./gradlew test` / 커버리지: `./gradlew jacocoTestReport`
 - 골든 테스트: `./gradlew test --tests '*GoldenTest'`
 - 프론트엔드: `cd frontend && npm run dev` / `npm test`

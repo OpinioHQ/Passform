@@ -11,8 +11,20 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # DB 테스트를 추가하면 이 위치(steps 앞)에 services.postgres를 넣고,
-    # build 단계의 env에 DB_HOST·DB_PORT·DB_NAME·DB_USERNAME·DB_PASSWORD를 준다.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: passform
+          POSTGRES_USER: passform
+          POSTGRES_PASSWORD: ci_only_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U passform -d passform"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -27,6 +39,12 @@ jobs:
       - run: chmod +x gradlew
 
       - run: ./gradlew build
+        env:
+          DB_HOST: localhost
+          DB_PORT: "5432"
+          DB_NAME: passform
+          DB_USERNAME: passform
+          DB_PASSWORD: ci_only_password
 
       - name: 커버리지 리포트 업로드
         if: always()

@@ -4,6 +4,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 import { demoForm } from './demo/data';
+import { ResponsePage } from './pages/ResponsePage';
 
 function CurrentPath() {
   return <output data-testid="path">{useLocation().pathname}</output>;
@@ -18,15 +19,8 @@ function openAt(path: string) {
   );
 }
 
-const pressedMode = () =>
-  within(screen.getByRole('group', { name: '화면 모드' }))
-    .getAllByRole('button')
-    .find((button) => button.getAttribute('aria-pressed') === 'true')?.textContent;
-
-const menuLabels = () =>
-  within(screen.getByRole('navigation', { name: '주 메뉴' }))
-    .getAllByRole('link')
-    .map((link) => link.textContent);
+const menuLinks = () =>
+  within(screen.getByRole('navigation', { name: '주 메뉴' })).getAllByRole('link');
 
 beforeEach(() => {
   window.scrollTo = vi.fn();
@@ -82,36 +76,74 @@ describe('라우트 표', () => {
   });
 });
 
-describe('화면 모드 스위치', () => {
+describe('주 메뉴', () => {
   it.each([
-    ['/creator', '제작자'],
-    ['/creator/forms/new', '제작자'],
-    ['/me/forms', '응답자'],
-    ['/f/test', '응답자'],
-    ['/', '응답자'],
-  ])('%s 로 시작하면 첫 값은 %s 이다', (path, mode) => {
+    ['/', null],
+    ['/login', null],
+    ['/me/forms', '내 폼함'],
+    ['/f/test', '내 폼함'],
+    ['/forms/abc', '내 폼함'],
+    ['/me/responses', '제출 내역'],
+    ['/me/responses/demo-r002', '제출 내역'],
+    ['/me/profile', '내 프로필'],
+    ['/creator', '내가 만든 폼'],
+    ['/creator/forms/new', '내가 만든 폼'],
+    ['/creator/forms/abc/edit', '내가 만든 폼'],
+    ['/creator/forms/abc/results', '내가 만든 폼'],
+    ['/creator/forms/abc/explore', '내가 만든 폼'],
+    ['/없는/경로', null],
+  ])('%s 에서 메뉴 4개가 보이고 활성 메뉴는 %s 이다', (path, active) => {
     openAt(path);
-    expect(pressedMode()).toBe(mode);
+    expect(menuLinks().map((link) => link.textContent)).toEqual([
+      '내 폼함',
+      '제출 내역',
+      '내 프로필',
+      '내가 만든 폼',
+    ]);
+    const activeLabels = menuLinks()
+      .filter((link) => link.classList.contains('active'))
+      .map((link) => link.textContent);
+    expect(activeLabels).toEqual(active ? [active] : []);
   });
 
-  it('전환하면 그 모드의 첫 화면으로 가고 메뉴가 바뀐다', () => {
+  it('메뉴로 제작자 라우트가 열린다', () => {
     openAt('/me/forms');
-    expect(menuLabels()).toEqual(['내 폼함', '제출 내역', '내 프로필']);
-    fireEvent.click(screen.getByRole('button', { name: '제작자' }));
+    fireEvent.click(screen.getByRole('link', { name: '내가 만든 폼' }));
     expect(screen.getByTestId('path').textContent).toBe('/creator');
-    expect(pressedMode()).toBe('제작자');
-    expect(menuLabels()).toEqual(['내가 만든 폼']);
-    fireEvent.click(screen.getByRole('button', { name: '응답자' }));
-    expect(screen.getByTestId('path').textContent).toBe('/me/forms');
-    expect(pressedMode()).toBe('응답자');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('내가 만든 폼');
+  });
+});
+
+describe('응답 화면의 폼 설명', () => {
+  const noteElement = (container: HTMLElement) => container.querySelector('.form-note');
+
+  function renderForm(note: string) {
+    return render(
+      <ResponsePage
+        form={{ ...demoForm, note }}
+        onBack={vi.fn()}
+        onSubmit={vi.fn(() => Promise.resolve())}
+        saving={false}
+      />,
+    );
+  }
+
+  it('제목 바로 아래에 입력한 줄바꿈 그대로 보여 준다', () => {
+    openAt('/f/test');
+    const title = screen.getByRole('heading', { level: 2, name: demoForm.title });
+    expect(demoForm.note).toContain('\n');
+    expect(title.nextElementSibling?.className).toBe('form-note');
+    expect(title.nextElementSibling?.textContent).toBe(demoForm.note);
   });
 
-  it('응답자 모드에서도 제작자 라우트가 열린다', () => {
-    openAt('/');
-    fireEvent.click(screen.getByRole('button', { name: '폼 만들기' }));
-    expect(screen.getByTestId('path').textContent).toBe('/creator/forms/new');
-    expect(pressedMode()).toBe('응답자');
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('폼 편집');
+  it.each([
+    ['빈 문자열', ''],
+    ['공백만', ' \n '],
+  ])('%s이면 자리를 만들지 않는다', (_label, note) => {
+    const { container } = renderForm(note);
+    expect(noteElement(container)).toBeNull();
+    const title = screen.getByRole('heading', { level: 2, name: demoForm.title });
+    expect(title.nextElementSibling?.classList.contains('muted')).toBe(true);
   });
 });
 

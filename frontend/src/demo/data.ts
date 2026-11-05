@@ -17,7 +17,7 @@ const questionDefaults = {
 export const demoForm: PublicForm = {
   form_id: 'demo-form-team-experience',
   title: '10월 팀 경험 설문',
-  note: '이번 달 함께 일한 경험을 나눠주세요. 약 3분이 걸려요.',
+  note: '이번 달 함께 일한 경험을 나눠주세요. 약 3분이 걸려요.\n답변은 다음 달 협업 방식을 정하는 데 참고합니다.\n마감 전까지는 언제든 이어서 작성할 수 있어요.',
   note_attachments: [],
   definition_version: 1,
   deadline: '2026-11-10T18:00:00+09:00',

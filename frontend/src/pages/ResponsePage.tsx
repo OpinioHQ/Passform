@@ -130,6 +130,7 @@ export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange }: 
         <div>
           <Badge tone="amber">작성 중 · 데모</Badge>
           <h2>{form.title}</h2>
+          {form.note.trim() && <p className="form-note">{form.note}</p>}
           <p className="muted">
             {demoResponseScreen.owner} ·{' '}
             {form.deadline ? new Date(form.deadline).toLocaleDateString('ko-KR') : ''} 마감

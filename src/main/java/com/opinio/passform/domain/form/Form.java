@@ -1,0 +1,137 @@
+package com.opinio.passform.domain.form;
+
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+// 뼈대다. 상태 전이와 버전 규칙은 이 엔티티의 메서드로 E2에서 더한다.
+@Entity
+@Table(name = "forms")
+public class Form {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.UUID)
+	@Column(name = "form_id")
+	private UUID id;
+
+	@Column(name = "owner_id", nullable = false)
+	private UUID ownerId;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private FormStatus status;
+
+	private String slug;
+
+	@Column(name = "definition_version")
+	private Integer definitionVersion;
+
+	private Instant deadline;
+
+	@Column(nullable = false)
+	private boolean editable;
+
+	@Column(nullable = false)
+	private boolean cancellable;
+
+	@Column(name = "response_limit")
+	private Integer responseLimit;
+
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(name = "working_definition", columnDefinition = "jsonb")
+	private Map<String, Object> workingDefinition;
+
+	@JdbcTypeCode(SqlTypes.JSON)
+	@Column(name = "ai_summary_notice", columnDefinition = "jsonb")
+	private Map<String, Object> aiSummaryNotice;
+
+	@Column(name = "deleted_at")
+	private Instant deletedAt;
+
+	@Column(name = "created_at", nullable = false)
+	private Instant createdAt;
+
+	@Column(name = "updated_at", nullable = false)
+	private Instant updatedAt;
+
+	protected Form() {
+	}
+
+	// 새 폼은 항상 draft이고 첫 배포 전에는 버전이 없다(AC38). 수정·취소 허용의 기본값은 false다(SPEC 5절 226행).
+	public Form(UUID ownerId, Map<String, Object> workingDefinition, Instant createdAt) {
+		this.ownerId = ownerId;
+		this.status = FormStatus.DRAFT;
+		this.workingDefinition = workingDefinition;
+		this.createdAt = createdAt;
+		this.updatedAt = createdAt;
+	}
+
+	public UUID getId() {
+		return id;
+	}
+
+	public UUID getOwnerId() {
+		return ownerId;
+	}
+
+	public FormStatus getStatus() {
+		return status;
+	}
+
+	public String getSlug() {
+		return slug;
+	}
+
+	public Integer getDefinitionVersion() {
+		return definitionVersion;
+	}
+
+	public Instant getDeadline() {
+		return deadline;
+	}
+
+	public boolean isEditable() {
+		return editable;
+	}
+
+	public boolean isCancellable() {
+		return cancellable;
+	}
+
+	public Integer getResponseLimit() {
+		return responseLimit;
+	}
+
+	public Map<String, Object> getWorkingDefinition() {
+		return workingDefinition;
+	}
+
+	public Map<String, Object> getAiSummaryNotice() {
+		return aiSummaryNotice;
+	}
+
+	public Instant getDeletedAt() {
+		return deletedAt;
+	}
+
+	public Instant getCreatedAt() {
+		return createdAt;
+	}
+
+	public Instant getUpdatedAt() {
+		return updatedAt;
+	}
+
+}

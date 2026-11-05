@@ -1,0 +1,7 @@
+dist/
+coverage/
+node_modules/
+package-lock.json
+preview.html
+preview.bundle.js
+preview-assets/

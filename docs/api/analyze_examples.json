@@ -1,0 +1,2498 @@
+{
+  "spec_list": {
+    "request": {
+      "context": {
+        "conditions": [
+          "소프트웨어학과"
+        ],
+        "operation": "list"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "ok",
+      "context": {
+        "conditions": [
+          "소프트웨어학과"
+        ],
+        "operation": "list"
+      },
+      "matched": [
+        {
+          "condition": "소프트웨어학과",
+          "form_version": 1,
+          "question_id": "q1",
+          "question_note": "소속 학과",
+          "kind": "option",
+          "option": "소프트웨어학과"
+        },
+        {
+          "condition": "소프트웨어학과",
+          "form_version": 2,
+          "question_id": "q1",
+          "question_note": "소속 학과",
+          "kind": "option",
+          "option": "소프트웨어학과"
+        }
+      ],
+      "coverage": {
+        "total_submitted_count": 9,
+        "not_evaluable_count": 4,
+        "not_evaluable_by_version": [
+          {
+            "form_version": 3,
+            "response_count": 4,
+            "unavailable_conditions": [
+              "소프트웨어학과"
+            ]
+          }
+        ]
+      },
+      "result": {
+        "operation": "list",
+        "count": 5,
+        "response_ids": [
+          "r01",
+          "r02",
+          "r03",
+          "r04",
+          "r05"
+        ],
+        "summary": null
+      },
+      "clarify": null
+    },
+    "source": "SPEC 5절 249행 + question_note"
+  },
+  "spec_summarize": {
+    "request": {
+      "context": {
+        "conditions": [
+          "소프트웨어학과"
+        ],
+        "operation": "summarize"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "ok",
+      "context": {
+        "conditions": [
+          "소프트웨어학과"
+        ],
+        "operation": "summarize"
+      },
+      "matched": [
+        {
+          "condition": "소프트웨어학과",
+          "form_version": 1,
+          "question_id": "q1",
+          "question_note": "소속 학과",
+          "kind": "option",
+          "option": "소프트웨어학과"
+        },
+        {
+          "condition": "소프트웨어학과",
+          "form_version": 2,
+          "question_id": "q1",
+          "question_note": "소속 학과",
+          "kind": "option",
+          "option": "소프트웨어학과"
+        }
+      ],
+      "coverage": {
+        "total_submitted_count": 9,
+        "not_evaluable_count": 4,
+        "not_evaluable_by_version": [
+          {
+            "form_version": 3,
+            "response_count": 4,
+            "unavailable_conditions": [
+              "소프트웨어학과"
+            ]
+          }
+        ]
+      },
+      "result": {
+        "operation": "summarize",
+        "count": 5,
+        "response_ids": [
+          "r01",
+          "r02",
+          "r03",
+          "r04",
+          "r05"
+        ],
+        "summary": {
+          "status": "ok",
+          "excluded_no_consent_count": 2,
+          "items": [
+            {
+              "type": "themes",
+              "target": {
+                "question_id": "q4",
+                "question_note": "지원 동기",
+                "form_versions": [
+                  1,
+                  2
+                ]
+              },
+              "themes": [
+                {
+                  "label": "실전 프로젝트 경험",
+                  "count": 3,
+                  "response_ids": [
+                    "r01",
+                    "r03",
+                    "r05"
+                  ],
+                  "text": "팀 프로젝트로 실제 서비스를 만들어 보고 싶다는 내용이 중심이다.",
+                  "evidence": [
+                    {
+                      "response_id": "r03",
+                      "form_version": 2,
+                      "question_id": "q4",
+                      "excerpt": "팀 프로젝트로 실제 서비스를 배포해 보고 싶어서 지원했습니다."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "option_stats",
+              "target": {
+                "question_id": "q2",
+                "question_note": "지원 분야",
+                "form_versions": [
+                  1,
+                  2
+                ]
+              },
+              "options": [
+                {
+                  "label": "백엔드",
+                  "count": 4,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "label": "기획",
+                  "count": 1,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                }
+              ]
+            }
+          ],
+          "topic": null
+        }
+      },
+      "clarify": null
+    },
+    "source": "SPEC 5절 264행 + question_note"
+  },
+  "clarify_2_parse_failed": {
+    "request": {
+      "query": "(형식 오류가 두 번 난 요청)"
+    },
+    "http_status": 200,
+    "response": {
+      "status": "clarify",
+      "context": null,
+      "matched": null,
+      "coverage": null,
+      "result": null,
+      "clarify": {
+        "reason": "parse_failed",
+        "message": "요청을 이해하지 못했어요. 다른 말로 다시 알려 주세요.",
+        "options": []
+      }
+    },
+    "source": "직접 작성(시험 데모에서 재현 못 함)"
+  },
+  "clarify_10_unsummarizable_field": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [],
+        "operation": "summarize",
+        "target": "이름"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "clarify",
+      "context": {
+        "conditions": [],
+        "operation": "summarize",
+        "target": "이름"
+      },
+      "matched": null,
+      "coverage": null,
+      "result": null,
+      "clarify": {
+        "reason": "unsummarizable_field",
+        "message": "개인정보 문항은 외부로 보내지 않아 요약하지 않아요. 아래 문항 중에서 골라 주세요.",
+        "options": [
+          {
+            "form_version": 1,
+            "question_id": "q5",
+            "question_note": "나이"
+          },
+          {
+            "form_version": 1,
+            "question_id": "q9",
+            "question_note": "지원 동기"
+          },
+          {
+            "form_version": 1,
+            "question_id": "q10",
+            "question_note": "활동하면서 걱정되는 점"
+          },
+          {
+            "form_version": 2,
+            "question_id": "q5",
+            "question_note": "나이"
+          },
+          {
+            "form_version": 2,
+            "question_id": "q9",
+            "question_note": "지원 동기"
+          }
+        ]
+      }
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "clarify_1_unsupported_scope": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "query": "버전 1만 보여줘"
+    },
+    "http_status": 200,
+    "response": {
+      "status": "clarify",
+      "context": null,
+      "matched": null,
+      "coverage": null,
+      "result": null,
+      "clarify": {
+        "reason": "unsupported_scope",
+        "message": "AI 분석은 특정 버전만 따로 보거나 버전끼리 비교할 수 없어요. 모든 버전을 합쳐 분석하거나, 결과 화면의 버전별 보기를 이용해 주세요.",
+        "options": [
+          "전체 버전 AI 분석",
+          "결과 화면의 버전별 보기"
+        ]
+      }
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "clarify_3_missing_operation": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [],
+        "operation": null
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "clarify",
+      "context": {
+        "conditions": [],
+        "operation": null
+      },
+      "matched": null,
+      "coverage": null,
+      "result": null,
+      "clarify": {
+        "reason": "missing_operation",
+        "message": "인원 수, 목록, 요약 중 무엇을 볼까요? 문항별 통계는 결과 화면에서 볼 수 있어요.",
+        "options": [
+          "count",
+          "list",
+          "summarize"
+        ]
+      }
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "clarify_4_summary_disabled": {
+    "form_id": "form_a",
+    "request": {
+      "context": {
+        "conditions": [],
+        "operation": "summarize"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "clarify",
+      "context": {
+        "conditions": [],
+        "operation": "summarize"
+      },
+      "matched": null,
+      "coverage": null,
+      "result": null,
+      "clarify": {
+        "reason": "summary_disabled",
+        "message": "이 폼은 AI 요약을 켜지 않고 배포해서 요약할 수 없어요. 배포 후에는 바꿀 수 없으니 폼을 복사해 새로 정해 주세요.",
+        "options": [
+          "count",
+          "list"
+        ]
+      }
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "clarify_5_missing_match": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [
+          "소프트웨어학과",
+          "4학년"
+        ],
+        "operation": "count"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "clarify",
+      "context": {
+        "conditions": [
+          "소프트웨어학과",
+          "4학년"
+        ],
+        "operation": "count"
+      },
+      "matched": null,
+      "coverage": null,
+      "result": null,
+      "clarify": {
+        "reason": "missing_match",
+        "message": "조건을 모두 만족하는 응답을 볼까요, 하나라도 만족하는 응답을 볼까요?",
+        "options": [
+          "all",
+          "any"
+        ]
+      }
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "clarify_6_unknown_condition": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [
+          "없는선택지표현"
+        ],
+        "operation": "count"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "clarify",
+      "context": {
+        "conditions": [
+          "없는선택지표현"
+        ],
+        "operation": "count"
+      },
+      "matched": null,
+      "coverage": null,
+      "result": null,
+      "clarify": {
+        "reason": "unknown_condition",
+        "message": "\"없는선택지표현\" 조건을 폼의 문항이나 선택지에서 찾지 못했어요. 아래 선택지 중에서 골라 주세요.",
+        "options": [
+          {
+            "form_version": 1,
+            "question_id": "q3",
+            "question_note": "소속 학과",
+            "options": [
+              "소프트웨어학과",
+              "컴퓨터공학과",
+              "경영학과",
+              "디자인학과"
+            ]
+          },
+          {
+            "form_version": 1,
+            "question_id": "q4",
+            "question_note": "학년",
+            "options": [
+              "1학년",
+              "2학년",
+              "3학년",
+              "4학년"
+            ]
+          },
+          {
+            "form_version": 1,
+            "question_id": "q6",
+            "question_note": "프로젝트 경험이 있나요?",
+            "options": [
+              "예",
+              "아니요"
+            ]
+          },
+          {
+            "form_version": 1,
+            "question_id": "q7",
+            "question_note": "프로젝트에서 맡은 역할",
+            "options": [
+              "팀장",
+              "팀원"
+            ]
+          },
+          {
+            "form_version": 1,
+            "question_id": "q8",
+            "question_note": "지원 분야",
+            "options": [
+              "백엔드",
+              "프론트엔드",
+              "기획",
+              "디자인"
+            ]
+          },
+          {
+            "form_version": 2,
+            "question_id": "q3",
+            "question_note": "소속 학과",
+            "options": [
+              "소프트웨어학과",
+              "컴퓨터공학과",
+              "경영학과",
+              "디자인학과"
+            ]
+          },
+          {
+            "form_version": 2,
+            "question_id": "q4",
+            "question_note": "학년",
+            "options": [
+              "1학년",
+              "2학년",
+              "3학년",
+              "4학년"
+            ]
+          },
+          {
+            "form_version": 2,
+            "question_id": "q6",
+            "question_note": "프로젝트 경험이 있나요?",
+            "options": [
+              "예",
+              "아니요"
+            ]
+          },
+          {
+            "form_version": 2,
+            "question_id": "q7",
+            "question_note": "프로젝트에서 맡은 역할",
+            "options": [
+              "팀장",
+              "팀원"
+            ]
+          },
+          {
+            "form_version": 2,
+            "question_id": "q8",
+            "question_note": "지원 분야",
+            "options": [
+              "백엔드",
+              "프론트엔드",
+              "기획",
+              "디자인",
+              "AI"
+            ]
+          },
+          {
+            "form_version": 2,
+            "question_id": "q11",
+            "question_note": "희망 활동 시간",
+            "options": [
+              "평일 저녁",
+              "주말"
+            ]
+          }
+        ]
+      }
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "clarify_7_ambiguous_question": {
+    "form_id": "form_b",
+    "request": {
+      "context": {
+        "conditions": [
+          "경영학과"
+        ],
+        "operation": "count"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "clarify",
+      "context": {
+        "conditions": [
+          "경영학과"
+        ],
+        "operation": "count"
+      },
+      "matched": null,
+      "coverage": null,
+      "result": null,
+      "clarify": {
+        "reason": "ambiguous_match",
+        "message": "\"경영학과\" 표현이 뜻이 다른 여러 문항에 걸려요. 어느 문항을 뜻하는지 골라 주세요.",
+        "options": [
+          {
+            "form_version": 1,
+            "question_id": "q1",
+            "question_note": "소속 학과"
+          },
+          {
+            "form_version": 2,
+            "question_id": "q1",
+            "question_note": "소속 학과"
+          },
+          {
+            "form_version": 3,
+            "question_id": "q7",
+            "question_note": "희망 학과"
+          }
+        ]
+      }
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "clarify_7_ambiguous_single_choice": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [
+          "소프트웨어학과",
+          "경영학과"
+        ],
+        "match": "all",
+        "operation": "count"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "clarify",
+      "context": {
+        "conditions": [
+          "소프트웨어학과",
+          "경영학과"
+        ],
+        "match": "all",
+        "operation": "count"
+      },
+      "matched": null,
+      "coverage": null,
+      "result": null,
+      "clarify": {
+        "reason": "ambiguous_match",
+        "message": "한 사람이 하나만 고를 수 있는 문항의 선택지를 함께 만족할 수는 없어요. 하나라도 해당하는 응답을 볼까요?",
+        "options": [
+          "any"
+        ]
+      }
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "clarify_8_double_negation": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [
+          "8번 문항 - 미응답"
+        ],
+        "match": "not",
+        "operation": "count"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "clarify",
+      "context": {
+        "conditions": [
+          "8번 문항 - 미응답"
+        ],
+        "match": "not",
+        "operation": "count"
+      },
+      "matched": null,
+      "coverage": null,
+      "result": null,
+      "clarify": {
+        "reason": "double_negation",
+        "message": "미응답 조건에 \"아닌\"을 함께 쓸 수 없어요. 아래 요청이 맞나요?",
+        "options": [
+          "8번 문항 - 미응답 응답"
+        ]
+      }
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "clarify_9_unsortable_field": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [],
+        "operation": "list",
+        "sort": {
+          "by": "지원 동기",
+          "order": "asc"
+        }
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "clarify",
+      "context": {
+        "conditions": [],
+        "operation": "list",
+        "sort": {
+          "by": "지원 동기",
+          "order": "asc"
+        }
+      },
+      "matched": null,
+      "coverage": null,
+      "result": null,
+      "clarify": {
+        "reason": "unsortable_field",
+        "message": "\"지원 동기\" 문항은 정렬할 수 없어요. 아래 문항 중에서 골라 주세요.",
+        "options": [
+          {
+            "form_version": 1,
+            "question_id": "q3",
+            "question_note": "소속 학과"
+          },
+          {
+            "form_version": 1,
+            "question_id": "q4",
+            "question_note": "학년"
+          },
+          {
+            "form_version": 1,
+            "question_id": "q5",
+            "question_note": "나이"
+          },
+          {
+            "form_version": 1,
+            "question_id": "q6",
+            "question_note": "프로젝트 경험이 있나요?"
+          },
+          {
+            "form_version": 1,
+            "question_id": "q7",
+            "question_note": "프로젝트에서 맡은 역할"
+          },
+          {
+            "form_version": 2,
+            "question_id": "q3",
+            "question_note": "소속 학과"
+          },
+          {
+            "form_version": 2,
+            "question_id": "q4",
+            "question_note": "학년"
+          },
+          {
+            "form_version": 2,
+            "question_id": "q5",
+            "question_note": "나이"
+          },
+          {
+            "form_version": 2,
+            "question_id": "q6",
+            "question_note": "프로젝트 경험이 있나요?"
+          },
+          {
+            "form_version": 2,
+            "question_id": "q7",
+            "question_note": "프로젝트에서 맡은 역할"
+          },
+          {
+            "form_version": 2,
+            "question_id": "q11",
+            "question_note": "희망 활동 시간"
+          }
+        ]
+      }
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "error_invalid_context": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [],
+        "operation": "statistics"
+      }
+    },
+    "http_status": 400,
+    "response": {
+      "error": "invalid_context"
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "ok_count": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [
+          "소프트웨어학과",
+          "4학년"
+        ],
+        "match": "all",
+        "operation": "count"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "ok",
+      "context": {
+        "conditions": [
+          "소프트웨어학과",
+          "4학년"
+        ],
+        "match": "all",
+        "operation": "count"
+      },
+      "matched": [
+        {
+          "condition": "소프트웨어학과",
+          "form_version": 1,
+          "question_id": "q3",
+          "question_note": "소속 학과",
+          "kind": "option",
+          "option": "소프트웨어학과"
+        },
+        {
+          "condition": "소프트웨어학과",
+          "form_version": 2,
+          "question_id": "q3",
+          "question_note": "소속 학과",
+          "kind": "option",
+          "option": "소프트웨어학과"
+        },
+        {
+          "condition": "4학년",
+          "form_version": 1,
+          "question_id": "q4",
+          "question_note": "학년",
+          "kind": "option",
+          "option": "4학년"
+        },
+        {
+          "condition": "4학년",
+          "form_version": 2,
+          "question_id": "q4",
+          "question_note": "학년",
+          "kind": "option",
+          "option": "4학년"
+        }
+      ],
+      "coverage": {
+        "total_submitted_count": 38,
+        "not_evaluable_count": 0,
+        "not_evaluable_by_version": []
+      },
+      "result": {
+        "operation": "count",
+        "count": 4,
+        "response_ids": null,
+        "summary": null
+      },
+      "clarify": null
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "ok_count_branch_skipped": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [
+          "팀장"
+        ],
+        "match": "not",
+        "operation": "count"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "ok",
+      "context": {
+        "conditions": [
+          "팀장"
+        ],
+        "match": "not",
+        "operation": "count"
+      },
+      "matched": [
+        {
+          "condition": "팀장",
+          "form_version": 1,
+          "question_id": "q7",
+          "question_note": "프로젝트에서 맡은 역할",
+          "kind": "option",
+          "option": "팀장"
+        },
+        {
+          "condition": "팀장",
+          "form_version": 2,
+          "question_id": "q7",
+          "question_note": "프로젝트에서 맡은 역할",
+          "kind": "option",
+          "option": "팀장"
+        }
+      ],
+      "coverage": {
+        "total_submitted_count": 38,
+        "not_evaluable_count": 9,
+        "not_evaluable_by_version": [
+          {
+            "form_version": 1,
+            "response_count": 6,
+            "unavailable_conditions": [
+              "팀장"
+            ]
+          },
+          {
+            "form_version": 2,
+            "response_count": 3,
+            "unavailable_conditions": [
+              "팀장"
+            ]
+          }
+        ]
+      },
+      "result": {
+        "operation": "count",
+        "count": 15,
+        "response_ids": null,
+        "summary": null
+      },
+      "clarify": null
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "ok_count_form_a": {
+    "form_id": "form_a",
+    "request": {
+      "context": {
+        "conditions": [],
+        "operation": "count"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "ok",
+      "context": {
+        "conditions": [],
+        "operation": "count"
+      },
+      "matched": [],
+      "coverage": {
+        "total_submitted_count": 9,
+        "not_evaluable_count": 0,
+        "not_evaluable_by_version": []
+      },
+      "result": {
+        "operation": "count",
+        "count": 9,
+        "response_ids": null,
+        "summary": null
+      },
+      "clarify": null
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "ok_count_not_evaluable": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [
+          "주말"
+        ],
+        "operation": "count"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "ok",
+      "context": {
+        "conditions": [
+          "주말"
+        ],
+        "operation": "count"
+      },
+      "matched": [
+        {
+          "condition": "주말",
+          "form_version": 2,
+          "question_id": "q11",
+          "question_note": "희망 활동 시간",
+          "kind": "option",
+          "option": "주말"
+        }
+      ],
+      "coverage": {
+        "total_submitted_count": 38,
+        "not_evaluable_count": 22,
+        "not_evaluable_by_version": [
+          {
+            "form_version": 1,
+            "response_count": 22,
+            "unavailable_conditions": [
+              "주말"
+            ]
+          }
+        ]
+      },
+      "result": {
+        "operation": "count",
+        "count": 5,
+        "response_ids": null,
+        "summary": null
+      },
+      "clarify": null
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "ok_list_sort_unavailable": {
+    "form_id": "form_a",
+    "request": {
+      "context": {
+        "conditions": [],
+        "operation": "list",
+        "sort": {
+          "by": "학과",
+          "order": "asc"
+        }
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "ok",
+      "context": {
+        "conditions": [],
+        "operation": "list",
+        "sort": {
+          "by": "학과",
+          "order": "asc"
+        }
+      },
+      "matched": [],
+      "coverage": {
+        "total_submitted_count": 9,
+        "not_evaluable_count": 0,
+        "not_evaluable_by_version": [],
+        "sort_unavailable_by_version": [
+          3
+        ]
+      },
+      "result": {
+        "operation": "list",
+        "count": 9,
+        "response_ids": [
+          "ra01",
+          "ra02",
+          "ra03",
+          "ra05",
+          "ra08",
+          "ra04",
+          "ra06",
+          "ra07",
+          "ra09"
+        ],
+        "summary": null
+      },
+      "clarify": null
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "ok_list_sorted": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [
+          "소프트웨어학과"
+        ],
+        "operation": "list",
+        "sort": {
+          "by": "나이",
+          "order": "desc"
+        }
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "ok",
+      "context": {
+        "conditions": [
+          "소프트웨어학과"
+        ],
+        "operation": "list",
+        "sort": {
+          "by": "나이",
+          "order": "desc"
+        }
+      },
+      "matched": [
+        {
+          "condition": "소프트웨어학과",
+          "form_version": 1,
+          "question_id": "q3",
+          "question_note": "소속 학과",
+          "kind": "option",
+          "option": "소프트웨어학과"
+        },
+        {
+          "condition": "소프트웨어학과",
+          "form_version": 2,
+          "question_id": "q3",
+          "question_note": "소속 학과",
+          "kind": "option",
+          "option": "소프트웨어학과"
+        }
+      ],
+      "coverage": {
+        "total_submitted_count": 38,
+        "not_evaluable_count": 0,
+        "not_evaluable_by_version": []
+      },
+      "result": {
+        "operation": "list",
+        "count": 15,
+        "response_ids": [
+          "rc019",
+          "rc033",
+          "rc036",
+          "rc005",
+          "rc007",
+          "rc011",
+          "rc018",
+          "rc038",
+          "rc010",
+          "rc016",
+          "rc024",
+          "rc030",
+          "rc009",
+          "rc012",
+          "rc023"
+        ],
+        "summary": null
+      },
+      "clarify": null
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "ok_summarize_all": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [],
+        "operation": "summarize"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "ok",
+      "context": {
+        "conditions": [],
+        "operation": "summarize"
+      },
+      "matched": [],
+      "coverage": {
+        "total_submitted_count": 38,
+        "not_evaluable_count": 0,
+        "not_evaluable_by_version": []
+      },
+      "result": {
+        "operation": "summarize",
+        "count": 38,
+        "response_ids": [
+          "rc001",
+          "rc002",
+          "rc003",
+          "rc004",
+          "rc005",
+          "rc006",
+          "rc007",
+          "rc008",
+          "rc009",
+          "rc010",
+          "rc011",
+          "rc012",
+          "rc013",
+          "rc014",
+          "rc015",
+          "rc016",
+          "rc017",
+          "rc018",
+          "rc019",
+          "rc020",
+          "rc021",
+          "rc022",
+          "rc023",
+          "rc024",
+          "rc025",
+          "rc026",
+          "rc027",
+          "rc028",
+          "rc029",
+          "rc030",
+          "rc031",
+          "rc032",
+          "rc033",
+          "rc034",
+          "rc035",
+          "rc036",
+          "rc037",
+          "rc038"
+        ],
+        "summary": {
+          "status": "ok",
+          "excluded_no_consent_count": 8,
+          "items": [
+            {
+              "type": "themes",
+              "target": {
+                "question_id": "q9",
+                "question_note": "지원 동기",
+                "form_versions": [
+                  1,
+                  2
+                ]
+              },
+              "themes": [
+                {
+                  "label": "이력서용 프로젝트",
+                  "count": 5,
+                  "response_ids": [
+                    "rc002",
+                    "rc019",
+                    "rc028",
+                    "rc032",
+                    "rc035"
+                  ],
+                  "text": "졸업 전에 이력서에 남길 만한 프로젝트를 완성하고자 하는 의견이 5건 있었습니다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc035",
+                      "form_version": 2,
+                      "question_id": "q9",
+                      "excerpt": "졸업 전에 이력서에 남길 만한 프로젝트를 하나 완성하고 싶습니다."
+                    },
+                    {
+                      "response_id": "rc002",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "졸업 전에 이력서에 남길 만한 프로젝트를 하나 완성하고 싶습니다."
+                    },
+                    {
+                      "response_id": "rc019",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "졸업 전에 이력서에 남길 만한 프로젝트를 하나 완성하고 싶습니다."
+                    }
+                  ]
+                },
+                {
+                  "label": "실서비스 운영 경험",
+                  "count": 4,
+                  "response_ids": [
+                    "rc003",
+                    "rc009",
+                    "rc012",
+                    "rc033"
+                  ],
+                  "text": "혼자 만든 토이 프로젝트를 넘어 실제 사용자가 있는 서비스를 운영해 보고 싶다는 응답이 4건 있었습니다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc003",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "혼자 만든 토이 프로젝트를 넘어 사용자가 있는 서비스를 운영해 보고 싶어요."
+                    },
+                    {
+                      "response_id": "rc009",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "혼자 만든 토이 프로젝트를 넘어 사용자가 있는 서비스를 운영해 보고 싶어요."
+                    },
+                    {
+                      "response_id": "rc012",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "혼자 만든 토이 프로젝트를 넘어 사용자가 있는 서비스를 운영해 보고 싶어요."
+                    }
+                  ]
+                },
+                {
+                  "label": "협업 경험과 결과물",
+                  "count": 4,
+                  "response_ids": [
+                    "rc005",
+                    "rc016",
+                    "rc018",
+                    "rc025"
+                  ],
+                  "text": "응답자 4명은 인턴 지원서에 적을 수 있는 협업 경험과 결과물이 필요하다고 답했습니다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc016",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "인턴 지원서에 적을 수 있는 협업 경험과 결과물이 필요합니다."
+                    },
+                    {
+                      "response_id": "rc018",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "인턴 지원서에 적을 수 있는 협업 경험과 결과물이 필요합니다."
+                    },
+                    {
+                      "response_id": "rc025",
+                      "form_version": 2,
+                      "question_id": "q9",
+                      "excerpt": "인턴 지원서에 적을 수 있는 협업 경험과 결과물이 필요합니다."
+                    }
+                  ]
+                },
+                {
+                  "label": "실전 프로젝트 경험",
+                  "count": 3,
+                  "response_ids": [
+                    "rc004",
+                    "rc008",
+                    "rc013"
+                  ],
+                  "text": "응답자 3명은 수업에서 해 보지 못한 실전 프로젝트 경험을 쌓고 싶다고 답했습니다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc013",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "실전 프로젝트 경험을 쌓고 싶습니다. 궁금한 점은 [전화번호]이나 [이메일]으로 연락 주세요."
+                    },
+                    {
+                      "response_id": "rc004",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "수업에서는 해 보지 못한 실전 프로젝트 경험을 쌓고 싶습니다."
+                    },
+                    {
+                      "response_id": "rc008",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "수업에서는 해 보지 못한 실전 프로젝트 경험을 쌓고 싶습니다."
+                    }
+                  ]
+                },
+                {
+                  "label": "LLM·RAG 학습",
+                  "count": 3,
+                  "response_ids": [
+                    "rc015",
+                    "rc022",
+                    "rc026"
+                  ],
+                  "text": "응답자 3명은 LLM과 RAG를 직접 사용하며 AI 서비스 구조를 공부하고 싶다고 밝혔습니다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc015",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "LLM과 RAG를 직접 써 보면서 AI 서비스 구조를 공부하고 싶어요."
+                    },
+                    {
+                      "response_id": "rc022",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "LLM과 RAG를 직접 써 보면서 AI 서비스 구조를 공부하고 싶어요."
+                    },
+                    {
+                      "response_id": "rc026",
+                      "form_version": 2,
+                      "question_id": "q9",
+                      "excerpt": "LLM과 RAG를 직접 써 보면서 AI 서비스 구조를 공부하고 싶어요."
+                    }
+                  ]
+                },
+                {
+                  "label": "기타",
+                  "count": 11,
+                  "response_ids": [
+                    "rc007",
+                    "rc010",
+                    "rc011",
+                    "rc014",
+                    "rc023",
+                    "rc024",
+                    "rc029",
+                    "rc030",
+                    "rc031",
+                    "rc034",
+                    "rc036"
+                  ],
+                  "text": null,
+                  "evidence": []
+                }
+              ]
+            },
+            {
+              "type": "themes",
+              "target": {
+                "question_id": "q10",
+                "question_note": "활동하면서 걱정되는 점",
+                "form_versions": [
+                  1
+                ]
+              },
+              "themes": [
+                {
+                  "label": "활동 시간 부족",
+                  "count": 5,
+                  "response_ids": [
+                    "rc002",
+                    "rc007",
+                    "rc008",
+                    "rc016",
+                    "rc018"
+                  ],
+                  "text": "수업과 아르바이트를 병행하면서 활동 시간이 부족할까 걱정하는 의견이 5건 있었습니다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc002",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "수업과 알바를 같이 하고 있어서 활동 시간이 부족할까 걱정됩니다."
+                    },
+                    {
+                      "response_id": "rc007",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "수업과 알바를 같이 하고 있어서 활동 시간이 부족할까 걱정됩니다."
+                    },
+                    {
+                      "response_id": "rc016",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "수업과 알바를 같이 하고 있어서 활동 시간이 부족할까 걱정됩니다."
+                    }
+                  ]
+                },
+                {
+                  "label": "비용 부담",
+                  "count": 3,
+                  "response_ids": [
+                    "rc010",
+                    "rc015",
+                    "rc019"
+                  ],
+                  "text": "응답자 3명은 활동 중 회비와 서버 비용이 부담될까 걱정했습니다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc010",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "회비와 서버 비용이 부담될까 걱정됩니다."
+                    },
+                    {
+                      "response_id": "rc015",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "회비와 서버 비용이 부담될까 걱정됩니다."
+                    },
+                    {
+                      "response_id": "rc019",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "회비와 서버 비용이 부담될까 걱정됩니다."
+                    }
+                  ]
+                },
+                {
+                  "label": "일정 조율",
+                  "count": 2,
+                  "response_ids": [
+                    "rc005",
+                    "rc022"
+                  ],
+                  "text": "시험 기간에 프로젝트 일정을 맞추지 못할 수 있다는 우려가 있습니다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc005",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "시험 기간에 프로젝트 일정을 맞추지 못할까 봐 걱정돼요."
+                    },
+                    {
+                      "response_id": "rc022",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "시험 기간에 프로젝트 일정을 맞추지 못할까 봐 걱정돼요."
+                    }
+                  ]
+                },
+                {
+                  "label": "경험 부족",
+                  "count": 1,
+                  "response_ids": [
+                    "rc013"
+                  ],
+                  "text": "경험이 부족해 다른 사람들의 속도를 따라가지 못할까 봐 부담을 느낀다는 의견이 1건 있었습니다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc013",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "경험이 적어서 다른 분들 속도를 따라가지 못할까 봐 부담돼요."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "option_stats",
+              "target": {
+                "question_id": "q3",
+                "question_note": "소속 학과",
+                "form_versions": [
+                  1,
+                  2
+                ]
+              },
+              "options": [
+                {
+                  "label": "소프트웨어학과",
+                  "count": 15,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "label": "컴퓨터공학과",
+                  "count": 6,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "label": "경영학과",
+                  "count": 8,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "label": "디자인학과",
+                  "count": 9,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "option_stats",
+              "target": {
+                "question_id": "q4",
+                "question_note": "학년",
+                "form_versions": [
+                  1,
+                  2
+                ]
+              },
+              "options": [
+                {
+                  "label": "1학년",
+                  "count": 8,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "label": "2학년",
+                  "count": 9,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "label": "3학년",
+                  "count": 10,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "label": "4학년",
+                  "count": 11,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "option_stats",
+              "target": {
+                "question_id": "q6",
+                "question_note": "프로젝트 경험이 있나요?",
+                "form_versions": [
+                  1,
+                  2
+                ]
+              },
+              "options": [
+                {
+                  "label": "예",
+                  "count": 29,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "label": "아니요",
+                  "count": 9,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "option_stats",
+              "target": {
+                "question_id": "q7",
+                "question_note": "프로젝트에서 맡은 역할",
+                "form_versions": [
+                  1,
+                  2
+                ]
+              },
+              "options": [
+                {
+                  "label": "팀장",
+                  "count": 14,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "label": "팀원",
+                  "count": 15,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "option_stats",
+              "target": {
+                "question_id": "q8",
+                "question_note": "지원 분야",
+                "form_versions": [
+                  1,
+                  2
+                ]
+              },
+              "options": [
+                {
+                  "label": "백엔드",
+                  "count": 14,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "label": "프론트엔드",
+                  "count": 14,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "label": "기획",
+                  "count": 10,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "label": "디자인",
+                  "count": 8,
+                  "form_versions": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "label": "AI",
+                  "count": 0,
+                  "form_versions": [
+                    2
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "option_stats",
+              "target": {
+                "question_id": "q11",
+                "question_note": "희망 활동 시간",
+                "form_versions": [
+                  2
+                ]
+              },
+              "options": [
+                {
+                  "label": "평일 저녁",
+                  "count": 11,
+                  "form_versions": [
+                    2
+                  ]
+                },
+                {
+                  "label": "주말",
+                  "count": 5,
+                  "form_versions": [
+                    2
+                  ]
+                }
+              ]
+            }
+          ],
+          "topic": null
+        }
+      },
+      "clarify": null
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "ok_summarize_partial_version": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [],
+        "operation": "summarize",
+        "target": "활동하면서 걱정되는 점"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "ok",
+      "context": {
+        "conditions": [],
+        "operation": "summarize",
+        "target": "활동하면서 걱정되는 점"
+      },
+      "matched": [],
+      "coverage": {
+        "total_submitted_count": 38,
+        "not_evaluable_count": 0,
+        "not_evaluable_by_version": [],
+        "summary_unavailable_by_version": [
+          {
+            "form_version": 2,
+            "response_count": 16
+          }
+        ]
+      },
+      "result": {
+        "operation": "summarize",
+        "count": 38,
+        "response_ids": [
+          "rc001",
+          "rc002",
+          "rc003",
+          "rc004",
+          "rc005",
+          "rc006",
+          "rc007",
+          "rc008",
+          "rc009",
+          "rc010",
+          "rc011",
+          "rc012",
+          "rc013",
+          "rc014",
+          "rc015",
+          "rc016",
+          "rc017",
+          "rc018",
+          "rc019",
+          "rc020",
+          "rc021",
+          "rc022",
+          "rc023",
+          "rc024",
+          "rc025",
+          "rc026",
+          "rc027",
+          "rc028",
+          "rc029",
+          "rc030",
+          "rc031",
+          "rc032",
+          "rc033",
+          "rc034",
+          "rc035",
+          "rc036",
+          "rc037",
+          "rc038"
+        ],
+        "summary": {
+          "status": "ok",
+          "excluded_no_consent_count": 8,
+          "items": [
+            {
+              "type": "themes",
+              "target": {
+                "question_id": "q10",
+                "question_note": "활동하면서 걱정되는 점",
+                "form_versions": [
+                  1
+                ]
+              },
+              "themes": [
+                {
+                  "label": "활동 시간 부족",
+                  "count": 5,
+                  "response_ids": [
+                    "rc002",
+                    "rc007",
+                    "rc008",
+                    "rc016",
+                    "rc018"
+                  ],
+                  "text": "수업과 아르바이트를 병행하면서 활동 시간이 부족할까 걱정하는 응답이 5건 있었습니다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc002",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "수업과 알바를 같이 하고 있어서 활동 시간이 부족할까 걱정됩니다."
+                    },
+                    {
+                      "response_id": "rc007",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "수업과 알바를 같이 하고 있어서 활동 시간이 부족할까 걱정됩니다."
+                    },
+                    {
+                      "response_id": "rc016",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "수업과 알바를 같이 하고 있어서 활동 시간이 부족할까 걱정됩니다."
+                    }
+                  ]
+                },
+                {
+                  "label": "비용 부담",
+                  "count": 3,
+                  "response_ids": [
+                    "rc010",
+                    "rc015",
+                    "rc019"
+                  ],
+                  "text": "회비와 서버 비용에 대한 부담을 걱정하는 응답이 3건 있었습니다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc010",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "회비와 서버 비용이 부담될까 걱정됩니다."
+                    },
+                    {
+                      "response_id": "rc015",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "회비와 서버 비용이 부담될까 걱정됩니다."
+                    },
+                    {
+                      "response_id": "rc019",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "회비와 서버 비용이 부담될까 걱정됩니다."
+                    }
+                  ]
+                },
+                {
+                  "label": "일정 조율",
+                  "count": 2,
+                  "response_ids": [
+                    "rc005",
+                    "rc022"
+                  ],
+                  "text": "시험 기간에 프로젝트 일정을 맞추지 못할 수 있다는 걱정이 있었다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc005",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "시험 기간에 프로젝트 일정을 맞추지 못할까 봐 걱정돼요."
+                    },
+                    {
+                      "response_id": "rc022",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "시험 기간에 프로젝트 일정을 맞추지 못할까 봐 걱정돼요."
+                    }
+                  ]
+                },
+                {
+                  "label": "경험 부족",
+                  "count": 1,
+                  "response_ids": [
+                    "rc013"
+                  ],
+                  "text": "경험이 부족해 다른 사람들의 활동 속도를 따라가지 못할까 봐 부담을 느낀다는 의견이 1건 있었습니다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc013",
+                      "form_version": 1,
+                      "question_id": "q10",
+                      "excerpt": "경험이 적어서 다른 분들 속도를 따라가지 못할까 봐 부담돼요."
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "topic": null
+        }
+      },
+      "clarify": null
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "ok_summarize_target": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [],
+        "operation": "summarize",
+        "target": "지원 동기"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "ok",
+      "context": {
+        "conditions": [],
+        "operation": "summarize",
+        "target": "지원 동기"
+      },
+      "matched": [],
+      "coverage": {
+        "total_submitted_count": 38,
+        "not_evaluable_count": 0,
+        "not_evaluable_by_version": []
+      },
+      "result": {
+        "operation": "summarize",
+        "count": 38,
+        "response_ids": [
+          "rc001",
+          "rc002",
+          "rc003",
+          "rc004",
+          "rc005",
+          "rc006",
+          "rc007",
+          "rc008",
+          "rc009",
+          "rc010",
+          "rc011",
+          "rc012",
+          "rc013",
+          "rc014",
+          "rc015",
+          "rc016",
+          "rc017",
+          "rc018",
+          "rc019",
+          "rc020",
+          "rc021",
+          "rc022",
+          "rc023",
+          "rc024",
+          "rc025",
+          "rc026",
+          "rc027",
+          "rc028",
+          "rc029",
+          "rc030",
+          "rc031",
+          "rc032",
+          "rc033",
+          "rc034",
+          "rc035",
+          "rc036",
+          "rc037",
+          "rc038"
+        ],
+        "summary": {
+          "status": "ok",
+          "excluded_no_consent_count": 8,
+          "items": [
+            {
+              "type": "themes",
+              "target": {
+                "question_id": "q9",
+                "question_note": "지원 동기",
+                "form_versions": [
+                  1,
+                  2
+                ]
+              },
+              "themes": [
+                {
+                  "label": "이력서용 프로젝트",
+                  "count": 5,
+                  "response_ids": [
+                    "rc002",
+                    "rc019",
+                    "rc028",
+                    "rc032",
+                    "rc035"
+                  ],
+                  "text": "이력서용 프로젝트와 관련해 졸업 전에 이력서에 남길 만한 프로젝트를 완성하고 싶다는 응답이 있었습니다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc035",
+                      "form_version": 2,
+                      "question_id": "q9",
+                      "excerpt": "졸업 전에 이력서에 남길 만한 프로젝트를 하나 완성하고 싶습니다."
+                    },
+                    {
+                      "response_id": "rc002",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "졸업 전에 이력서에 남길 만한 프로젝트를 하나 완성하고 싶습니다."
+                    },
+                    {
+                      "response_id": "rc019",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "졸업 전에 이력서에 남길 만한 프로젝트를 하나 완성하고 싶습니다."
+                    }
+                  ]
+                },
+                {
+                  "label": "실서비스 운영 경험",
+                  "count": 4,
+                  "response_ids": [
+                    "rc003",
+                    "rc009",
+                    "rc012",
+                    "rc033"
+                  ],
+                  "text": "응답자 4명은 혼자 만든 토이 프로젝트를 넘어 실제 사용자가 있는 서비스를 운영해 보고 싶다는 동기를 밝혔습니다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc003",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "혼자 만든 토이 프로젝트를 넘어 사용자가 있는 서비스를 운영해 보고 싶어요."
+                    },
+                    {
+                      "response_id": "rc009",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "혼자 만든 토이 프로젝트를 넘어 사용자가 있는 서비스를 운영해 보고 싶어요."
+                    },
+                    {
+                      "response_id": "rc012",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "혼자 만든 토이 프로젝트를 넘어 사용자가 있는 서비스를 운영해 보고 싶어요."
+                    }
+                  ]
+                },
+                {
+                  "label": "협업 경험과 결과물",
+                  "count": 4,
+                  "response_ids": [
+                    "rc005",
+                    "rc016",
+                    "rc018",
+                    "rc025"
+                  ],
+                  "text": "인턴 지원서에 기재할 수 있는 협업 경험과 결과물이 필요하다는 의견이 4건 있었습니다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc016",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "인턴 지원서에 적을 수 있는 협업 경험과 결과물이 필요합니다."
+                    },
+                    {
+                      "response_id": "rc018",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "인턴 지원서에 적을 수 있는 협업 경험과 결과물이 필요합니다."
+                    },
+                    {
+                      "response_id": "rc025",
+                      "form_version": 2,
+                      "question_id": "q9",
+                      "excerpt": "인턴 지원서에 적을 수 있는 협업 경험과 결과물이 필요합니다."
+                    }
+                  ]
+                },
+                {
+                  "label": "실전 프로젝트 경험",
+                  "count": 3,
+                  "response_ids": [
+                    "rc004",
+                    "rc008",
+                    "rc013"
+                  ],
+                  "text": "응답자 3명은 수업에서 해 보지 못한 실전 프로젝트 경험을 쌓고 싶다고 답했습니다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc013",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "실전 프로젝트 경험을 쌓고 싶습니다. 궁금한 점은 [전화번호]이나 [이메일]으로 연락 주세요."
+                    },
+                    {
+                      "response_id": "rc004",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "수업에서는 해 보지 못한 실전 프로젝트 경험을 쌓고 싶습니다."
+                    },
+                    {
+                      "response_id": "rc008",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "수업에서는 해 보지 못한 실전 프로젝트 경험을 쌓고 싶습니다."
+                    }
+                  ]
+                },
+                {
+                  "label": "LLM·RAG 학습",
+                  "count": 3,
+                  "response_ids": [
+                    "rc015",
+                    "rc022",
+                    "rc026"
+                  ],
+                  "text": "응답자 3명은 LLM과 RAG를 직접 사용하며 AI 서비스 구조를 공부하고 싶다고 밝혔다.",
+                  "evidence": [
+                    {
+                      "response_id": "rc015",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "LLM과 RAG를 직접 써 보면서 AI 서비스 구조를 공부하고 싶어요."
+                    },
+                    {
+                      "response_id": "rc022",
+                      "form_version": 1,
+                      "question_id": "q9",
+                      "excerpt": "LLM과 RAG를 직접 써 보면서 AI 서비스 구조를 공부하고 싶어요."
+                    },
+                    {
+                      "response_id": "rc026",
+                      "form_version": 2,
+                      "question_id": "q9",
+                      "excerpt": "LLM과 RAG를 직접 써 보면서 AI 서비스 구조를 공부하고 싶어요."
+                    }
+                  ]
+                },
+                {
+                  "label": "기타",
+                  "count": 11,
+                  "response_ids": [
+                    "rc007",
+                    "rc010",
+                    "rc011",
+                    "rc014",
+                    "rc023",
+                    "rc024",
+                    "rc029",
+                    "rc030",
+                    "rc031",
+                    "rc034",
+                    "rc036"
+                  ],
+                  "text": null,
+                  "evidence": []
+                }
+              ]
+            }
+          ],
+          "topic": null
+        }
+      },
+      "clarify": null
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "ok_summarize_topic": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [],
+        "operation": "summarize",
+        "topic": "비용이 부담된다"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "ok",
+      "context": {
+        "conditions": [],
+        "operation": "summarize",
+        "topic": "비용이 부담된다"
+      },
+      "matched": [],
+      "coverage": {
+        "total_submitted_count": 38,
+        "not_evaluable_count": 0,
+        "not_evaluable_by_version": []
+      },
+      "result": {
+        "operation": "summarize",
+        "count": 38,
+        "response_ids": [
+          "rc001",
+          "rc002",
+          "rc003",
+          "rc004",
+          "rc005",
+          "rc006",
+          "rc007",
+          "rc008",
+          "rc009",
+          "rc010",
+          "rc011",
+          "rc012",
+          "rc013",
+          "rc014",
+          "rc015",
+          "rc016",
+          "rc017",
+          "rc018",
+          "rc019",
+          "rc020",
+          "rc021",
+          "rc022",
+          "rc023",
+          "rc024",
+          "rc025",
+          "rc026",
+          "rc027",
+          "rc028",
+          "rc029",
+          "rc030",
+          "rc031",
+          "rc032",
+          "rc033",
+          "rc034",
+          "rc035",
+          "rc036",
+          "rc037",
+          "rc038"
+        ],
+        "summary": {
+          "status": "ok",
+          "excluded_no_consent_count": 8,
+          "items": [],
+          "topic": {
+            "query": "비용이 부담된다",
+            "text": "회비와 서버 비용이 부담될 수 있다는 우려가 있습니다.",
+            "evidence": [
+              {
+                "response_id": "rc015",
+                "form_version": 1,
+                "question_id": "q10",
+                "excerpt": "회비와 서버 비용이 부담될까 걱정됩니다."
+              },
+              {
+                "response_id": "rc010",
+                "form_version": 1,
+                "question_id": "q10",
+                "excerpt": "회비와 서버 비용이 부담될까 걱정됩니다."
+              },
+              {
+                "response_id": "rc019",
+                "form_version": 1,
+                "question_id": "q10",
+                "excerpt": "회비와 서버 비용이 부담될까 걱정됩니다."
+              }
+            ]
+          }
+        }
+      },
+      "clarify": null
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "ok_summary_insufficient_evidence": {
+    "form_id": "form_club_recruit",
+    "request": {
+      "context": {
+        "conditions": [],
+        "operation": "summarize",
+        "topic": "우주여행"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "ok",
+      "context": {
+        "conditions": [],
+        "operation": "summarize",
+        "topic": "우주여행"
+      },
+      "matched": [],
+      "coverage": {
+        "total_submitted_count": 38,
+        "not_evaluable_count": 0,
+        "not_evaluable_by_version": []
+      },
+      "result": {
+        "operation": "summarize",
+        "count": 38,
+        "response_ids": [
+          "rc001",
+          "rc002",
+          "rc003",
+          "rc004",
+          "rc005",
+          "rc006",
+          "rc007",
+          "rc008",
+          "rc009",
+          "rc010",
+          "rc011",
+          "rc012",
+          "rc013",
+          "rc014",
+          "rc015",
+          "rc016",
+          "rc017",
+          "rc018",
+          "rc019",
+          "rc020",
+          "rc021",
+          "rc022",
+          "rc023",
+          "rc024",
+          "rc025",
+          "rc026",
+          "rc027",
+          "rc028",
+          "rc029",
+          "rc030",
+          "rc031",
+          "rc032",
+          "rc033",
+          "rc034",
+          "rc035",
+          "rc036",
+          "rc037",
+          "rc038"
+        ],
+        "summary": {
+          "status": "insufficient_evidence",
+          "excluded_no_consent_count": 8,
+          "items": [],
+          "topic": {
+            "query": "우주여행",
+            "text": null,
+            "evidence": []
+          }
+        }
+      },
+      "clarify": null
+    },
+    "source": "시험 데모 실제 응답(feat/demo d6cb1b9)"
+  },
+  "ok_summary_no_matches": {
+    "request": {
+      "context": {
+        "conditions": [
+          "소프트웨어학과"
+        ],
+        "operation": "summarize"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "ok",
+      "context": {
+        "conditions": [
+          "소프트웨어학과"
+        ],
+        "operation": "summarize"
+      },
+      "matched": [
+        {
+          "condition": "소프트웨어학과",
+          "form_version": 1,
+          "question_id": "q1",
+          "question_note": "소속 학과",
+          "kind": "option",
+          "option": "소프트웨어학과"
+        }
+      ],
+      "coverage": {
+        "total_submitted_count": 9,
+        "not_evaluable_count": 0,
+        "not_evaluable_by_version": []
+      },
+      "result": {
+        "operation": "summarize",
+        "count": 0,
+        "response_ids": [],
+        "summary": {
+          "status": "no_matches",
+          "excluded_no_consent_count": 0,
+          "items": [],
+          "topic": null
+        }
+      },
+      "clarify": null
+    },
+    "source": "직접 작성(AC93 테스트 문구)"
+  },
+  "ok_summary_no_consented_responses": {
+    "request": {
+      "context": {
+        "conditions": [
+          "소프트웨어학과"
+        ],
+        "operation": "summarize"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "ok",
+      "context": {
+        "conditions": [
+          "소프트웨어학과"
+        ],
+        "operation": "summarize"
+      },
+      "matched": [
+        {
+          "condition": "소프트웨어학과",
+          "form_version": 1,
+          "question_id": "q1",
+          "question_note": "소속 학과",
+          "kind": "option",
+          "option": "소프트웨어학과"
+        }
+      ],
+      "coverage": {
+        "total_submitted_count": 9,
+        "not_evaluable_count": 0,
+        "not_evaluable_by_version": []
+      },
+      "result": {
+        "operation": "summarize",
+        "count": 2,
+        "response_ids": [
+          "r01",
+          "r02"
+        ],
+        "summary": {
+          "status": "no_consented_responses",
+          "excluded_no_consent_count": 2,
+          "items": [],
+          "topic": null
+        }
+      },
+      "clarify": null
+    },
+    "source": "직접 작성(AC93 테스트 문구)"
+  },
+  "ok_summary_too_many_responses": {
+    "request": {
+      "context": {
+        "conditions": [
+          "소프트웨어학과"
+        ],
+        "operation": "summarize"
+      }
+    },
+    "http_status": 200,
+    "response": {
+      "status": "ok",
+      "context": {
+        "conditions": [
+          "소프트웨어학과"
+        ],
+        "operation": "summarize"
+      },
+      "matched": [
+        {
+          "condition": "소프트웨어학과",
+          "form_version": 1,
+          "question_id": "q1",
+          "question_note": "소속 학과",
+          "kind": "option",
+          "option": "소프트웨어학과"
+        }
+      ],
+      "coverage": {
+        "total_submitted_count": 9,
+        "not_evaluable_count": 0,
+        "not_evaluable_by_version": []
+      },
+      "result": {
+        "operation": "summarize",
+        "count": 4,
+        "response_ids": [
+          "r01",
+          "r02",
+          "r03",
+          "r04"
+        ],
+        "summary": {
+          "status": "too_many_responses",
+          "excluded_no_consent_count": 0,
+          "items": [],
+          "topic": null
+        }
+      },
+      "clarify": null
+    },
+    "source": "직접 작성(AC93 테스트 문구)"
+  }
+}

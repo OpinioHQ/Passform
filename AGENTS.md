@@ -52,7 +52,7 @@
 
 ## 3. 절대 규칙 (위반한 결과물은 수용하지 않는다)
 
-1. 개인정보는 허용한 만큼만 저장·사용하고 권한 있는 사람만 본다 — `personal_info`에는 허용 키만 저장하고, 자동채우기 요청은 `Response`를 만들거나 바꾸지 않는다. 미완성 폼은 초안으로 저장할 수 있지만 모든 폼은 동의 템플릿이 있어야 배포되며, 응답 제출에는 동의가 필요하다. 프로필·로그인 응답 초안·제출 이력·내 폼함·알림은 해당 사용자만, 비로그인 응답 초안은 해당 브라우저에서만, 응답 첨부는 그 폼의 제작자와 제출한 로그인 사용자만, 받은 제출 응답·결과·분석은 그 폼의 제작자만 접근한다. 개인정보 문항(`profile_key`가 있거나 `input_format.kind`가 `name`·`mobile_phone`·`landline_phone`·`address`·`student_id`·`email`인 문항)의 값은 서버 안의 필터·집계·정렬에만 쓰고, LLM 프롬프트와 임베딩 요청으로 보내지 않는다. 응답 원문을 외부 LLM·임베딩 제공사로 보내는 것은 SPEC이 정한 동의 범위 안에서만 한다. (↔ AC2, AC3, AC5, AC6, AC12, AC13, AC14, AC38, AC56, AC64, AC82, AC83, AC88, AC90~AC92 — 추가 개발 착수 시 AC55)
+1. 개인정보는 허용한 만큼만 저장·사용하고 권한 있는 사람만 본다 — `personal_info`에는 허용 키만 저장하고, 자동채우기 요청은 `Response`를 만들거나 바꾸지 않는다. 미완성 폼은 초안으로 저장할 수 있지만 모든 폼은 동의 템플릿이 있어야 배포되며, 응답 제출에는 동의가 필요하다. 프로필·로그인 응답 초안·제출 이력·내 폼함·알림은 해당 사용자만, 비로그인 응답 초안은 해당 브라우저에서만, 응답 첨부는 그 폼의 제작자와 제출한 로그인 사용자만, 받은 제출 응답·결과·분석은 그 폼의 제작자만 접근한다. 개인정보 문항(`profile_key`가 있거나 `input_format.kind`가 `name`·`mobile_phone`·`landline_phone`·`address`·`student_id`·`email`인 문항)의 값은 서버 안의 필터·집계·정렬에만 쓰고, LLM 프롬프트와 임베딩 요청으로 보내지 않는다. 금지 대상은 이 응답 값이며, 문항 문구와 선택지는 매칭을 위해 LLM에 보낼 수 있다. 응답 원문을 외부 LLM·임베딩 제공사로 보내는 것은 SPEC이 정한 동의 범위 안에서만 한다. (↔ AC2, AC3, AC5, AC6, AC12, AC13, AC14, AC38, AC56, AC64, AC82, AC83, AC88, AC90~AC92 — 추가 개발 착수 시 AC55)
 2. 송금은 링크로만 — Passform은 송금을 처리하거나 송금 완료 여부를 저장하지 않는다. (↔ AC11)
 3. 숫자를 지어내지 않는다 — 결과 집계와 `count`·`list`·`summarize`의 대상 응답은 코드가 현재 남은 `submitted` 응답에서 결정한다. AI 분석은 폼의 모든 제출 버전을 대상으로 각 응답의 제출 당시 정의에서 조건을 판정하고, 조건·버전별 `matched` 근거와 판정 불가 범위 `coverage`를 붙인다. 어느 버전에도 매칭되지 않은 조건을 0건으로 처리하지 않는다. 요약의 주제별 개수와 순위도 코드가 LLM 분류 라벨을 집계해 정한다. (↔ AC19~AC24, AC48, AC49, AC75, AC78, AC87, AC89, AC93)
 4. 모르면 되묻는다 — 분석 요청을 확정할 수 없으면 추측하지 않고 `clarify`를 반환한다. 파서 재호출은 형식 오류에만 1회 한다. (↔ AC25~AC30, AC32, AC77)
@@ -60,7 +60,7 @@
 
 ## 4. 금지 사항 (에이전트에게 위임할 때 항상 걸린다)
 
-1. **테스트, 골든 케이스, 판정 기준 파일을 고치지 않는다.** 기존 테스트(`src/test/`, `tests/java/`(골든 테스트), `frontend/src/**/*.test.*`), `tests/harness/golden_cases.yaml`, `data/seed/`(골든 테스트 fixture), `src/passform/schemas/form.schema.json`, `src/response_analysis/schemas/request_context.schema.json`, `src/response_analysis/prompts/`의 모든 프롬프트 파일(파일 전체), `config/rag.yaml`, `evals/evalset.jsonl`, `load/`의 목표값은 사람이 승인한다. 실패하면 테스트가 아니라 구현을 고친다. 사람이 지시한 변경과 포매터 정리는 승인된 변경으로 보되, 판정에 쓰이는 것(단언문, 케이스, 기대값, `@Disabled`, enum, 임계값)은 건드리지 않는다.
+1. **테스트, 골든 케이스, 판정 기준 파일을 고치지 않는다.** 기존 테스트(`src/test/`, `tests/java/`(골든 테스트), `frontend/src/**/*.test.*`), `tests/harness/golden_cases.yaml`, `data/seed/`(골든 테스트 fixture), `src/passform/schemas/form.schema.json`, `src/response_analysis/schemas/request_context.schema.json`, `src/response_analysis/schemas/analyze_response.schema.json`, `src/response_analysis/prompts/`의 모든 프롬프트 파일(파일 전체), `config/rag.yaml`, `evals/evalset.jsonl`, `load/`의 목표값은 사람이 승인한다. 실패하면 테스트가 아니라 구현을 고친다. 사람이 지시한 변경과 포매터 정리는 승인된 변경으로 보되, 판정에 쓰이는 것(단언문, 케이스, 기대값, `@Disabled`, enum, 임계값)은 건드리지 않는다.
 2. **완료 조건을 임의로 좁히지 않는다.** `@Disabled`, skip, 케이스 삭제, 커버리지 제외 범위 확대로 통과시키지 않는다.
 3. **근거 없는 결과를 내놓지 않는다.** 통과했다면 각 케이스를 왜 통과하는지 한 줄씩 설명한다.
 4. **막히면 멈추고 보고한다.** 같은 실패로 3회차를 넘기거나, SPEC·AGENTS에 없는 판단이 필요하거나, 판정 기준 파일을 바꿔야만 통과할 수 있으면 더 진행하지 않는다. 무엇을 시도했고 어디서 막혔는지, 사람이 정해야 할 것이 무엇인지 보고한다.
@@ -89,8 +89,20 @@
   - 내보내기 행: `context.operation`이 `list`면 그 `result.response_ids` 순서, 아니면 `form_version` 오름차순 → 버전 안에서 `submitted_at` 오름차순 → `Response.id` 오름차순
 - 판정은 SPEC의 해당 AC가 지정한 위치에서 한다. 골든 케이스가 판정 기준이면 사람이 `golden_cases.yaml`에 케이스를 먼저 추가하고, 에이전트는 그 케이스를 읽어 실행하는 테스트 코드와 구현을 추가할 수 있다. AC21의 규칙 매칭은 골든 테스트, LLM 매칭은 evals에서 잰다. 테스트에서 LLM은 모의 객체로 바꾸고, 실제 호출은 `evals/`에서만 한다.
 - 프론트엔드: TypeScript strict, `any` 금지. API 타입은 백엔드 DTO와 같은 이름을 쓴다.
+  - 제작자 화면에 "판정 불가", q1, 응답 ID, v1을 쓰지 않는다. 문항 문구, "응답 1", "폼 버전 1"로 쓴다.
+  - 일부만 확인했다는 사실은 항상 보이고, 이유는 물음표를 눌러야 보인다.
+  - 묻기 밑 버튼은 그 폼에서 되는 요청만 만들고 `{context}`로 보낸다.
+  - 형식·필수 오류는 "다음"을 누를 때 문항 아래에 알린다.
 - 프롬프트 마커 안이 바뀌면 `prompt_version`을 올린다(규칙은 `parse_query.md` 상단).
 - 협업: `README.md`의 GitHub 절을 따른다 — 커밋 `{tag}: 한글 메시지 (#이슈번호)`(50자 이내, 파일명·디렉터리명 금지), 브랜치 `{tag}/{작업내용}`, PR 제목 `[{tag}] 제목 (#이슈번호)`. 기본은 이슈 단위로 브랜치를 만들어 `main`으로 PR을 보내며, 이슈·PR을 생략하거나 `main`에 바로 push하는 것은 README의 사소한 변경 규칙에 해당할 때뿐이다. 커밋·PR에 에이전트 이름이나 생성 문구(Co-Authored-By 등)를 넣지 않는다.
+- 세션 규칙:
+  - 세션 하나에 작업 하나. 끝나면 다음 항목으로 넘어가지 않고 멈춘다. 크면 먼저 나눠서 제안한다.
+  - 기능 담당자가 서버와 화면 연결을 함께 끝내고, 실제 화면에서 동작해야 완료다.
+  - 선행 작업이 `main`에 없으면 구현하지 말고 알린다.
+  - 이슈에 적힌 1순위 골든이 `tests/harness`에 없으면 구현하지 말고 알린다. 기대값은 사람이 쓴다. 사람의 판단이 필요한 건 맥락을 적은 객관식으로 묻는다.
+  - 공통 파일(라우트, 공통 컴포넌트, API 타입)을 바꿀 때는 작은 PR로 먼저 올린다. Flyway 파일을 더할 때는 PR 전에 최신 번호를 확인한다.
+  - `git add`는 경로를 명시한다. `_local/`과 `docs/SPEC_followups.md`는 커밋하지 않는다.
+  - `feat/demo`의 시험 데모 코드(자바는 `com.opinio.passform.demo`, 화면은 `frontend_demo/`)는 참고만 하고, 재사용하기 전에 알린다. `demo` 패키지 이름을 그대로 가져오지 않는다.
 
 ## 6. 완료의 정의
 
@@ -100,13 +112,13 @@
 
 개발 환경
 
-- 백엔드: Java 17+, Spring Boot 4.1.2, Spring Security(OAuth 2.0 소셜 로그인), Spring Data JPA, PostgreSQL
+- 백엔드: Java 17+, Spring Boot 4.1.2, Spring Security(OAuth 2.0 소셜 로그인, 제공사는 Google), Spring Data JPA, PostgreSQL
 - 프론트엔드: Node 20+, React, TypeScript, Tailwind CSS
 - AI: OpenAI API + JSON Schema 기반 구조화 출력. 파서·조건 매처·주제 분류는 `gpt-6-luna`(reasoning effort `none`, temperature 0), 요약문 생성은 `gpt-6.1-terra`(reasoning effort `none`), 임베딩은 `text-embedding-3-small`. 모델 ID를 바꾸면 SPEC과 evals 측정 기록에 함께 적는다. 개발용 API 키에는 월 사용 한도를 건다.
-- 파일: AWS S3 Presigned URL — 폼 설명란·문항 첨부와 응답자 파일 업로드는 MVP 범위다(형식·용량·권한은 SPEC 5절과 AC63~AC70).
+- 파일: AWS S3. 업로드는 SPEC 5절대로 서버가 multipart로 받아 S3에 저장하고, 다운로드는 서버가 권한을 확인한 뒤 Presigned URL로 넘긴다 — 폼 설명란·문항 첨부와 응답자 파일 업로드는 MVP 범위다(형식·용량·권한은 SPEC 5절과 AC63~AC70).
 - evals 러너만 Python 3.11+
-- 배포: Vercel(프론트엔드, 루트 디렉터리 `frontend/`), AWS(백엔드·DB). CI: GitHub Actions
-- 환경변수는 `.env`(`.env.example` 복사). LLM 키·메일 설정이 없어도 빌드와 테스트는 실행된다.
+- 배포: 프론트 `app.<도메인>`(Vercel, 루트 디렉터리 `frontend/`), 백엔드 `api.<도메인>`(AWS, DB 포함). CI: GitHub Actions
+- 환경변수: DB 값은 `.env`(`.env.example` 복사), OpenAI 키는 OS 환경변수 `OPENAI_API_KEY`로만 쓴다. 키는 저장소, 이슈, PR, 로그, `VITE_` 환경변수, Vercel 설정에 넣지 않는다. LLM 키·메일 설정이 없어도 빌드와 테스트는 실행된다.
 
 자주 쓰는 명령
 
@@ -119,12 +131,12 @@
 디렉터리
 
 - `src/main/java/.../passform/` — 백엔드 코드. `src/test/java/` — JUnit 테스트
-- `src/response_analysis/schemas/`, `src/response_analysis/prompts/` — 강의 3 정본. Gradle 리소스 경로에 포함해 서버가 읽는다. `src/passform/schemas/form.schema.json`은 SPEC의 폼 정의 스키마이며 같은 방식으로 서버가 읽는다
+- `src/response_analysis/schemas/`, `src/response_analysis/prompts/` — 강의 3 정본. Gradle 리소스 경로에 포함해 서버가 읽는다. `src/passform/schemas/form.schema.json`은 SPEC의 폼 정의 스키마이며 같은 방식으로 서버가 읽는다. 분석 응답 스키마는 `src/response_analysis/schemas/analyze_response.schema.json`이다
 - `tests/harness/golden_cases.yaml` — 골든 케이스(판정 기준). 실행기는 `tests/java/.../golden/`(Gradle 테스트 소스 경로로 등록)의 JUnit 테스트이며, 이 YAML을 읽어 케이스마다 실행한다
 - `frontend/` — React 앱
 - `data/seed/` — 가상 폼·문항 템플릿·프로필·응답. 일부 응답에 인젝션 함정이 심겨 있다(레드티밍 실습용)
 - `evals/` — AI 결과 탐색 평가. `load/` — 부하 테스트 스크립트
-- `docs/` — SPEC, PROBLEM, ontology, 인터뷰 로그, 스파이크, 아키텍처(`ARCHITECTURE.md`, 강의 6), 위임 프롬프트 기록(`prompts/`, 강의 5)
+- `docs/` — SPEC, PROBLEM, ontology, 인터뷰 로그, 스파이크, 아키텍처(`ARCHITECTURE.md`, 강의 6), 위임 프롬프트 기록(`prompts/`, 강의 5), API 입출력 계약(`api/`)
 
 진행 상태
 

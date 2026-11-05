@@ -159,7 +159,7 @@
 - 제출 버전의 폼 제목·문항 문구·유형·선택지·순서·분기·입력 형식·최대 글자 수·동의 문구는 과거 응답을 읽고 수정할 수 있도록 보존한다. 버전 스냅샷에 남은 과거 운영 설정은 현재 수정·취소 권한이나 마감 판정에 쓰지 않는다. 응답 이력의 `form_title`과 문항 문구도 제출 버전에서 읽는다.
 - `Question.input_format`은 선택적인 입력 형식 객체다. MVP의 `kind`는 `name`, `mobile_phone`, `landline_phone`, `address`, `student_id`, `email`, `date`다. 이 형식은 `short_answer` 문항에 적용하며, 형식을 지정하지 않은 문항도 만들 수 있다. 안내용 `placeholder`는 검증 기준이 아니다. 제출과 제출 후 수정에 같은 규칙을 적용하고, 형식이 있는 필수 문항의 값이 앞뒤 공백을 제거한 뒤 비어 있으면 기존 필수 문항 검증으로 거부한다. 주소는 한 칸으로 받는다. 일반적인 예약 날짜는 응답자 프로필의 `birth_date`와 다르다.
   - `name`·`address`·`student_id`: 앞뒤 공백을 제거해 저장한다. 필수 여부 외의 별도 패턴 검증은 하지 않는다.
-  - `mobile_phone`·`landline_phone`: 입력의 공백·하이픈을 제거한 뒤 숫자만 남아야 한다. 휴대전화는 10~11자리, 집전화는 9~11자리면 허용하고 숫자만 저장한다.
+  - `mobile_phone`·`landline_phone`: 입력의 공백·하이픈을 제거한 뒤 숫자만 남아야 한다. 휴대전화는 01로 시작해야 하고 010은 11자리, 011·016~019는 10~11자리, 집전화는 9~11자리면 허용하고 숫자만 저장한다.
   - `email`: 앞뒤 공백을 제거하고, 공백 없이 `@`가 정확히 하나 있으며 `@` 앞이 비어 있지 않고 뒤에는 비어 있지 않은 부분이 점(`.`)으로 구분된 도메인만 허용한다. 제거한 앞뒤 공백 외의 글자는 그대로 저장한다.
   - `date`: `YYYY-MM-DD` 형태의 실제 날짜만 허용하고 그 형식으로 저장한다. 날짜는 별도 문항 유형이 아니라 `short_answer`의 입력 형식이다.
 - `Question.question_note`는 문항 문구이고, 폼 정의 JSON의 선택적 구현 필드 `question_description`은 응답자에게 보여 주는 문항별 보조 설명이다. 기본 모드는 `multiple_choice`(단일 선택), `dropdown`(단일 선택), `checkbox`(복수 선택), `short_answer`, `long_answer`를 모두 편집할 수 있다. 선택형 문항은 선택지, 모든 문항은 문구·설명·필수 여부를 저장하고 응답 화면에 적용한다.
@@ -175,7 +175,7 @@
 - `status` 전이: `draft → open`, `open ↔ closed`, 그리고 응답이 0건일 때만 `open → draft`. 그 밖의 전이는 `409 invalid_transition`. `share_url`은 처음 `open`할 때 한 번 만들고 다시 열어도 바꾸지 않는다. 응답 받기 끄기는 `closed`다.
 - `settings.response_limit`은 선택적인 선착순 인원(양의 정수, 없으면 `null`)이다. 현재 남은 `submitted` 응답 수(`Result.response_count`)가 이 값에 도달하는 제출이 성공하면, 서버는 같은 처리 안에서 폼을 `closed`로 바꾼다. 동시에 제출돼도 인원을 넘는 응답은 저장하지 않고 `409 form_closed`를 반환한다. 닫힌 뒤에는 다른 `closed` 폼과 같이 새 제출과 기존 응답의 수정·취소를 받지 않는다. 다시 `open`하거나 `open` 폼의 인원을 바꿀 때 `response_limit`이 현재 제출 응답 수 이하이면 `409 response_limit_reached`를 반환하고 바꾸지 않는다. 남은 자리 수는 응답자에게 보여 주지 않는다.
 - `display.default_mode`는 제작자가 정하는 필수 시작값이다. 분기 규칙이 없으면 `one_question` | `all_questions` 중에서 고르고, 응답자는 「한 질문씩」과 「전체 질문 보기」 사이를 언제든 전환할 수 있다. 분기 규칙이 하나라도 있으면 `one_question` | `section_page` 중에서 고르고, 응답자에게 전환 버튼을 보여 주지 않는다. 응답 도중 방식을 바꿔도 작성한 답은 유지하고 보던 문항으로 이동하며, 전환 때문에 시작 화면으로 되돌아가지 않는다. `one_question`으로 처음 폼에 들어오면 제목·설명·설명란 첨부와 시작 버튼을 먼저 보여 주고, 버튼을 누르면 첫 문항을 보여 준다. `all_questions`는 제목·설명·설명란 첨부 아래에 모든 섹션의 제목과 문항을 한 페이지에 보여 준다. `section_page`는 제목·설명·설명란 첨부와 첫 섹션의 모든 문항을 첫 화면에 보여 준다.
-- `branch_rules`는 위에서부터 검사해 처음 맞는 규칙으로 이동한다. `one_question`에서는 각 문항의 답을 확정하고 다음 화면으로 넘어갈 때 규칙을 적용하며, 뒤쪽 `question_id`, `section_id`, `"submit"`으로 이동할 수 있다. 규칙이 맞지 않으면 다음 문항(섹션 끝이면 다음 섹션)으로 간다. `section_page`에서는 한 섹션의 문항을 모두 보여 주고 다음 화면으로 넘어갈 때만 규칙을 적용한다. 규칙은 그 섹션의 마지막 문항에만 두고 뒤쪽 `section_id` 또는 `"submit"`으로만 이동할 수 있다. 규칙이 맞지 않으면 다음 섹션으로 간다. 두 방식 모두 `conditions`는 규칙이 붙은 문항과 그보다 앞의 선택형 문항만, 그 문항에 실제로 있는 선택지로 가리킬 수 있다. `checkbox` 조건은 "그 선택지를 포함함"이다.
+- `branch_rules`는 위에서부터 검사해 처음 맞는 규칙으로 이동한다. `one_question`에서는 각 문항의 답을 확정하고 다음 화면으로 넘어갈 때 규칙을 적용하며, 뒤쪽 `question_id`, `section_id`, `"submit"`으로 이동할 수 있다. 규칙이 맞지 않으면 다음 문항(섹션 끝이면 다음 섹션)으로 간다. `section_page`에서는 한 섹션의 문항을 모두 보여 주고 다음 화면으로 넘어갈 때만 규칙을 적용한다. 규칙은 그 섹션의 마지막 문항에만 두고 뒤쪽 `section_id` 또는 `"submit"`으로만 이동할 수 있다. 규칙이 맞지 않으면 다음 섹션으로 간다. 두 방식 모두 `conditions`는 규칙이 붙은 문항과 그보다 앞의 선택형 문항만, 그 문항에 실제로 있는 선택지로 가리킬 수 있다. `checkbox` 조건은 "그 선택지를 포함함"이다. 제출로 이동하는 `go_to`는 `{"submit": true}`로 쓴다.
 - 빠른 모드는 제작 목적(예: 신청·설문조사·예약·퀴즈)과 응답 대상(예: 고등학생·대학생·직장인)을 먼저 고르게 한다. 이 둘에 맞춰 추천 문항을 제시하고, 제작자는 필요한 문항을 고른 뒤 직접 질문을 추가하고 검토·미리보기한다. 예를 들어 예약을 고르면 “예약자 성함”, “예약 날짜” 같은 문항을 추천한다. 예약 관리나 퀴즈 자동 채점 기능을 뜻하지 않는다. 추천 문항은 `template_id`의 문구·유형·선택지·`input_format`을 복사하되 `profile_key`는 `null`로 시작해 제작자가 본인 정보 여부를 확인한다. 직접 만든 문항에도 동일한 입력 형식·본인 정보 설정을 제공한다. 두 모드는 같은 폼 정의를 주고받는다.
 - 기본·빠른 모드의 미리보기는 저장 전의 현재 편집 내용을 응답자 화면 방식으로 보여 준다. 분기 규칙이 있으면 같은 경로 계산 규칙으로 이동을 확인하고, 미리보기의 답 입력·제출 조작은 실제 `Response`나 결과 집계를 만들지 않는다. 미리보기에서 돌아와도 작업 중인 폼 정의는 유지된다.
 - `deadline`은 선택이다. ISO 8601(타임존 포함)로 받아 UTC로 저장하고, 화면에는 Asia/Seoul로 보여 준다.
@@ -185,13 +185,13 @@
 | 엔드포인트 | 인증 | 입력 | 출력 |
 |---|---|---|---|
 | `GET /f/{slug}` · `GET /forms/{form_id}` | 공개 | — | `{form_id, definition_version, title, note, note_attachments, deadline, sections, display: {default_mode, allowed_modes}, payment_link, consent: {items, purpose, retention, refusal_notice, ai_summary}}` — 최신 버전. `consent.ai_summary`는 AI 요약을 켠 폼에서만 고지 객체 `{provider, processing_country, items, purpose, retention, refusal_effect, checked_on}`이고 아니면 `null`. 분기 규칙이 없으면 `allowed_modes: ["one_question", "all_questions"]`, 있으면 `[default_mode]` / `404`(초안·삭제된 폼) / `409 {error: "form_closed"}` |
-| `POST /forms/{form_id}/responses` | 공개 | 파일 없으면 JSON `{form_version, answers: [{question_id, value}], consent_agreed: true, ai_summary_agreed?, draft_response_id?}`(`ai_summary_agreed`는 선택, 기본 `false`); 파일이 있으면 같은 값의 JSON 부분과 각 파일의 `question_id`를 담은 `multipart/form-data`. `draft_response_id`는 로그인한 본인의 작성 중 응답에만 사용 | `201 {response_id, form_version, status: "submitted", content, attachments, submitted_at, updated_at: null}` / `400 {error: "consent_required" \| "required_missing" \| "invalid_input_format_value" \| "character_limit_exceeded" \| "invalid_file_type", question_ids?}` / `413 {error: "file_too_large"}`(문항별 25MB 초과) / `404`(삭제된 폼 또는 본인 소유가 아닌 초안 ID) / `409 {error: "form_closed" \| "form_version_changed" \| "storage_quota_exceeded"}` |
+| `POST /forms/{form_id}/responses` | 공개 | 파일 없으면 JSON `{form_version, answers: [{question_id, value}], consent_agreed: true, ai_summary_agreed?, draft_response_id?}`(`ai_summary_agreed`는 선택, 기본 `false`); 파일이 있으면 같은 값의 JSON 부분과 각 파일의 `question_id`를 담은 `multipart/form-data`. `draft_response_id`는 로그인한 본인의 작성 중 응답에만 사용 | `201 {response_id, form_version, status: "submitted", content, attachments, submitted_at, updated_at: null}` / `400 {error: "consent_required" \| "required_missing" \| "invalid_input_format_value" \| "invalid_option" \| "character_limit_exceeded" \| "invalid_file_type", question_ids?}`(`invalid_option`은 선택지 밖 값) / `413 {error: "file_too_large"}`(문항별 25MB 초과) / `404`(삭제된 폼 또는 본인 소유가 아닌 초안 ID) / `409 {error: "form_closed" \| "form_version_changed" \| "storage_quota_exceeded"}` |
 | `GET /me/forms/{form_id}/response-draft` | 로그인 | — | `{response_id, form_version, form_definition, answers: [{question_id, value}], saved_at}` — 작성 시작 버전의 문항을 포함한 본인의 작성 중 답만 / `404`(초안 없음) |
 | `PUT /me/forms/{form_id}/response-draft` | 로그인 | `{form_version, answers: [{question_id, value}]}` — 미완성 답 허용 | `200` 또는 첫 저장 `201 {response_id, status: "in_progress", saved_at}` / `409 {error: "form_closed" \| "form_version_changed" \| "storage_quota_exceeded"}` |
 | `DELETE /me/forms/{form_id}/response-draft` | 로그인 | — | `204` — 본인의 미제출 답만 지움 |
 | `GET /me/responses` | 로그인 | — | `[{response_id, form_id, form_title, form_version, submitted_at, updated_at, editable, cancellable}]` — 제출 이력만, 작성 중 응답 제외 |
 | `GET /me/responses/{response_id}` | 로그인 | — | `{form_title, form_version, form_definition, content: [{question_id, question_note, value}], attachments, submitted_at, updated_at, editable, cancellable}` — 문항·문구는 제출 버전 기준. 폼·받은 응답 전체 삭제로 조회 전용이 되면 `form_definition: null` |
-| `PATCH /me/responses/{response_id}` | 로그인 | `{answers, attachments?}`(새 파일이 있으면 각 파일의 `question_id`를 담은 `multipart/form-data`) | `200 {response_id, form_version, content, attachments, submitted_at, updated_at}` / `400 {error: "required_missing" \| "invalid_input_format_value" \| "character_limit_exceeded" \| "invalid_file_type"}` / `413 {error: "file_too_large"}` / `409 {error: "history_only" \| "not_editable" \| "form_closed" \| "storage_quota_exceeded"}` |
+| `PATCH /me/responses/{response_id}` | 로그인 | `{answers, attachments?}`(새 파일이 있으면 각 파일의 `question_id`를 담은 `multipart/form-data`) | `200 {response_id, form_version, content, attachments, submitted_at, updated_at}` / `400 {error: "required_missing" \| "invalid_input_format_value" \| "invalid_option" \| "character_limit_exceeded" \| "invalid_file_type"}` / `413 {error: "file_too_large"}` / `409 {error: "history_only" \| "not_editable" \| "form_closed" \| "storage_quota_exceeded"}` |
 | `DELETE /me/responses/{response_id}` | 로그인 | — | `204` / `409 {error: "history_only" \| "not_cancellable" \| "form_closed"}` |
 | `GET /forms/{form_id}/attachments/{attachment_id}` | 현재 버전의 `open` 폼은 공개; 제작자와 해당 버전의 응답을 제출한 로그인 사용자는 과거·마감 버전도 열람 | — | 폼 안내에 첨부된 파일. 초안은 제작자만 열람 |
 | `GET /forms/{form_id}/questions/{question_id}/attachments/{attachment_id}` | 현재 버전의 `open` 폼은 공개; 제작자와 해당 버전의 응답을 제출한 로그인 사용자는 과거·마감 버전도 열람 | — | 문항에 첨부된 파일. 초안은 제작자만 열람 |
@@ -232,7 +232,7 @@
 | 엔드포인트 | 인증 | 입력 | 출력 |
 |---|---|---|---|
 | `GET /forms/{form_id}/results` | 제작자 | — | `{response_count, combined: {questions: [{question_id, question_note, question_type, form_versions, options: [{label, count, form_versions}]}]}, versions: [{form_version, response_count, questions: [{question_id, question_note, counts: {선택지: 수}}]}]}` — 화면에서 통합·버전별 보기 전환 |
-| `POST /forms/{form_id}/analyze` | 제작자 | `{query}` 또는 `{context}` — 대시보드의 버전별 보기 선택과 무관하게 해당 폼의 모든 제출 버전을 분석 | 아래 / `400 {error: "invalid_context"}` — 자연어에서 특정 버전 분석이나 지원 밖 통계를 요구하면 안내·되묻기 |
+| `POST /forms/{form_id}/analyze` | 제작자 | `{query}` 또는 `{context}` — 대시보드의 버전별 보기 선택과 무관하게 해당 폼의 모든 제출 버전을 분석 | 아래 / `400 {error: "invalid_context"}`(`query`와 `context`를 함께 보내거나 둘 다 없을 때 포함) / `503 {error: "llm_unavailable"}`(LLM 호출 실패) — 자연어에서 특정 버전 분석이나 지원 밖 통계를 요구하면 안내·되묻기 |
 | `GET /forms/{form_id}/responses/{response_id}` | 제작자 | — | `{response_id, form_version, submitted_at, updated_at, content: [{question_id, question_note, value}], attachments}` — 해당 제출 버전의 문항 문구 / `404`(없는 응답 또는 다른 폼의 응답) |
 | `DELETE /forms/{form_id}/responses` | 제작자 | — | `204` — 그 폼에 현재 받은 응답 전체와 응답 첨부 전체 삭제, 폼 정의는 유지 |
 | `DELETE /forms/{form_id}/response-attachments` | 제작자 | — | `204` — 그 폼에 현재 받은 응답의 첨부 원본 전체 삭제, 답변 내용과 응답 수는 유지 |
@@ -250,8 +250,8 @@
   "status": "ok",
   "context": { "conditions": ["소프트웨어학과"], "operation": "list" },
   "matched": [
-    {"condition": "소프트웨어학과", "form_version": 1, "question_id": "q1", "kind": "option", "option": "소프트웨어학과"},
-    {"condition": "소프트웨어학과", "form_version": 2, "question_id": "q1", "kind": "option", "option": "소프트웨어학과"}
+    {"condition": "소프트웨어학과", "form_version": 1, "question_id": "q1", "question_note": "소속 학과", "kind": "option", "option": "소프트웨어학과"},
+    {"condition": "소프트웨어학과", "form_version": 2, "question_id": "q1", "question_note": "소속 학과", "kind": "option", "option": "소프트웨어학과"}
   ],
   "coverage": { "total_submitted_count": 9, "not_evaluable_count": 4, "not_evaluable_by_version": [{"form_version": 3, "response_count": 4, "unavailable_conditions": ["소프트웨어학과"]}] },
   "result": { "operation": "list", "count": 5, "response_ids": ["r01", "r02", "r03", "r04", "r05"], "summary": null },
@@ -266,8 +266,8 @@
   "status": "ok",
   "context": { "conditions": ["소프트웨어학과"], "operation": "summarize" },
   "matched": [
-    {"condition": "소프트웨어학과", "form_version": 1, "question_id": "q1", "kind": "option", "option": "소프트웨어학과"},
-    {"condition": "소프트웨어학과", "form_version": 2, "question_id": "q1", "kind": "option", "option": "소프트웨어학과"}
+    {"condition": "소프트웨어학과", "form_version": 1, "question_id": "q1", "question_note": "소속 학과", "kind": "option", "option": "소프트웨어학과"},
+    {"condition": "소프트웨어학과", "form_version": 2, "question_id": "q1", "question_note": "소속 학과", "kind": "option", "option": "소프트웨어학과"}
   ],
   "coverage": { "total_submitted_count": 9, "not_evaluable_count": 4, "not_evaluable_by_version": [{"form_version": 3, "response_count": 4, "unavailable_conditions": ["소프트웨어학과"]}] },
   "result": {
@@ -302,18 +302,18 @@
 }
 ```
 
-- `status`가 `ok`이면 `result`·`matched`가 있고 `clarify`는 `null`, `clarify`이면 그 반대다.
+- `status`가 `ok`이면 `result`·`matched`가 있고 `clarify`는 `null`, `clarify`이면 그 반대다. 되묻기 응답에도 서버가 이해한 `context`를 담고, `operation`은 `null`이어도 키를 둔다. 파서를 부르기 전에 끝나거나 파싱에 실패하면 `context`는 `null`이다.
 - `{context}`(되묻기 후 확정한 `RequestContext`)로 요청하면 파서를 부르지 않는다. `context`는 `src/response_analysis/schemas/request_context.schema.json`의 `conditions`·`match`·`operation`·`sort`·`target`·`topic` 여섯 키만 사용하며, 스키마에 맞지 않으면 `400 invalid_context`다. 자연어 파싱 프롬프트는 `src/response_analysis/prompts/parse_query.md` 그대로 사용한다.
 - AI 분석 범위는 **해당 폼에 현재 남아 있는 모든 버전의 `submitted` 응답**으로 고정한다. 대시보드가 버전별 통계를 보여 주고 있어도 AI 분석 범위는 바뀌지 않는다. `RequestContext`에는 버전 범위·보기 방식 필드를 넣지 않는다. 자연어에서 “버전 1만”, “버전별로”처럼 분석 범위를 제한·비교하라는 요청은 파서에 넘기기 전에 `unsupported_scope`로 안내하고 전체 버전 분석 또는 대시보드 보기를 제안한다. 범위 표현을 일반 응답 조건으로 취급하거나 조용히 무시하지 않는다.
 - `conditions`는 항상 존재한다. `[]`는 조건 없이 폼의 모든 버전에 현재 남아 있는 `submitted` 응답 전체를 대상으로 한다. `operation`도 항상 존재하고 `count`·`summarize`·`list` 중 하나이며, 동작을 확정할 수 없으면 `null`이다. 평균·비율·그룹별 집계·문항별 통계 요청을 `count`나 `summarize`로 바꿔 실행하지 않고 `missing_operation`과 지원 동작을 안내한다. 문항·선택지 전체 통계는 AI와 별개로 결과 대시보드에서 계산·표시한다.
 - `match`: `all` = 나열한 조건을 모두 만족, `any` = 하나라도 만족, `not` = 나열한 조건 중 어느 것도 만족하지 않음. 생략은 조건이 0개 또는 1개일 때 허용한다.
 - 원문 요청이 긍정·부정 조건을 섞어 단일 `match`로 표현되지 않으면 `all`·`any`·`not` 중 하나로 뜻을 바꾸지 않는다. `clarify.reason: missing_match`, `options: []`로 요청을 나누어 달라고 안내한다.
-- `sort`는 `list`에만 적용한다. 다른 `operation`과 함께 오면 정렬을 적용하거나 `sort.by`를 검증하지 않고 무시한다. `sort.by`는 각 제출 버전의 정의에서 해석한다. 어느 버전에도 문항이 없거나 같은 표현이 뜻이 다른 문항에 걸리면 되묻는다. 숫자·날짜의 값 형식 또는 선택지 정의 순서가 버전 사이에서 비교 가능해야 하며 그렇지 않으면 `unsortable_field`로 되묻는다. 일부 버전에만 문항이 없으면 그 버전 응답을 빈 정렬값처럼 맨 뒤에 놓고 `coverage.sort_unavailable_by_version: [form_version, ...]`에 알린다. `sort.order`는 `asc` 또는 `desc`이며 방향을 말하지 않으면 `asc`다. 값이 같거나 `sort`가 없으면 모든 버전을 합쳐 `response_id` 오름차순이다.
+- `sort`는 `list`에만 적용한다. 다른 `operation`과 함께 오면 정렬을 적용하거나 `sort.by`를 검증하지 않고 무시한다. `sort.by`는 각 제출 버전의 정의에서 해석한다. 어느 버전에도 문항이 없거나 같은 표현이 뜻이 다른 문항에 걸리면 되묻는다. 숫자·날짜의 값 형식 또는 선택지 정의 순서가 버전 사이에서 비교 가능해야 하며 그렇지 않으면 `unsortable_field`로 되묻는다. 버전 사이에 선택지 문구가 바뀐 문항의 정렬도 `unsortable_field`다. 일부 버전에만 문항이 없으면 그 버전 응답을 빈 정렬값처럼 맨 뒤에 놓고 `coverage.sort_unavailable_by_version: [form_version, ...]`에 알린다. `sort.order`는 `asc` 또는 `desc`이며 방향을 말하지 않으면 `asc`다. 값이 같거나 `sort`가 없으면 모든 버전을 합쳐 `response_id` 오름차순이다.
 - `target`·`topic`은 `summarize`에만 적용한다. 다른 `operation`과 함께 오면 `sort`처럼 검증하지 않고 무시하며 되묻지 않는다. 두 키는 응답을 거르지 않으므로 `result.count`·`response_ids`를 바꾸지 않는다. 요약할 문항 표현은 `conditions`가 아니라 `target`에 담긴다.
 - 서버는 각 응답의 제출 당시 버전에서 각 조건을 `true`·`false`·`판정 불가`로 평가한다. 해당 문항·선택지가 그 버전에 없거나 분기로 그 문항을 접하지 않았다면 판정 불가다. `all`은 하나라도 `false`면 불일치, 전부 `true`면 일치이고 그 밖에는 판정 불가다. `any`는 하나라도 `true`면 일치, 전부 `false`면 불일치이고 그 밖에는 판정 불가다. `not`은 `any` 결과를 뒤집되 판정 불가는 그대로 둔다. 조건이 없으면 모든 제출 응답이 일치한다. 판정 불가 응답은 일치 응답으로 세거나 “아닌” 응답으로 취급하지 않는다.
-- `matched[]`에는 실제 문항·선택지에 매칭된 **조건·제출 버전별** 근거를 담고 `form_version`을 표시한다. `kind`는 `option`(선택지 일치, `option`에 선택지) / `answered`·`unanswered`(그 문항에 답했는지, `option`은 `null`)다. `coverage`는 `{total_submitted_count, not_evaluable_count, not_evaluable_by_version: [{form_version, response_count, unavailable_conditions}], sort_unavailable_by_version?, summary_unavailable_by_version?}`이며 판정 불가의 버전·조건별 이유를 담는다. `not_evaluable_by_version`에는 판정 불가 응답이 있는 버전만 담는다. `summary_unavailable_by_version: [{form_version, response_count}]`는 `summarize`의 `target` 문항이 없는 버전과 그 버전의 일치 응답 수다. 일부 버전에 해당 문항이 없어도 나머지 버전의 일치 응답은 반환한다. 어느 버전에서도 조건을 매칭할 수 없거나 같은 표현이 뜻이 다른 문항에 걸려 안전하게 특정할 수 없으면 되묻는다. AI 필터 결과를 내보낼 때도 다운로드 전에 같은 판정 불가 범위를 제작자에게 보여 준다.
+- `matched[]`에는 실제 문항·선택지에 매칭된 **조건·제출 버전별** 근거를 담고 `form_version`과 문항 문구 `question_note`를 표시한다. `kind`는 `option`(선택지 일치, `option`에 선택지) / `answered`·`unanswered`(그 문항에 답했는지, `option`은 `null`)다. `coverage`는 `{total_submitted_count, not_evaluable_count, not_evaluable_by_version: [{form_version, response_count, unavailable_conditions}], sort_unavailable_by_version?, summary_unavailable_by_version?}`이며 판정 불가의 버전·조건별 이유를 담는다. `not_evaluable_by_version`에는 판정 불가 응답이 있는 버전만 담는다. `summary_unavailable_by_version: [{form_version, response_count}]`는 `summarize`의 `target` 문항이 없는 버전과 그 버전의 일치 응답 수다. 일부 버전에 해당 문항이 없어도 나머지 버전의 일치 응답은 반환한다. 어느 버전에서도 조건을 매칭할 수 없거나 같은 표현이 뜻이 다른 문항에 걸려 안전하게 특정할 수 없으면 되묻는다. AI 필터 결과를 내보낼 때도 다운로드 전에 같은 판정 불가 범위를 제작자에게 보여 준다.
 - `result.count`는 모든 제출 버전에서 조건에 **일치**한 응답 수(온톨로지의 파생값 `Result.filtered_response_count`)다. `result.response_ids`는 `list` 결과의 응답 ID 목록이고, `summarize`에서는 요약 대상이 된 일치 응답 전체(AI 요약 동의 여부와 무관)다. `count`에서는 `null`이다. 요약 ID 순서는 정렬 없는 `list`와 같다. 요약에 실제로 쓴 응답은 `summary.items[].themes[].response_ids`와 `evidence`가 보여 준다. 제작자 화면은 `list`의 `response_ids` 순서대로 상세 API를 조회한다. AI 필터·판정 불가 제외를 적용해도 폼 전체 `Result.response_count`는 바뀌지 않는다.
-- **AI 요약(`summarize`)**: 요약 대상 응답은 코드가 정한 일치 응답이다. 요약 가능 문항은 `short_answer`·`long_answer` 중 개인정보 문항(5절 폼 제작)이 아닌 것이다. 폼의 `settings.ai_summary.enabled`가 `false`이면 요약하지 않고 `summary_disabled`로 되묻는다. 요약 유형은 `target`·`topic`으로 정한다.
+- **AI 요약(`summarize`)**: 요약 대상 응답은 코드가 정한 일치 응답이다. 요약 가능 문항은 `short_answer`·`long_answer` 중 개인정보 문항(5절 폼 제작)이 아닌 것이다. 폼의 `settings.ai_summary.enabled`가 `false`이면 요약하지 않고 `summary_disabled`로 되묻는다. 요약 유형은 `target`·`topic`으로 정한다. 전체 요약(유형 A)에서는 숫자·날짜만 있는 단답을 뺀다.
 
 | 유형 | 예시 | `RequestContext` | 처리 |
 |---|---|---|---|
@@ -331,11 +331,11 @@
 - `target`이 일부 버전에만 있으면 있는 버전만 요약하고, 나머지 버전의 일치 응답 수를 `coverage.summary_unavailable_by_version`에 적는다(`sort_unavailable_by_version`과 같은 방식). `target`이 어느 버전에도 없거나, 뜻이 다른 여러 문항에 걸리거나, 요약할 수 없는 문항이면 아래 `clarify` 표대로 되묻는다.
 - 전송 범위: 주제 분류·임베딩에는 대상 문항의 답 전체(AI 요약 동의 응답만, 개인정보 문항 제외, 마스킹)를 보낸다. 요약문 작성에는 근거(evidence)와 코드가 센 주제별 개수만 보낸다. 외부로 보내는 모든 답(단답·장문)은 전화번호·이메일 패턴을 정규식으로 가린 뒤 보낸다. 요약 프롬프트에는 각 응답의 제출 버전과 그 버전의 문항 문구를 데이터로 전달하며 수치 집계는 LLM에 맡기지 않는다. 응답 원문은 구분자로 감싼 데이터 영역에만 넣는다(AC31). 분류는 설정값 단위(임시 50건)로 나눠 호출하고, 요청당 상한은 설정값(임시 300건)이다. 두 값은 시드 데이터로 측정한 뒤 확정한다.
 - 결과 대시보드 통계는 AI 분석과 별개로 코드가 계산한다. 통합 보기는 `question_id`·문항 문구·문항 유형이 같은 문항끼리 묶고 **같은 선택지 문구**의 응답 수만 합친다. 선택지별 실제 출처 버전을 표시하고, 달라진 문항·선택지는 별도 항목으로 보여 준다. 버전별 보기는 각 제출 버전의 정의와 응답만 사용한다.
-- `clarify`: `{reason, message, options[]}`. 여러 사유가 해당하면 **표에서 위에 있는 것 하나만** 반환한다.
+- `clarify`: `{reason, message, options[]}`. 여러 사유가 해당하면 **표에서 위에 있는 것 하나만** 반환한다. 파서 출력 보정: `{query}`의 파서 출력은 스키마 재검증 뒤 표의 3행부터 판정하기 전에 코드로 보정한다. 파서가 버린 표현은 원문에서 되살려 매칭으로 보내고, 조건을 버린 출력을 전체 건수로 내보내지 않는다.
 
 | 순서 | reason | 언제 | `options` | 강의 3 실패 모드 |
 |---|---|---|---|---|
-| 1 | `unsupported_scope` | 자연어에서 특정 버전만 분석하거나 버전별 AI 결과를 비교하도록 요청함. 쿼리를 파서에 보내기 전에 판정 | 전체 버전 AI 분석·대시보드 버전별 보기 안내 | 제품 정책 |
+| 1 | `unsupported_scope` | 자연어에서 특정 버전만 분석하거나 버전별 AI 결과를 비교하도록 요청함. 쿼리를 파서에 보내기 전에 판정. 이 규칙은 명시적 표현만 잡으며, 놓친 표현은 되묻기를 기대하지만 보장하지 않는다 | 전체 버전 AI 분석·대시보드 버전별 보기 안내 | 제품 정책 |
 | 2 | `parse_failed` | 형식 오류 재요청 후에도 스키마 검증 실패 | `[]` | 4, 9, 10 |
 | 3 | `missing_operation` | `operation`이 `null`이거나 평균·비율·그룹별 집계·문항별 통계처럼 지원하지 않는 동작을 요청함 | `["count", "list", "summarize"]`(AI 요약이 꺼진 폼은 `["count", "list"]`)와 대시보드 안내 | 2, 5 |
 | 4 | `summary_disabled` | `operation`이 `summarize`인데 폼의 AI 요약(`settings.ai_summary.enabled`)이 꺼져 있음 | `["count", "list"]`. 메시지로 배포 시 설정 때문이며 배포 후에는 바꿀 수 없음(폼 복사로 새로 정함)을 안내 | 제품 정책 |
@@ -402,7 +402,7 @@
 - **AC72 [이벤트 기반]**: 제작자가 기본·빠른 모드에서 문항의 입력 형식을 정하면, Passform은 두 모드 모두 응답자 본인 정보인지 쉬운 말로 묻고 기본값을 “아니요”로 둔다. “예”로 확인한 문항에만 해당 `profile_key`를 설정하며, 문항 문구나 입력 형식이 바뀌면 그 선택을 지우고 다시 확인한다.
   - 테스트: 두 모드에서 각각 이름 형식의 “부모님 이름”을 추가 → 기본 `profile_key: null` / “응답자 본인의 이름인가요?”에 “예” → `name` / 주소·날짜 형식에서 본인 주소·생년월일 질문에 “예” → 각각 `address`·`birth_date` / 문구 또는 형식 변경 → `null`, 다시 확인 전에는 자동채우기 안 됨
 - **AC73 [이벤트 기반]**: 제작자가 `short_answer` 문항에 입력 형식을 설정하면, Passform은 응답 화면에서 그 형식에 맞게 안내하고 5절의 `kind`별 규칙으로 제출·수정 값을 서버에서 검증·저장한다. 형식에 맞지 않으면 `400 invalid_input_format_value`를 반환하고 기존 응답·파일을 바꾸지 않는다.
-  - 테스트: 날짜 `2026-02-28` 제출 → 그대로 저장, `2026-02-30` → 400 / 휴대전화 `010-1234-5678` → `01012345678` 저장, 9자리 또는 문자 포함 → 400 / 집전화 `02-123-4567` → `021234567` 저장, 8자리 → 400 / 이메일 `a@example.com` → 저장, `a@@example.com` → 400 / 이름·주소·학번의 앞뒤 공백 제거 후 저장, 필수 문항에 공백만 제출 → `400 required_missing` / 수정 허용·마감 전 폼에서도 같은 규칙 적용, 실패하면 기존 응답·파일 불변
+  - 테스트: 날짜 `2026-02-28` 제출 → 그대로 저장, `2026-02-30` → 400 / 휴대전화 `010-1234-5678` → `01012345678` 저장, `011-123-4567` → `0111234567` 저장, 9자리·문자 포함·010의 10자리(`0101234567`)·01로 시작하지 않음(`1234567890`)·허용하지 않는 앞자리(`01212345678`) → 400 / 집전화 `02-123-4567` → `021234567` 저장, 8자리 → 400 / 이메일 `a@example.com` → 저장, `a@@example.com` → 400 / 이름·주소·학번의 앞뒤 공백 제거 후 저장, 필수 문항에 공백만 제출 → `400 required_missing` / 수정 허용·마감 전 폼에서도 같은 규칙 적용, 실패하면 기존 응답·파일 불변
 - **AC38 [상시 적용]**: Passform은 항상 새 폼을 `draft`로 만들고, `draft` 폼은 제작자 외에는 조회·응답·저장할 수 없게 한다. 첫 배포 전에는 `definition_version: null`이고, 제작자가 처음 `open`으로 바꿔 검증을 통과하면 `share_url`과 `definition_version: 1`을 만든다.
   - 테스트: 만든 직후 제작자의 `GET /forms/{id}/definition` → `definition_version: null`, 다른 사용자의 `GET /forms/{id}`·응답 제출·내 폼함 저장 → 모두 `404` / `PATCH status: open` 뒤 `share_url`로 공개 조회하면 `definition_version: 1`
 - **AC56 [이벤트 기반]**: 제작자가 기본 시작 방식을 정해 `draft` 폼을 저장하면, Passform은 형식 검증만 하고 분기 규칙이나 동의 템플릿이 미완성이어도 저장하며 `definition_version`을 올리지 않는다. 그 폼을 `open`으로 바꿀 때 기본 시작 방식과 분기 규칙의 적합성까지 의미 검증을 하고, 통과하지 못하면 해당 `400`을 반환하며 작업 초안·마지막 배포 정의와 버전은 유지한다. 검증에 성공해 이전 배포본과 버전 대상 정의가 다를 때만 다음 버전을 만든다.
@@ -505,7 +505,7 @@
   - 테스트: 시드에 `in_progress`·`abandoned` 응답을 섞음 → 폼 전체 `response_count`는 버전별 남은 `submitted` 수의 합 / 대시보드에서 버전 1만 보거나 AI로 조건 필터링해도 폼 전체 수 불변 / 폼의 받은 응답 전체 삭제 → `response_count: 0`
 - **AC75 [상시 적용]**: Passform은 AI 분석·`context` 필터 내보내기의 범위를 항상 해당 폼의 모든 제출 버전으로 고정한다. `RequestContext`는 강의 3 스키마의 여섯 필드(`conditions`·`match`·`operation`·`sort`·`target`·`topic`)만 허용한다. 각 응답은 제출 당시 문항 정의로 평가하고, AI 결과에 출처 버전과 판정 불가 범위를 표시한다. 필터 없는 내보내기만 대시보드에서 버전 범위를 고를 수 있다.
   - 테스트: 버전 1·2에 제출 응답이 있을 때 `conditions: []`의 `count`는 두 버전 합계 / 대시보드에서 버전 1 통계를 연 상태의 `analyze`도 두 버전 대상 / `{context}`에 `form_versions`·`view` 키나 `operation: "statistics"`가 있으면 스키마 검증 실패로 `400 invalid_context`, `target`·`topic`이 든 `summarize` context는 스키마 통과 / 필터 없는 JSON·YAML은 두 버전의 정의와 응답 출처 유지
-- **AC77 [예외 대응]**: 제작자가 자연어 AI에 특정 버전만 분석·비교하거나 버전별 결과를 요청하면, Passform은 그 표현을 응답 조건으로 해석하거나 전체 버전 결과로 바꾸지 않고 `clarify.reason: unsupported_scope`로 전체 버전 분석과 대시보드 버전별 보기를 안내한다. 평균·비율·그룹별 집계·문항별 통계 요청도 `count`·`summarize`로 바꿔 실행하지 않고 지원 동작과 대시보드를 안내한다.
+- **AC77 [예외 대응]**: 제작자가 자연어 AI에 특정 버전만 분석·비교하거나 버전별 결과를 요청하면, Passform은 그 표현을 응답 조건으로 해석하거나 전체 버전 결과로 바꾸지 않고 `clarify.reason: unsupported_scope`로 전체 버전 분석과 대시보드 버전별 보기를 안내한다. 평균·비율·그룹별 집계·문항별 통계 요청도 `count`·`summarize`로 바꿔 실행하지 않고 지원 동작과 대시보드를 안내한다. 파서 전 규칙은 명시적 표현만 잡으며, 놓친 표현은 되묻기를 기대하지만 보장하지 않는다.
   - 테스트: “버전 1만 보여줘”·“버전별 응답 수 알려줘” → `unsupported_scope`, 파서 호출 0회 / “학과별 통계 보여줘”·“평균 나이 알려줘” → 결과 없음, `missing_operation`과 지원 동작 3개 안내 / 단순 “전체 응답 수 알려줘” → `count`
 - **AC78 [이벤트 기반]**: 제작자가 모든 버전을 대상으로 자연어 조건을 요청하면, Passform은 각 응답의 제출 버전에서 조건을 판정하여 일치한 응답만 `count`·`list`·`summarize`에 사용한다. 판정 불가 응답은 일치·불일치 어느 쪽에도 넣지 않고 버전별 수와 이유를 `coverage`에 표시한다. 한 버전에 문항이 없다는 이유만으로 다른 버전의 일치 응답을 버리지 않는다.
   - 테스트: 버전 1의 소프트웨어학과 2건, 버전 2의 3건, 학과 문항이 없는 버전 3의 제출 응답 4건 → “소프트웨어학과 학생만 보여줘”는 5건과 ID 5개, `coverage.total_submitted_count: 9`, `not_evaluable_count: 4`, 버전 3의 이유 표시 / “소프트웨어학과가 아닌 학생 수”에서도 버전 3의 4건은 반대 조건에 넣지 않음 / `conditions: []`이면 9건 모두 대상
@@ -523,8 +523,8 @@
   - 테스트: "소프트웨어학과가 아닌 4학년 수" → `missing_match`, `result` 없음, `options: []`, 요청 분리 안내 / 조건 0개·1개에서 `match` 생략 → `missing_match` 아님
 - **AC27 [예외 대응]**: 파서 출력의 `operation`이 `null`이거나 원문이 지원하지 않는 통계 동작을 명시하면, Passform은 이를 다른 동작으로 바꾸지 않고 `clarify.reason: missing_operation`과 지원하는 동작 `count`·`list`·`summarize`를 반환한다. 폼의 `settings.ai_summary.enabled`가 `false`이면 `summarize`는 넣지 않고 `count`·`list`만 반환한다. 문항별 통계 요청에는 대시보드도 안내한다.
   - 테스트: 모의 파서가 `{"conditions":[],"operation":null}` 반환 → 파서 호출 1회, `missing_operation`, `options`에 세 동작 포함 / “학과별 통계”를 파서가 `summarize`로 잘못 해석해도 결과 없이 대시보드 안내 / AI 요약이 꺼진 폼 → `options`에 `summarize` 없음(`["count", "list"]`)
-- **AC28 [예외 대응]**: `list`에서 `sort.by`가 `long_answer`·`checkbox` 문항이거나, `short_answer` 값이 정규화 가능한 숫자·날짜가 아니거나, 버전 사이에서 값 형식·선택지 순서를 비교할 수 없으면, Passform은 정렬하지 않고 `clarify.reason: unsortable_field`와 정렬 가능한 문항 목록을 반환한다. 선택형 문항은 선택지 정의 순서로 정렬한다. 일부 제출 버전에만 정렬 문항이 없으면 그 버전 응답은 맨 뒤에 두고 범위를 알린다.
-  - 테스트: `sort.by` = 자기소개(long_answer) → `unsortable_field`, `options`에 자기소개 없음 / 나이 값에 "23살" 포함 → `unsortable_field` / `input_format`이 날짜인 `YYYY-MM-DD` 값은 날짜순으로 정렬 / 버전 간 같은 선택지의 정의 순서가 달라 비교 불가 → `unsortable_field` / 버전 2에 나이 문항 없음 → 버전 2 응답을 맨 뒤에 놓고 `coverage.sort_unavailable_by_version`에 버전 2 표시
+- **AC28 [예외 대응]**: `list`에서 `sort.by`가 `long_answer`·`checkbox` 문항이거나, `short_answer` 값이 정규화 가능한 숫자·날짜가 아니거나, 버전 사이에서 값 형식·선택지 순서를 비교할 수 없거나 선택지 문구가 바뀌었으면, Passform은 정렬하지 않고 `clarify.reason: unsortable_field`와 정렬 가능한 문항 목록을 반환한다. 선택형 문항은 선택지 정의 순서로 정렬한다. 일부 제출 버전에만 정렬 문항이 없으면 그 버전 응답은 맨 뒤에 두고 범위를 알린다.
+  - 테스트: `sort.by` = 자기소개(long_answer) → `unsortable_field`, `options`에 자기소개 없음 / 나이 값에 "23살" 포함 → `unsortable_field` / `input_format`이 날짜인 `YYYY-MM-DD` 값은 날짜순으로 정렬 / 버전 간 같은 선택지의 정의 순서가 달라 비교 불가 → `unsortable_field` / 버전 사이에 선택지 문구가 바뀐 문항 → `unsortable_field` / 버전 2에 나이 문항 없음 → 버전 2 응답을 맨 뒤에 놓고 `coverage.sort_unavailable_by_version`에 버전 2 표시
 - **AC61 [이벤트 기반]**: `list` 요청에 `sort.by`가 있으면, Passform은 모든 제출 버전의 응답을 해당 문항의 값과 `sort.order`로 한꺼번에 정렬하고 방향이 없으면 `asc`로 처리한다. 빈 값이나 그 버전에 정렬 문항이 없는 응답은 맨 뒤, 같은 값은 `response_id` 오름차순이다. `count`·`summarize`에 붙은 `sort`는 무시한다.
   - 테스트: 버전 1·2의 `list` + "나이순" → 두 버전 전체의 나이 오름차순, 같은 값은 `response_id` 오름차순 / `count` + 정렬할 수 없는 문항의 `sort` → 정렬 관련 `clarify` 없이 같은 `count`
 - **AC29 [예외 대응]**: `conditions`에 "미응답" 조건과 `match: not`이 함께 오면, Passform은 결과를 내지 않고 `clarify.reason: double_negation`으로 확정 요청("3번 문항 미응답자 수")을 확인받는다.
@@ -597,7 +597,7 @@
 | AC18 | `deadline_reminder_once`, `reminder_saved_within_window`, `reminder_opt_out` | 미구현 |
 | AC19 | `results_option_counts_combined_and_by_version`, `results_changed_question_separate` | 미구현 |
 | AC20 | `submitted_only`, `response_count_across_versions`, `injection_in_response` | 일부 구현 |
-| AC21 | `matching_labeled_set` (규칙이면 골든 / LLM이면 evals) | 스파이크 1차 미달(2026-11-02), 재도전 예정 |
+| AC21 | `matching_labeled_set` (규칙이면 골든 / LLM이면 evals) | 스파이크 1차 미달. MVP는 규칙 우선과 임시 LLM 프롬프트, 재도전 미룸 |
 | AC22 | `unknown_condition_all_versions`, `unknown_sort_field`, `condition_missing_one_version_keeps_matches`, `option_renamed_version_not_evaluable` | 일부 구현 |
 | AC23 | `matched_for_applicable_versions`, `coverage_for_unavailable_version`, `unavailable_version_without_unknown_omitted` | 일부 구현 |
 | AC24 | `match_not_excludes_unknown`, `match_any_known_true_with_unknown`, `checkbox_all_requires_both_options`, `unanswered_kind_counts_blank_only`, `answered_kind_excludes_blank`, `match_all_unknown_when_no_false`, `no_condition_counts_all`, `negation_does_not_count_unknown`, `no_condition_match_any_counts_all`, `no_condition_match_not_counts_all`, `unavailable_version_without_unknown_omitted` | 일부 구현 |

@@ -16,8 +16,19 @@ const menus: Array<{ label: string; to: string }> = [
 export function Header() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const [open, setOpen] = React.useState(false);
+  const [reminderOpen, setReminderOpen] = React.useState(false);
+  const [accountOpen, setAccountOpen] = React.useState(false);
+  // 화면 상태로만 둔다. 서버 저장(`PATCH /me/settings`의 `deadline_reminder`)은 E12에서 연결한다.
+  const [deadlineReminder, setDeadlineReminder] = React.useState(true);
   const onFormScreen = pathname.startsWith('/f/') || pathname.startsWith('/forms/');
+  function toggleReminder() {
+    setReminderOpen(!reminderOpen);
+    setAccountOpen(false);
+  }
+  function toggleAccount() {
+    setAccountOpen(!accountOpen);
+    setReminderOpen(false);
+  }
   return (
     <header className="global-header">
       <Brand onClick={() => navigate(paths.home)} />
@@ -42,15 +53,39 @@ export function Header() {
         ) : (
           <>
             <Badge>{demoUser.workspace}</Badge>
-            <button className="icon-btn" aria-label="알림 보기" onClick={() => setOpen(!open)}>
+            <button
+              className="icon-btn"
+              aria-label="마감 알림 설정"
+              aria-expanded={reminderOpen}
+              onClick={toggleReminder}
+            >
               <Icon name="bell" />
             </button>
+            {reminderOpen && (
+              <div className="account-popover reminder-popover">
+                <label className="reminder-switch">
+                  <span>마감 하루 전 알림</span>
+                  <input
+                    type="checkbox"
+                    role="switch"
+                    checked={deadlineReminder}
+                    onChange={(e) => setDeadlineReminder(e.target.checked)}
+                  />
+                </label>
+                <p className="muted">저장한 미제출 폼을 이메일과 사이트 내 알림으로 알려드려요.</p>
+              </div>
+            )}
             <span className="avatar">{demoUser.initial}</span>
             <span className="account-name">{demoUser.name}</span>
-            <button className="icon-btn" aria-label="계정 메뉴" onClick={() => setOpen(!open)}>
+            <button
+              className="icon-btn"
+              aria-label="계정 메뉴"
+              aria-expanded={accountOpen}
+              onClick={toggleAccount}
+            >
               <Icon name="chevron" size={15} />
             </button>
-            {open && (
+            {accountOpen && (
               <div className="account-popover">
                 이 화면은 가상 데이터 미리보기입니다.
                 <br />

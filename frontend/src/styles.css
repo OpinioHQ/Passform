@@ -177,6 +177,47 @@ h3 {
   font-size: 12px;
   white-space: normal;
 }
+.reminder-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.reminder-switch input {
+  appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  width: 38px;
+  height: 22px;
+  margin: 0;
+  border-radius: 99px;
+  background: #d5d8d0;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.reminder-switch input::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.12s ease;
+}
+.reminder-switch input:checked {
+  background: #3158d5;
+}
+.reminder-switch input:checked::before {
+  transform: translateX(16px);
+}
+.reminder-popover p {
+  margin-top: 6px;
+}
 .demo-ribbon {
   background: #f2f5ff;
   border-bottom: 1px solid #e3e9fc;
@@ -462,33 +503,6 @@ h3 {
 }
 .progress-wrap small {
   font-size: 11px;
-}
-.reminder {
-  margin-top: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-.reminder h3 {
-  font-size: 15px;
-}
-.reminder p {
-  margin-top: 6px;
-}
-.toggle-line {
-  display: flex;
-  gap: 22px;
-}
-.toggle-line label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 12px;
-  color: #73776f;
-}
-.toggle-line input {
-  accent-color: #3158d5;
 }
 .response-hero {
   display: flex;
@@ -1261,13 +1275,6 @@ h3 {
   .form-line .btn {
     font-size: 11px;
     padding: 0 10px;
-  }
-  .reminder {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .toggle-line {
-    flex-wrap: wrap;
   }
   .response-hero {
     flex-direction: column;

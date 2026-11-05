@@ -11,8 +11,6 @@ interface Props {
 export function InboxPage({ forms, onOpen, onCreated }: Props) {
   const [tab, setTab] = React.useState<'all' | 'pending' | 'draft'>('all');
   const [filter, setFilter] = React.useState('');
-  const [email, setEmail] = React.useState(true);
-  const [site, setSite] = React.useState(true);
   const shown = forms.filter(
     (x) =>
       (tab === 'all' || (tab === 'draft' ? x.has_draft : x.state === 'saved' && !x.has_draft)) &&
@@ -133,24 +131,6 @@ export function InboxPage({ forms, onOpen, onCreated }: Props) {
           </Panel>
         )}
       </div>
-      <Panel className="reminder">
-        <div>
-          <h3>마감 하루 전, 잊지 않도록</h3>
-          <p className="muted small">
-            저장한 미제출 폼에만 알려드려요. 채널별로 언제든 끌 수 있어요.
-          </p>
-        </div>
-        <div className="toggle-line">
-          <label>
-            이메일{' '}
-            <input type="checkbox" checked={email} onChange={(e) => setEmail(e.target.checked)} />
-          </label>
-          <label>
-            사이트 내 알림{' '}
-            <input type="checkbox" checked={site} onChange={(e) => setSite(e.target.checked)} />
-          </label>
-        </div>
-      </Panel>
     </div>
   );
 }

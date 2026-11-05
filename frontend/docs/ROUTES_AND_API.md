@@ -21,6 +21,8 @@
 
 주 1: `VITE_USE_API=true`일 때 이 화면만 실제로 호출한다. `/me/forms`는 `GET /me/forms`, `/f/:slug`는 `GET /f/{slug}`, `/forms/:formId`는 `GET /forms/{form_id}`, 응답 제출은 `POST /forms/{form_id}/responses`다. 공개 경로에서 로그인 전용 API를 부르지 않는다.
 
+주 2: 헤더 종 아이콘의 "마감 하루 전 알림" 스위치는 화면 상태로만 동작한다. 서버 저장(`PATCH /me/settings`의 `deadline_reminder`)과 알림 목록은 E12 #57이 연결한다.
+
 ## 공통 파일 규칙
 
 - 공통 파일(`src/routes/paths.ts`, `src/App.tsx`, `src/components/`, `src/api/client.ts`, `src/types/`)을 바꿀 때는 작은 PR로 먼저 올린다(`AGENTS.md` 5절).

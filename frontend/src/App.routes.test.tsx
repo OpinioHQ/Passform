@@ -114,6 +114,52 @@ describe('주 메뉴', () => {
   });
 });
 
+describe('헤더 종 아이콘의 마감 알림', () => {
+  const bell = () => screen.getByRole('button', { name: '마감 알림 설정' });
+
+  it('누르면 스위치 1개와 설명이 열리고 다시 누르면 닫힌다', () => {
+    openAt('/me/forms');
+    expect(screen.queryByRole('switch')).toBeNull();
+    fireEvent.click(bell());
+    expect(screen.getAllByRole('switch')).toHaveLength(1);
+    expect(screen.getByRole('switch', { name: '마감 하루 전 알림' })).toBeTruthy();
+    expect(
+      screen.getByText('저장한 미제출 폼을 이메일과 사이트 내 알림으로 알려드려요.'),
+    ).toBeTruthy();
+    fireEvent.click(bell());
+    expect(screen.queryByRole('switch')).toBeNull();
+  });
+
+  it('값은 화면 상태로만 바뀌고 API를 부르지 않는다', () => {
+    openAt('/me/forms');
+    fireEvent.click(bell());
+    const toggle = screen.getByRole('switch') as HTMLInputElement;
+    expect(toggle.checked).toBe(true);
+    fireEvent.click(toggle);
+    fireEvent.click(bell());
+    fireEvent.click(bell());
+    expect((screen.getByRole('switch') as HTMLInputElement).checked).toBe(false);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('계정 메뉴와 열림 상태가 나뉘어 있다', () => {
+    openAt('/me/forms');
+    fireEvent.click(screen.getByRole('button', { name: '계정 메뉴' }));
+    expect(screen.getByText(/가상 데이터 미리보기입니다/)).toBeTruthy();
+    expect(screen.queryByRole('switch')).toBeNull();
+    fireEvent.click(bell());
+    expect(screen.getByRole('switch')).toBeTruthy();
+    expect(screen.queryByText(/가상 데이터 미리보기입니다/)).toBeNull();
+  });
+
+  it('내 폼함 화면에는 알림 패널이 없다', () => {
+    openAt('/me/forms');
+    expect(screen.queryByText('마감 하루 전, 잊지 않도록')).toBeNull();
+    expect(screen.queryByRole('checkbox', { name: /이메일/ })).toBeNull();
+    expect(screen.queryByRole('checkbox', { name: /사이트 내 알림/ })).toBeNull();
+  });
+});
+
 describe('응답 화면의 폼 설명', () => {
   const noteElement = (container: HTMLElement) => container.querySelector('.form-note');
 

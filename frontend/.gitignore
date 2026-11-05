@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.local
+*.tsbuildinfo
+preview.html
+preview.bundle.js
+preview-assets/

@@ -2,6 +2,7 @@ import type {
   AnalyzeRequest,
   AnalyzeResponse,
   CreatorFormSummary,
+  MeResponse,
   PublicForm,
   ResponseHistoryItem,
   SavedFormSummary,
@@ -12,6 +13,9 @@ import type {
 export const useLiveApi = import.meta.env.VITE_USE_API === 'true';
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '');
 
+/** Google 로그인 시작 주소. fetch가 아니라 전체 페이지 이동으로 연다. */
+export const googleLoginUrl = `${baseUrl}/oauth2/authorization/google`;
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -21,9 +25,11 @@ export class ApiError extends Error {
   }
 }
 
-/** CSRF 헤더를 넣을 자리. 서버의 CSRF 방식이 정해지면(T2) 여기만 고친다. */
+/** 서버의 모든 응답이 주는 `XSRF-TOKEN` 쿠키를 헤더로 옮긴다. 쿠키가 없으면 넣지 않는다. */
 function csrfHeaders(): Record<string, string> {
-  return {};
+  if (typeof document === 'undefined') return {};
+  const token = /(?:^|;\s*)XSRF-TOKEN=([^;]+)/.exec(document.cookie)?.[1];
+  return token ? { 'X-XSRF-TOKEN': decodeURIComponent(token) } : {};
 }
 
 function parseErrorBody(text: string): unknown {
@@ -54,8 +60,9 @@ const json = (data: unknown): RequestInit => ({
 
 const segment = encodeURIComponent;
 
-/** 실제 API 연결점. 화면이 호출하는 것은 `/me/forms`, 폼 공개 조회, 제출뿐이다. */
+/** 실제 API 연결점. 화면이 호출하는 것은 `/me`, `/me/forms`, 폼 공개 조회, 제출뿐이다. */
 export const api = {
+  me: () => request<MeResponse>('/me'),
   savedForms: () => request<SavedFormSummary[]>('/me/forms'),
   createdForms: () => request<CreatorFormSummary[]>('/me/created-forms'),
   formBySlug: (slug: string) => request<PublicForm>(`/f/${segment(slug)}`),

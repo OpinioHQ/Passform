@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { useLiveApi } from '../api/client';
+import { api, useLiveApi } from '../api/client';
 import { demoUser } from '../demo/screens';
 import { paths } from '../routes/paths';
+import type { MeResponse } from '../types/api';
 import { Brand, Icon, Badge } from './UI';
 
 const menus: Array<{ label: string; to: string }> = [
@@ -12,7 +13,7 @@ const menus: Array<{ label: string; to: string }> = [
   { label: '내가 만든 폼', to: paths.creator },
 ];
 
-/** 메뉴는 모든 사용자에게 같다. 실제 로그인 상태(`GET /me`)는 T2에서 연결한다. */
+/** 메뉴는 모든 사용자에게 같다. 실제 API 모드에서는 앱을 열 때 `GET /me`로 로그인 상태를 한 번 묻는다. */
 export function Header() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -20,6 +21,23 @@ export function Header() {
   const [accountOpen, setAccountOpen] = React.useState(false);
   // 화면 상태로만 둔다. 서버 저장(`PATCH /me/settings`의 `deadline_reminder`)은 E12에서 연결한다.
   const [deadlineReminder, setDeadlineReminder] = React.useState(true);
+  const [me, setMe] = React.useState<MeResponse | null>(null);
+  React.useEffect(() => {
+    if (!useLiveApi) return;
+    let active = true;
+    // 401이면 비로그인이다. 그 밖의 실패도 로그인 링크를 보인다.
+    api.me().then(
+      (account) => {
+        if (active) setMe(account);
+      },
+      () => {
+        if (active) setMe(null);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, []);
   const onFormScreen = pathname.startsWith('/f/') || pathname.startsWith('/forms/');
   function toggleReminder() {
     setReminderOpen(!reminderOpen);
@@ -47,9 +65,16 @@ export function Header() {
       </nav>
       <div className="account-actions">
         {useLiveApi ? (
-          <Link className="nav-link" to={paths.login}>
-            로그인
-          </Link>
+          me?.name ? (
+            <>
+              <span className="avatar">{me.name.slice(0, 1)}</span>
+              <span className="account-name">{me.name}</span>
+            </>
+          ) : (
+            <Link className="nav-link" to={paths.login}>
+              로그인
+            </Link>
+          )
         ) : (
           <>
             <Badge>{demoUser.workspace}</Badge>

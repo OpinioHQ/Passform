@@ -177,7 +177,7 @@ SPEC 4절 비포함과 같다. 주관식 내용으로 `count`·`list` 거르기,
 | # | 내용 | 제안 | 근거 |
 |---|---|---|---|
 | G1 | `golden_cases.yaml` 안에서 기능 나누기 | `cases`는 조건 평가 전용으로 두고 기능별 최상위 키 추가(`analysis_cases`, `submission_cases` 등) | 현재 하니스는 `cases`만 읽어 전부 평가 함수 케이스로 처리한다(`ConditionEvaluatorGoldenTest.java:228`). 다른 최상위 키는 읽지 않는다 |
-| G2 | 실행 수준 | service 수준. LLM과 저장소는 모의 객체. `access_cases`만 MVC 슬라이스 | 케이스를 빠르게 돌린다. 권한은 필터와 컨트롤러를 지나야 판정된다. 모의 저장소로는 동시성을 판정할 수 없어 동시 제출은 T3 완료 조건에서 따로 시험한다 |
+| G2 | 실행 수준 | `form_cases`, `submission_cases`, `analysis_cases`, `summary_cases`는 service 수준. LLM과 저장소는 모의 객체. `access_cases`는 MockMvc에 실제 service, 모의 저장소, 모의 LLM을 붙여 실행 | HTTP 상태 매핑은 advice에서만 하므로 service 수준에는 상태 코드가 없고, 소유권은 service가 판정하므로 service를 모의 객체로 두면 판정이 시험되지 않는다. 모의 저장소로는 동시성을 판정할 수 없어 동시 제출은 T3 완료 조건에서 따로 시험한다 |
 | G3 | 파서 입력 | 모의 파서에 고정 출력을 준다 | 테스트에서 실제 LLM을 부르지 않는다(AGENTS 5절). 실제 출력 패턴은 `docs/spikes/2026-11-04_test_demo.md` 3-1절 |
 
 **골든 작성 시점**
@@ -188,14 +188,18 @@ SPEC 4절 비포함과 같다. 주관식 내용으로 `count`·`list` 거르기,
 
 공통: 케이스마다 `name`, `ac`, `type`(정상/경계/금지 행동), `input`, `note`와 판정 키 1개 이상. 정해진 키 밖의 키는 로더가 거부한다. 판정 키는 케이스에 있는 것만 검사한다. 시드 폼의 소유자는 `owner`, 시드 응답의 제출자는 `respondent`로 본다. `cases`는 조건 평가 전용으로 유지한다.
 
+- service 수준 케이스는 오류 코드 `expect_error`와 되묻기 사유 `expect_reason`으로 판정한다.
+- service 수준 케이스는 `expect_error`가 없으면 오류 없이 끝나야 통과한다. `access_cases`는 `expect_status`로 판정하고, 오류 코드가 정해진 경우에만 `expect_error`를 쓴다.
+- `expect_reason`이 있으면 `status: clarify`와 `result: null`까지 검사한다.
+- `access_cases`의 POST 등 변경 요청은 하니스가 유효한 CSRF 토큰을 함께 보낸다. CSRF 거부로 나온 403을 소유권 판정으로 세지 않기 위해서다. CSRF 자체의 검사는 T2가 맡는다.
+- 오류 코드가 HTTP 상태로 바뀌는지는 골든이 아니라 advice 테스트에서 검사한다.
+
 | 최상위 키 | 이슈 | `input` | 판정 키 |
 |---|---|---|---|
-| `access_cases` | T2, E5, E6 | `fixture`, `actor`(`anonymous`·`owner`·`respondent`·`other_user`), `method`, `path` | `expect_status`, `must_not_contain` |
-| `form_cases` | E2 | `fixture`, `actor`, `change`(바꿀 최상위 키), `action` | `expect_status`, `expect_error`, `expect_unchanged` |
-| `submission_cases` | T3 | `fixture`, `now`, `form_version`, `answers`, `consent_agreed`, `ai_summary_agreed` | `expect_status`, `expect_error`, `expect_question_ids`, `expect_saved_answers`, `expect_response_count` |
-| `analysis_cases` | E6, E7 | `fixture`, `query` 또는 `context`, `parser_outputs`(호출 순서대로), `matching`(`cases`와 같은 형태) | `expect_status`, `expect_error`, `expect_reason`, `expect_options`, `expect_parser_calls`, `expect_count`, `expect_response_ids`, `expect_not_evaluable_count`, `expect_not_evaluable_by_version`, `must_not_include` |
+| `access_cases` | T2, E5, E6 | `fixture`, `actor`(`anonymous`·`owner`·`respondent`·`other_user`), `method`, `path`, `body` | `expect_status`, `expect_error`, `must_not_contain` |
+| `form_cases` | E2 | `fixture`, `actor`, `change`(바꿀 최상위 키), `action` | `expect_error`, `expect_unchanged` |
+| `submission_cases` | T3 | `fixture`, `now`, `form_version`, `answers`, `consent_agreed`, `ai_summary_agreed` | `expect_error`, `expect_question_ids`, `expect_saved_answers`, `expect_response_count` |
+| `analysis_cases` | E6, E7 | `fixture`, `query` 또는 `context`, `parser_outputs`(호출 순서대로), `matching`(`cases`와 같은 형태) | `expect_error`, `expect_reason`, `expect_options`, `expect_parser_calls`, `expect_count`, `expect_response_ids`, `expect_not_evaluable_count`, `expect_not_evaluable_by_version`, `must_not_include` |
 | `summary_cases` | T7 | `fixture`, `context`, `labels`, `scores` | `expect_summary_status`, `expect_count`, `expect_response_ids`, `expect_excluded_no_consent_count`, `expect_theme_counts`, `llm_must_not_contain`, `must_not_include` |
-
-`analysis_cases`의 `expect_status`는 HTTP 상태다. `expect_reason`이 있으면 `status: clarify`와 `result: null`까지 함께 검사한다.
 
 새 fixture 2개는 골든 작성의 맨 앞 단계이며 담당은 팀원이다: 요약용 폼(AI 요약 켬, 개인정보 문항, 이름·전화번호·이메일·날짜 입력 형식 문항 포함(생년월일 확인 문항 포함), 동의·미동의 혼합, 장문 속 연락처), 필수 문항 분기 폼(분기로 건너뛰는 문항이 필수). 사람이 `data/seed`에 추가하고 시드 README 표를 갱신한다.

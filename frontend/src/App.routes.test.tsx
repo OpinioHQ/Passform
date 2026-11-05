@@ -193,6 +193,63 @@ describe('응답 화면의 폼 설명', () => {
   });
 });
 
+describe('탐색 화면의 내보내기', () => {
+  const exportPath = '/creator/forms/abc/explore';
+  const openDialog = () => {
+    fireEvent.click(screen.getByRole('button', { name: '내보내기' }));
+    return screen.getByRole('dialog', { name: '내보내기' });
+  };
+  const radio = (dialog: HTMLElement, name: string) =>
+    within(dialog).getByRole('radio', { name }) as HTMLInputElement;
+
+  it('상단 폼 편집 버튼 옆에 버튼이 있고 하단 패널은 없다', () => {
+    openAt(exportPath);
+    const edit = screen.getByRole('button', { name: '폼 편집' });
+    expect(edit.nextElementSibling?.textContent).toBe('내보내기');
+    expect(screen.queryByText('파일로 내보내기')).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('창을 열고 닫기 버튼으로 닫는다', () => {
+    openAt(exportPath);
+    const dialog = openDialog();
+    fireEvent.click(within(dialog).getByRole('button', { name: '닫기' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('CSV만 고를 수 있고 JSON과 YAML은 비활성이며 안내를 보여 준다', () => {
+    openAt(exportPath);
+    const dialog = openDialog();
+    expect(radio(dialog, 'CSV').checked).toBe(true);
+    expect(radio(dialog, 'CSV').disabled).toBe(false);
+    expect(radio(dialog, 'JSON').disabled).toBe(true);
+    expect(radio(dialog, 'YAML').disabled).toBe(true);
+    expect(within(dialog).getByText('데모에서는 아직 지원하지 않아요.')).toBeTruthy();
+  });
+
+  it('표의 건수를 가상 응답으로 알린다', () => {
+    openAt(exportPath);
+    const rows = screen.getAllByRole('row').length - 1;
+    const dialog = openDialog();
+    expect(within(dialog).getByText(`표에 보이는 가상 응답 ${rows}건을 내보냅니다.`)).toBeTruthy();
+  });
+
+  it('CSV로 내보내기는 파일을 만들고 창을 닫는다', () => {
+    const createObjectURL = vi.fn<typeof URL.createObjectURL>(() => 'blob:demo');
+    URL.createObjectURL = createObjectURL;
+    URL.revokeObjectURL = vi.fn();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    openAt(exportPath);
+    const dialog = openDialog();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'CSV로 내보내기' }));
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    expect((createObjectURL.mock.calls[0][0] as Blob).type).toContain('text/csv');
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    click.mockRestore();
+  });
+});
+
 describe('/creator/forms/new', () => {
   it('빈 폼에 초안 배지를 보이고, 미리보기는 끄고, 응답 수와 고정 섹션 이름은 숨긴다', () => {
     openAt('/creator/forms/new');

@@ -15,6 +15,7 @@ export function ExplorePage({
   const [query, setQuery] = React.useState('');
   const [mode, setMode] = React.useState<'all' | 'satisfied'>('all');
   const [message, setMessage] = React.useState('');
+  const [exportOpen, setExportOpen] = React.useState(false);
   const filtered =
     mode === 'satisfied'
       ? responses.filter(
@@ -70,6 +71,9 @@ export function ExplorePage({
             <Badge tone="green">{demoExplore.statusBadge}</Badge>
             <Button variant="secondary" onClick={onBuilder}>
               폼 편집
+            </Button>
+            <Button variant="secondary" onClick={() => setExportOpen(true)}>
+              내보내기
             </Button>
           </div>
         }
@@ -153,18 +157,6 @@ export function ExplorePage({
               </span>
             </div>
           </Panel>
-          <Panel className="export-panel">
-            <h3>
-              <Icon name="download" size={18} /> 파일로 내보내기
-            </h3>
-            <div className="button-row">
-              <Badge tone="blue">CSV · 데모</Badge>
-              <span className="small muted">표에 보이는 가상 응답만 다운로드합니다.</span>
-              <Button variant="secondary" onClick={downloadCsv}>
-                <Icon name="download" size={15} /> CSV 내보내기
-              </Button>
-            </div>
-          </Panel>
         </div>
         {assistant && (
           <Panel className="assistant-panel">
@@ -221,6 +213,40 @@ export function ExplorePage({
           </Panel>
         )}
       </div>
+      {exportOpen && (
+        <div className="modal-scrim" role="presentation">
+          <div className="modal" role="dialog" aria-label="내보내기">
+            <button className="modal-close" onClick={() => setExportOpen(false)} aria-label="닫기">
+              <Icon name="x" />
+            </button>
+            <h2>내보내기</h2>
+            <p className="muted">표에 보이는 가상 응답 {filtered.length}건을 내보냅니다.</p>
+            <div className="option-stack export-formats" role="radiogroup" aria-label="파일 형식">
+              <label className="option checked">
+                <input type="radio" name="export-format" value="csv" defaultChecked />
+                CSV
+              </label>
+              <label className="option disabled">
+                <input type="radio" name="export-format" value="json" disabled />
+                JSON
+              </label>
+              <label className="option disabled">
+                <input type="radio" name="export-format" value="yaml" disabled />
+                YAML
+              </label>
+            </div>
+            <p className="small muted">데모에서는 아직 지원하지 않아요.</p>
+            <Button
+              onClick={() => {
+                downloadCsv();
+                setExportOpen(false);
+              }}
+            >
+              <Icon name="download" size={15} /> CSV로 내보내기
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

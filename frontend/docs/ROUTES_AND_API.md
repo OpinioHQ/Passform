@@ -23,6 +23,8 @@
 
 주 2: 헤더 종 아이콘의 "마감 하루 전 알림" 스위치는 화면 상태로만 동작한다. 서버 저장(`PATCH /me/settings`의 `deadline_reminder`)과 알림 목록은 E12 #57이 연결한다.
 
+주 3: 탐색 화면의 내보내기 창은 표에 보이는 가상 응답을 CSV로 받는 데모다. 실제 JSON·YAML·CSV 내보내기와 범위 선택(전체 응답, AI 필터 결과)은 T11 #62가 연결한다.
+
 ## 공통 파일 규칙
 
 - 공통 파일(`src/routes/paths.ts`, `src/App.tsx`, `src/components/`, `src/api/client.ts`, `src/types/`)을 바꿀 때는 작은 PR로 먼저 올린다(`AGENTS.md` 5절).

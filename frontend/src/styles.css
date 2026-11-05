@@ -1036,15 +1036,13 @@ h3 {
   justify-content: space-between;
   margin-top: 16px;
 }
-.export-panel h3 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 17px;
-  font-size: 15px;
+.export-formats {
+  margin: 18px 0 10px;
 }
-.export-panel .button-row > .btn:last-child {
-  margin-left: auto;
+.option.disabled {
+  color: #73776f;
+  background: #f8f9f7;
+  cursor: not-allowed;
 }
 .assistant-panel {
   padding: 0;

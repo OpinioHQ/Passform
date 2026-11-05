@@ -1,6 +1,7 @@
 /** Passform docs/SPEC.md §5 참고. 구체적인 검증은 서버가 권위 있는 판정자다. */
 export type FormStatus = 'draft' | 'open' | 'closed';
-export type QuestionType = 'short_answer' | 'long_answer' | 'multiple_choice' | 'checkbox' | 'dropdown';
+export type QuestionType =
+  'short_answer' | 'long_answer' | 'multiple_choice' | 'checkbox' | 'dropdown';
 export interface Question {
   question_id: string;
   question_note: string;
@@ -11,7 +12,11 @@ export interface Question {
   character_limit?: number;
   profile_key?: string | null;
 }
-export interface FormSection { section_id: string; title: string; questions: Question[] }
+export interface FormSection {
+  section_id: string;
+  title: string;
+  questions: Question[];
+}
 export interface FormDefinition {
   form_id: string;
   title: string;
@@ -20,10 +25,19 @@ export interface FormDefinition {
   deadline: string | null;
   status: FormStatus;
   sections: FormSection[];
-  consent: { items: string[]; purpose: string; retention: string; refusal_notice: string; ai_summary: null };
+  consent: {
+    items: string[];
+    purpose: string;
+    retention: string;
+    refusal_notice: string;
+    ai_summary: null;
+  };
 }
 export type AnswerValue = string | string[];
-export interface ResponseAnswer { question_id: string; value: AnswerValue }
+export interface ResponseAnswer {
+  question_id: string;
+  value: AnswerValue;
+}
 export interface SubmitResponseInput {
   form_version: number;
   answers: ResponseAnswer[];

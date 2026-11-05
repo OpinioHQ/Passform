@@ -2,18 +2,19 @@
 
 기준: Figma `Omj6sDT7BKq5ExD7ukJw9F`, `ver1(blue color)` 주요 프레임. `SPEC.md` §5는 변경 전 다시 확인.
 
-| 화면 | 데모 라우트 | Figma node | 연동할 서버 API | 구현 상태 |
-|---|---|---|---|---|
-| 랜딩페이지 | `#/landing` | `34:75` | 없음 | 정적 반응형 화면 |
-| 내 폼함 | `#/inbox` | `5:6468` | `GET /me/forms`, `POST /me/saved-forms` | UI+일부 실제 클라이언트 스켈레톤 |
-| 응답 작성 | `#/response` | `5:6640` | `GET /f/{slug}`, `POST /forms/{form_id}/responses`, 응답 초안 API | UI+제출 클라이언트 연결점 |
-| 제출 내역 | `#/history` | `5:6811` | `GET /me/responses`, `GET /me/responses/{id}` | 데모 전용, 서버 연결 필요 |
-| 폼 편집 | `#/builder` | `5:6940` | `GET /forms/{id}/definition`, `POST /forms`, `PATCH /forms/{id}` | 편집 UI 상태만, 저장 연결 필요 |
-| 내가 만든 폼 | `#/created` | Figma 메뉴/폼 편집 | `GET /me/created-forms` | 데모 전용, 서버 연결 필요 |
-| 응답 탐색 | `#/explore` | `5:7219` | `GET /forms/{id}/results`, `POST /forms/{id}/analyze`, `POST /forms/{id}/export` | 데모 전용, 서버 연결 필요 |
-| 내 프로필 | `#/profile` | Figma 메뉴/자동채우기 | `GET /me/profiles` 등 | 데모 전용, 서버 연결 필요 |
+| 화면         | 데모 라우트  | Figma node            | 연동할 서버 API                                                                  | 구현 상태                        |
+| ------------ | ------------ | --------------------- | -------------------------------------------------------------------------------- | -------------------------------- |
+| 랜딩페이지   | `#/landing`  | `34:75`               | 없음                                                                             | 정적 반응형 화면                 |
+| 내 폼함      | `#/inbox`    | `5:6468`              | `GET /me/forms`, `POST /me/saved-forms`                                          | UI+일부 실제 클라이언트 스켈레톤 |
+| 응답 작성    | `#/response` | `5:6640`              | `GET /f/{slug}`, `POST /forms/{form_id}/responses`, 응답 초안 API                | UI+제출 클라이언트 연결점        |
+| 제출 내역    | `#/history`  | `5:6811`              | `GET /me/responses`, `GET /me/responses/{id}`                                    | 데모 전용, 서버 연결 필요        |
+| 폼 편집      | `#/builder`  | `5:6940`              | `GET /forms/{id}/definition`, `POST /forms`, `PATCH /forms/{id}`                 | 편집 UI 상태만, 저장 연결 필요   |
+| 내가 만든 폼 | `#/created`  | Figma 메뉴/폼 편집    | `GET /me/created-forms`                                                          | 데모 전용, 서버 연결 필요        |
+| 응답 탐색    | `#/explore`  | `5:7219`              | `GET /forms/{id}/results`, `POST /forms/{id}/analyze`, `POST /forms/{id}/export` | 데모 전용, 서버 연결 필요        |
+| 내 프로필    | `#/profile`  | Figma 메뉴/자동채우기 | `GET /me/profiles` 등                                                            | 데모 전용, 서버 연결 필요        |
 
 ## 주의
+
 - 프론트의 데이터 예시는 모두 `src/demo/data.ts`의 가상 데이터이며, **MVP API가 구현·연결됐다는 뜻이 아니다**.
 - `api/client.ts`는 실제 백엔드 엔드포인트를 위한 호출 함수 초안이다. CORS, 세션, OAuth2, CSRF 및 정확한 응답 타입은 백엔드와 통합하며 검증해야 한다.
 - `VITE_USE_API=true`로 켜도 API를 일부 화면에만 연결했다. 통합 전에는 `false` 유지.

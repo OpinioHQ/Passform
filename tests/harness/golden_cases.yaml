@@ -345,3 +345,265 @@ cases:
     note: >-
       버전 3에는 소속 학과 문항이 없지만 3학년이 모두 거짓이라 all의 결과가 거짓으로 확정된다.
       판정 불가 응답이 없는 버전은 not_evaluable_by_version에 넣지 않는다(SPEC 5절, 팀 결정 2026-11-04).
+
+# ---------------------------------------------------------------- 필수 골든 (T2 #50, T3 #51, T7 #55)
+#   fixture에 폼 status가 없으므로 시험 시작 때 open이고, 최신 버전은 form_versions의 가장 큰 번호로 본다.
+#   expect_question_ids는 오류 응답의 문항 ID, expect_saved_answers는 저장된 답, expect_response_count는 요청 뒤 그 폼의 제출 응답 수다.
+#   labels, scores는 {response_id, question_id, label 또는 score} 목록이고 fixture의 모든 장문 답에 값을 준다.
+access_cases:
+  - name: unauthenticated_401
+    ac: [AC2]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_required_branch.json
+      actor: anonymous
+      method: GET
+      path: /me/forms
+    expect_status: 401
+    note: 사람이 401로 답했다. 로그인이 필요한 API를 로그인 없이 부른 경우다(SPEC 5절 90행, AC2).
+
+submission_cases:
+  - name: submit_without_consent
+    ac: [AC14]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_required_branch.json
+      now: "2026-11-01T00:00:00Z"
+      form_version: 2
+      answers:
+        - {question_id: q1, value: 예}
+        - {question_id: q2, value: "2026-11-20"}
+        - {question_id: q3, value: 신청}
+        - {question_id: q4, value: 학생회}
+      consent_agreed: false
+    expect_error: consent_required
+    expect_response_count: 3
+    note: 사람 답. 동의 없는 제출은 거부되어 응답이 늘지 않고 기존 rr01, rr02, rr03만 남는다.
+
+  - name: skipped_answers_dropped
+    ac: [AC9]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_required_branch.json
+      now: "2026-11-01T00:00:00Z"
+      form_version: 2
+      answers:
+        - {question_id: q1, value: 아니요}
+        - {question_id: q2, value: "2026-11-20"}
+        - {question_id: q4, value: 동아리}
+      consent_agreed: true
+    expect_saved_answers:
+      - {question_id: q1, value: 아니요}
+      - {question_id: q4, value: 동아리}
+    expect_response_count: 4
+    note: 사람 답. 제출은 성공한다. q2는 q1 "아니요"로 건너뛰는 문항이라 일단 받더라도 검토 과정에서 저장에서 제외한다. rr01, rr02, rr03에 새 응답 1건이 더해진다.
+
+  - name: required_missing_visited_only
+    ac: [AC43, AC9]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_required_branch.json
+      now: "2026-11-01T00:00:00Z"
+      form_version: 2
+      answers:
+        - {question_id: q1, value: 아니요}
+      consent_agreed: true
+    expect_error: required_missing
+    expect_question_ids: [q4]
+    expect_response_count: 3
+    note: 사람 답. 경로 위의 필수 문항이 비어 있으면 400이고 해당 문항은 q4다. 4xx를 반환하므로 저장하지 않아 rr01, rr02, rr03만 남는다.
+
+  - name: submit_after_deadline
+    ac: [AC16]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_required_branch.json
+      now: "2026-11-30T15:00:00Z"
+      form_version: 2
+      answers:
+        - {question_id: q1, value: 예}
+        - {question_id: q2, value: "2026-11-20"}
+        - {question_id: q3, value: 신청}
+        - {question_id: q4, value: 학생회}
+      consent_agreed: true
+    expect_error: form_closed
+    expect_response_count: 3
+    note: 사람 답. 마감 이후 제출은 409 form_closed다. 마감 기한이 지났으니 저장하지 않아 rr01, rr02, rr03만 남는다.
+
+  - name: stale_form_version_rejected
+    ac: [AC76]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_required_branch.json
+      now: "2026-11-01T00:00:00Z"
+      form_version: 1
+      answers:
+        - {question_id: q1, value: 예}
+        - {question_id: q2, value: "2026-11-20"}
+        - {question_id: q3, value: 신청}
+        - {question_id: q4, value: 학생회}
+      consent_agreed: true
+    expect_error: form_version_changed
+    expect_response_count: 3
+    note: 사람 답. 옛 버전 제출은 409 form_version_changed로 받지 않고 최신 폼을 열어 제출하도록 안내한다. rr01, rr02, rr03만 남는다.
+
+  - name: latest_form_version_submits
+    ac: [AC76]
+    type: 정상
+    input:
+      fixture: data/seed/forms/form_required_branch.json
+      now: "2026-11-01T00:00:00Z"
+      form_version: 2
+      answers:
+        - {question_id: q1, value: 예}
+        - {question_id: q2, value: "2026-11-20"}
+        - {question_id: q3, value: 신청}
+        - {question_id: q4, value: 학생회}
+      consent_agreed: true
+    expect_saved_answers:
+      - {question_id: q1, value: 예}
+      - {question_id: q2, value: "2026-11-20"}
+      - {question_id: q3, value: 신청}
+      - {question_id: q4, value: 학생회}
+    expect_response_count: 4
+    note: 사람 답. 최신 버전 제출은 성공하고 답 4개가 저장된다. 최신 버전이 나왔다고 DB에 저장된 과거 버전 응답을 지우지 않으므로 rr01, rr02, rr03에 새 응답이 더해진다.
+
+summary_cases:
+  - name: personal_question_never_sent
+    ac: [AC92]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_summary.json
+      context: {conditions: [], operation: summarize}
+      labels:
+        - {response_id: rs01, question_id: q9, label: 행사 기획}
+        - {response_id: rs02, question_id: q9, label: 운영 경험}
+        - {response_id: rs03, question_id: q9, label: 행사 기획}
+        - {response_id: rs04, question_id: q9, label: 운영 경험}
+        - {response_id: rs07, question_id: q9, label: 행사 기획}
+        - {response_id: rs01, question_id: q10, label: 연락 요청}
+        - {response_id: rs03, question_id: q10, label: 면접 안내}
+        - {response_id: rs06, question_id: q10, label: 연락 요청}
+      scores:
+        - {response_id: rs01, question_id: q9, score: 0.9}
+        - {response_id: rs02, question_id: q9, score: 0.9}
+        - {response_id: rs03, question_id: q9, score: 0.9}
+        - {response_id: rs04, question_id: q9, score: 0.9}
+        - {response_id: rs07, question_id: q9, score: 0.9}
+        - {response_id: rs01, question_id: q10, score: 0.9}
+        - {response_id: rs03, question_id: q10, score: 0.9}
+        - {response_id: rs06, question_id: q10, score: 0.9}
+    expect_summary_status: ok
+    llm_must_not_contain:
+      - "김가상"
+      - "이가상"
+      - "박가상"
+      - "최가상"
+      - "정가상"
+      - "강가상"
+      - "윤가상"
+      - "01000000001"
+      - "01000000002"
+      - "01000000003"
+      - "01000000004"
+      - "01000000005"
+      - "01000000006"
+      - "virtual01@example.com"
+      - "virtual02@example.com"
+      - "virtual03@example.com"
+      - "virtual04@example.com"
+      - "virtual05@example.com"
+      - "virtual06@example.com"
+      - "2001-01-01"
+      - "2002-02-02"
+      - "2003-03-03"
+      - "2004-04-04"
+      - "2005-05-05"
+      - "2006-06-06"
+      - "이보호"
+      - "소프트웨어학과"
+      - "경영학과"
+    note: >-
+      사람 답. q1~q6은 개인정보 문항이라 값이 요청 본문에 없어야 한다. q6은 profile_key가 department라 SPEC 5절 168행 정의에 들어간다(대조 뒤 사람이 포함으로 정함).
+      q9, q10의 일부 응답에 개인정보가 들어 있어도 문항 자체가 개인정보를 묻는 것은 아니므로 문항을 배제하지 않는다.
+
+  - name: contact_masked_in_long_answer
+    ac: [AC92]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_summary.json
+      context: {conditions: [], operation: summarize}
+      labels:
+        - {response_id: rs01, question_id: q9, label: 행사 기획}
+        - {response_id: rs02, question_id: q9, label: 운영 경험}
+        - {response_id: rs03, question_id: q9, label: 행사 기획}
+        - {response_id: rs04, question_id: q9, label: 운영 경험}
+        - {response_id: rs07, question_id: q9, label: 행사 기획}
+        - {response_id: rs01, question_id: q10, label: 연락 요청}
+        - {response_id: rs03, question_id: q10, label: 면접 안내}
+        - {response_id: rs06, question_id: q10, label: 연락 요청}
+      scores:
+        - {response_id: rs01, question_id: q9, score: 0.9}
+        - {response_id: rs02, question_id: q9, score: 0.9}
+        - {response_id: rs03, question_id: q9, score: 0.9}
+        - {response_id: rs04, question_id: q9, score: 0.9}
+        - {response_id: rs07, question_id: q9, score: 0.9}
+        - {response_id: rs01, question_id: q10, score: 0.9}
+        - {response_id: rs03, question_id: q10, score: 0.9}
+        - {response_id: rs06, question_id: q10, score: 0.9}
+    expect_summary_status: ok
+    llm_must_not_contain:
+      - "01000000102"
+      - "010-0000-0104"
+      - "010-0000-0101"
+      - "contact01@example.com"
+      - "contact06@example.com"
+    note: >-
+      사람 답. 장문 속 전화번호와 이메일은 하이픈 유무와 관계없이 요청 본문에 없어야 한다.
+      rs01의 전화번호와 이메일은 하나만 가려도 통과하지 않도록 나눠 적었다(대조 뒤 사람이 정함).
+
+  - name: no_consent_excluded_from_summary_only
+    ac: [AC91]
+    type: 정상
+    input:
+      fixture: data/seed/forms/form_summary.json
+      context: {conditions: [], operation: summarize}
+      labels:
+        - {response_id: rs01, question_id: q9, label: 행사 기획}
+        - {response_id: rs02, question_id: q9, label: 운영 경험}
+        - {response_id: rs03, question_id: q9, label: 행사 기획}
+        - {response_id: rs04, question_id: q9, label: 운영 경험}
+        - {response_id: rs07, question_id: q9, label: 행사 기획}
+        - {response_id: rs01, question_id: q10, label: 연락 요청}
+        - {response_id: rs03, question_id: q10, label: 면접 안내}
+        - {response_id: rs06, question_id: q10, label: 연락 요청}
+      scores:
+        - {response_id: rs01, question_id: q9, score: 0.9}
+        - {response_id: rs02, question_id: q9, score: 0.9}
+        - {response_id: rs03, question_id: q9, score: 0.9}
+        - {response_id: rs04, question_id: q9, score: 0.9}
+        - {response_id: rs07, question_id: q9, score: 0.9}
+        - {response_id: rs01, question_id: q10, score: 0.9}
+        - {response_id: rs03, question_id: q10, score: 0.9}
+        - {response_id: rs06, question_id: q10, score: 0.9}
+    expect_summary_status: ok
+    expect_count: 6
+    expect_response_ids: [rs01, rs02, rs03, rs04, rs05, rs06]
+    expect_excluded_no_consent_count: 2
+    llm_must_not_contain:
+      - "최가상"
+      - "01000000004"
+      - "virtual04@example.com"
+      - "2004-04-04"
+      - "미동의 응답의 지원 동기입니다"
+      - "010-0000-0104"
+      - "강가상"
+      - "01000000006"
+      - "virtual06@example.com"
+      - "2006-06-06"
+      - "미동의 응답의 건의 사항입니다"
+      - "contact06@example.com"
+    note: >-
+      사람 답. rs07은 미완성이라 count와 미동의 수에 넣지 않는다. rs04, rs06은 AI 요약 미동의라 q1~q10이 요청 본문에 없어야 하지만 집계에는 남는다.
+      동의한 다른 응답이 있으므로 no_consented_responses가 아니라 ok다.
+      다른 응답과 값이 겹치는 q6, q7은 어느 응답의 값인지 구분되지 않아 이 목록에서 뺐다(대조 뒤 사람이 정함). q6은 personal_question_never_sent가 검사한다.

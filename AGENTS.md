@@ -112,7 +112,7 @@
 개발 환경
 
 - 백엔드: Java 17+, Spring Boot 4.1.2, Spring Security(OAuth 2.0 소셜 로그인, 제공사는 Google), Spring Data JPA, PostgreSQL
-- 프론트엔드: Node 20+, React, TypeScript, Tailwind CSS
+- 프론트엔드: Node 20+, React 19, TypeScript 5, Vite 6, React Router 7, Tailwind CSS 3, ESLint 9, Prettier 3, Vitest 2
 - AI: OpenAI API + JSON Schema 기반 구조화 출력. 파서·조건 매처·주제 분류는 `gpt-6-luna`(reasoning effort `none`, temperature 0), 요약문 생성은 `gpt-6.1-terra`(reasoning effort `none`), 임베딩은 `text-embedding-3-small`. 모델 ID를 바꾸면 SPEC과 evals 측정 기록에 함께 적는다. 개발용 API 키에는 월 사용 한도를 건다.
 - 파일: AWS S3. 업로드는 SPEC 5절대로 서버가 multipart로 받아 S3에 저장하고, 다운로드는 서버가 권한을 확인한 뒤 Presigned URL로 넘긴다 — 폼 설명란·문항 첨부와 응답자 파일 업로드는 MVP 범위다(형식·용량·권한은 SPEC 5절과 AC63~AC70).
 - evals 러너만 Python 3.11+

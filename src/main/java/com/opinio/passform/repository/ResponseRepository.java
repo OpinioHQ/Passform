@@ -22,4 +22,13 @@ public interface ResponseRepository extends JpaRepository<Response, UUID> {
 			""")
 	List<Response> findSubmittedNotDeletedByFormId(@Param("formId") UUID formId);
 
+	// 선착순 인원과 비교하는 현재 제출 응답 수다(SPEC 5절 176행). 위 메서드와 같은 범위를 센다.
+	@Query("""
+			select count(r) from Response r
+			where r.formId = :formId
+			  and r.status = com.opinio.passform.domain.analysis.ResponseStatus.SUBMITTED
+			  and r.creatorDeletedAt is null
+			""")
+	long countSubmittedNotDeleted(@Param("formId") UUID formId);
+
 }

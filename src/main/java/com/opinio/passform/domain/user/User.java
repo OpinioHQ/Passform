@@ -10,7 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-// 뼈대다. 로그인 규칙은 T2에서 더한다. email은 알림 수신용이며 Profile의 email과 다르다.
+// email은 알림 수신용이며 Profile의 email과 다르다.
 @Entity
 @Table(name = "users")
 public class User {
@@ -49,6 +49,10 @@ public class User {
 		this.oauthProvider = oauthProvider;
 		this.oauthSubject = oauthSubject;
 		this.createdAt = createdAt;
+	}
+
+	public void changeDeadlineReminder(boolean deadlineReminder) {
+		this.deadlineReminder = deadlineReminder;
 	}
 
 	public UUID getId() {

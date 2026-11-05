@@ -31,7 +31,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return switch (code) {
 			case NOT_FOUND -> HttpStatus.NOT_FOUND;
 			case FORBIDDEN -> HttpStatus.FORBIDDEN;
-			case INVALID_REQUEST -> HttpStatus.BAD_REQUEST;
+			case INVALID_REQUEST, CONSENT_REQUIRED, REQUIRED_MISSING, INVALID_INPUT_FORMAT_VALUE, INVALID_OPTION,
+					CHARACTER_LIMIT_EXCEEDED -> HttpStatus.BAD_REQUEST;
+			case FORM_CLOSED, FORM_VERSION_CHANGED -> HttpStatus.CONFLICT;
 			case INTERNAL_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
 		};
 	}

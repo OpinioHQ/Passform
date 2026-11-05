@@ -42,11 +42,18 @@ import jakarta.validation.constraints.NotBlank;
 class ApiExceptionHandlerTest {
 
 	// 오류 코드-HTTP 상태 표. 코드를 더하면 여기에도 한 줄 더해야 첫 테스트가 통과한다.
-	private static final Map<ErrorCode, HttpStatus> EXPECTED = Map.of(
-			ErrorCode.NOT_FOUND, HttpStatus.NOT_FOUND,
-			ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN,
-			ErrorCode.INVALID_REQUEST, HttpStatus.BAD_REQUEST,
-			ErrorCode.INTERNAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+	private static final Map<ErrorCode, HttpStatus> EXPECTED = Map.ofEntries(
+			Map.entry(ErrorCode.NOT_FOUND, HttpStatus.NOT_FOUND),
+			Map.entry(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN),
+			Map.entry(ErrorCode.INVALID_REQUEST, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.INTERNAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR),
+			Map.entry(ErrorCode.CONSENT_REQUIRED, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.REQUIRED_MISSING, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.INVALID_INPUT_FORMAT_VALUE, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.INVALID_OPTION, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.CHARACTER_LIMIT_EXCEEDED, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.FORM_CLOSED, HttpStatus.CONFLICT),
+			Map.entry(ErrorCode.FORM_VERSION_CHANGED, HttpStatus.CONFLICT));
 
 	@Autowired
 	private MockMvc mockMvc;

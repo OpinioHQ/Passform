@@ -78,6 +78,26 @@ public class Form {
 		this.updatedAt = createdAt;
 	}
 
+	// 배포된 적 있고 삭제되지 않은 폼. 초안과 삭제된 폼은 응답자에게 없는 폼이다(AC38).
+	public boolean isPublished() {
+		return status != FormStatus.DRAFT && deletedAt == null;
+	}
+
+	// deadline이 지나면 status가 open이어도 닫힌 것이다. now == deadline도 닫힘이다(AC16).
+	public boolean acceptsSubmissionAt(Instant now) {
+		return status == FormStatus.OPEN && (deadline == null || now.isBefore(deadline));
+	}
+
+	public boolean isResponseLimitReached(long submittedCount) {
+		return responseLimit != null && submittedCount >= responseLimit;
+	}
+
+	// N번째 제출을 저장하는 처리 안에서 부른다(SPEC 5절 176행).
+	public void closeByResponseLimit(Instant now) {
+		this.status = FormStatus.CLOSED;
+		this.updatedAt = now;
+	}
+
 	public UUID getId() {
 		return id;
 	}

@@ -115,12 +115,12 @@ SPEC 4절 비포함과 같다. 주관식 내용으로 `count`·`list` 거르기,
 
 | 테이블 | 내용 |
 |---|---|
-| `users` | 계정. 이메일(알림 수신), 화면 모드, 마감 알림 설정, 소셜 제공사와 제공사 고유 ID |
+| `users` | 계정. 이메일(알림 수신), 마감 알림 설정, 소셜 제공사와 제공사 고유 ID |
 | `profiles` | 프로필 |
 | `forms` | 소유자, 상태, 슬러그, 마지막 배포 버전, 운영 설정, 작업 중 정의, 첫 배포 때 고정한 AI 요약 고지, 삭제 시각 |
 | `form_versions` | 버전별 폼 정의 JSON(불변) |
 | `responses` | 응답 한 건. 답 목록 JSON, 제출 버전, 상태, AI 요약 동의, 제작자 삭제 시각, 삭제 뒤 이력에 쓸 폼 제목·문항 문구 |
-| `saved_forms`, `notifications` | 내 폼함, 알림 |
+| `saved_forms`, `notifications` | 내 폼함(처음 들어간 시각 `saved_at` 포함), 알림 |
 | `consent_templates`, `question_templates` | 템플릿 |
 | `attachments` | 첨부 메타데이터. 원본은 S3 |
 

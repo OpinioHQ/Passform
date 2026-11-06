@@ -139,6 +139,30 @@ class FormPublishValidatorTest {
 	}
 
 	@Test
+	void 문항이_하나도_없으면_schema_invalid다() {
+		Map<String, Object> noSections = SampleForms.unbranched();
+		noSections.put("sections", List.of());
+		assertRejected(noSections, ErrorCode.SCHEMA_INVALID);
+
+		Map<String, Object> emptySections = SampleForms.unbranched();
+		emptySections.put("sections", List.of(emptySection("s1"), emptySection("s2")));
+		assertRejected(emptySections, ErrorCode.SCHEMA_INVALID);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	void 문항이_있는_폼의_빈_섹션은_막지_않는다() {
+		Map<String, Object> definition = SampleForms.unbranched();
+		((List<Object>) definition.get("sections")).add(emptySection("s3"));
+
+		assertThatCode(() -> FormPublishValidator.validate(definition)).doesNotThrowAnyException();
+	}
+
+	private static Map<String, Object> emptySection(String sectionId) {
+		return Map.of("section_id", sectionId, "title", "빈 섹션", "questions", List.of());
+	}
+
+	@Test
 	void 문항_ID가_중복되면_schema_invalid다() {
 		Map<String, Object> definition = SampleForms.unbranched();
 		SampleForms.question(definition, 1, 1).put("question_id", "q1");

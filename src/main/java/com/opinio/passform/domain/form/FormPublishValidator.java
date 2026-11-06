@@ -32,8 +32,12 @@ public final class FormPublishValidator {
 		checkDisplayMode(definition, questions);
 	}
 
-	// 문구, 선택지, ID 중복은 SPEC에 맞는 코드가 없어 schema_invalid로 답한다(사람 결정, 이슈 #40).
+	// 문항 없음, 문구, 선택지, ID 중복은 SPEC에 맞는 코드가 없어 schema_invalid로 답한다(사람 결정, 이슈 #40).
+	// 문항이 없으면 수집 항목이 비어 동의를 받을 내용이 없다(SPEC 5절 210행). 문항이 있는 폼의 빈 섹션은 막지 않는다.
 	private static void checkQuestions(Map<String, Object> definition, List<Question> questions) {
+		if (questions.isEmpty()) {
+			throw new DomainException(ErrorCode.SCHEMA_INVALID);
+		}
 		Set<Object> sectionIds = new HashSet<>();
 		for (Object section : FormJson.array(definition.get("sections"))) {
 			if (!sectionIds.add(FormJson.object(section).get("section_id"))) {

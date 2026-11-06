@@ -409,6 +409,47 @@ class FormApiDatabaseTest extends DatabaseTest {
 		readDefinition(owner, formId).andExpect(jsonPath("$.status").value("draft"));
 	}
 
+	@Test
+	void F4_문항이_하나도_없는_폼은_초안에_저장되지만_배포되지_않는다() throws Exception {
+		Map<String, Object> definition = SampleForms.unbranched();
+		definition.put("sections", List.of());
+		String formId = createDraft(definition);
+		JsonNode before = definitionOf(formId);
+
+		expectError(patchForm(owner, formId, Map.of("status", "open")), 400, "schema_invalid");
+
+		assertThat(definitionOf(formId)).isEqualTo(before);
+		readDefinition(owner, formId).andExpect(jsonPath("$.status").value("draft"))
+			.andExpect(jsonPath("$.definition_version").value(nullValue()))
+			.andExpect(jsonPath("$.share_url").value(nullValue()));
+		assertThat(versionCount(formId)).isZero();
+		expectError(publicById(formId), 404, "not_found");
+	}
+
+	@Test
+	void F4_배포된_폼의_문항을_모두_지우는_저장은_거부하고_마지막_배포본은_그대로다() throws Exception {
+		String formId = createOpen(SampleForms.unbranched());
+		JsonNode before = definitionOf(formId);
+
+		expectError(patchForm(owner, formId, Map.of("sections", List.of())), 400, "schema_invalid");
+
+		assertThat(definitionOf(formId)).isEqualTo(before);
+		assertThat(versionCount(formId)).isEqualTo(1);
+		publicById(formId).andExpect(status().isOk()).andExpect(jsonPath("$.definition_version").value(1));
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	void F4_문항이_있는_폼에_빈_섹션이_섞여_있으면_배포된다() throws Exception {
+		Map<String, Object> definition = SampleForms.unbranched();
+		((List<Object>) definition.get("sections"))
+			.add(Map.of("section_id", "s3", "title", "빈 섹션", "questions", List.of()));
+
+		String formId = createOpen(definition);
+
+		publicById(formId).andExpect(status().isOk()).andExpect(jsonPath("$.sections", hasSize(3)));
+	}
+
 	@ParameterizedTest
 	@CsvSource(nullValues = "NULL", value = { "NULL", "없는_템플릿" })
 	void AC12_동의_템플릿이_없으면_배포되지_않는다(String templateId) throws Exception {

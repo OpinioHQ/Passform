@@ -28,12 +28,14 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.function.Executable;
+import org.opentest4j.TestAbortedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -47,6 +49,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -73,6 +77,10 @@ import com.opinio.passform.repository.UserRepository;
  * 케이스와 기대값은 YAML에만 둔다. MockMvc에 실제 SecurityConfig와 service, 모의 저장소를 붙인다(ARCHITECTURE G2).
  * 케이스에 있는 판정 키만 검사한다. POST 등 변경 요청에는 유효한 CSRF 토큰을 넣는다(CSRF 자체의 검사는 일반 테스트가 맡는다).
  * 지금은 사용자 행만 모의 저장소에 있다. 폼·응답을 읽는 케이스를 더하는 이슈(E5, E6)가 fixture 값을 저장소에 넣는다.
+ * skip은 두 경우뿐이다: 스텁의 "not implemented", 그리고 보안 필터를 통과했는데 맞는 라우트가 없을 때(API 미구현).
+ * 라우트가 없으면 MockMvc가 404를 주므로, skip하지 않으면 404 기대 케이스가 검사 없이 통과한다.
+ * 보안 필터가 먼저 막은 요청(예: unauthenticated_401)은 라우트를 찾지 않으므로 skip하지 않는다.
+ * 케이스를 더한 이슈는 자기 케이스의 skip 0을 완료 조건으로 삼는다.
  */
 @WebMvcTest
 @Import({ SecurityConfig.class, ClockConfig.class })
@@ -177,6 +185,25 @@ class AccessGoldenTest {
 		assertTrue(thrownBy("access_cases:\n  - {name: a, name: b}\n") instanceof YAMLException, "YAML 중복 키");
 	}
 
+	@Test
+	void 보안_필터를_통과했는데_라우트가_없으면_skip한다() {
+		Map<String, Object> input = Map.of("actor", "other_user", "method", "GET", "path", "/no-such-route");
+		TestAbortedException skipped = Assertions.assertThrows(TestAbortedException.class, () -> perform(input));
+		assertTrue(skipped.getMessage().contains("라우트 미구현: GET /no-such-route"), skipped::getMessage);
+	}
+
+	@Test
+	void 보안_필터가_막은_요청은_라우트가_없어도_skip하지_않는다() throws Exception {
+		Map<String, Object> input = Map.of("actor", "anonymous", "method", "GET", "path", "/no-such-route");
+		assertEquals(401, perform(input).getStatus());
+	}
+
+	@Test
+	void 라우트가_있는_요청은_skip하지_않는다() throws Exception {
+		Map<String, Object> input = Map.of("actor", "owner", "method", "GET", "path", "/me");
+		assertEquals(200, perform(input).getStatus());
+	}
+
 	@TestFactory
 	Stream<DynamicTest> 골든_케이스() throws IOException {
 		return loadCases(Files.readString(CASES)).stream()
@@ -210,22 +237,27 @@ class AccessGoldenTest {
 		if (input.containsKey("body")) {
 			request.contentType(MediaType.APPLICATION_JSON).content(JSON.writeValueAsString(input.get("body")));
 		}
+		String target = method + " " + input.get("path");
 		try {
 			MvcResult result = mockMvc.perform(request).andReturn();
-			skipIfNotImplemented(result.getResolvedException());
+			skipIfNotImplemented(result.getResolvedException(), target);
 			return result.getResponse();
 		}
 		catch (Exception e) {
-			skipIfNotImplemented(e);
+			skipIfNotImplemented(e, target);
 			throw e;
 		}
 	}
 
-	// 공통 advice가 예외를 500으로 바꾸므로 처리된 예외까지 원인을 따라가 스텁인지 본다.
-	private static void skipIfNotImplemented(Throwable thrown) {
+	// 공통 advice가 예외를 응답으로 바꾸므로 처리된 예외까지 원인을 따라가 미구현인지 본다.
+	// skip 사유에 요청을 남긴다. 경로 오타나 잘못된 매핑도 같은 사유로 skip되므로 결과에서 찾을 수 있게 한다.
+	private static void skipIfNotImplemented(Throwable thrown, String target) {
 		for (Throwable cause = thrown; cause != null; cause = cause.getCause()) {
 			Assumptions.assumeFalse(
-					cause instanceof UnsupportedOperationException && NOT_IMPLEMENTED.equals(cause.getMessage()), "스텁 미구현");
+					cause instanceof UnsupportedOperationException && NOT_IMPLEMENTED.equals(cause.getMessage()),
+					"스텁 미구현: " + target);
+			Assumptions.assumeFalse(cause instanceof NoResourceFoundException || cause instanceof NoHandlerFoundException,
+					() -> "라우트 미구현: " + target + " (API를 만들었다면 경로 오타나 매핑을 확인한다. 케이스를 더한 이슈는 skip 0을 확인한다)");
 		}
 	}
 

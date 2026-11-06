@@ -1,22 +1,21 @@
 package com.opinio.passform.controller;
 
-import java.util.Map;
-
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.opinio.passform.domain.error.DomainException;
-import com.opinio.passform.domain.error.ErrorCode;
+import tools.jackson.databind.annotation.JsonDeserialize;
+
 import com.opinio.passform.service.AccountService;
 import com.opinio.passform.service.AccountService.AccountView;
+import com.opinio.passform.service.AccountService.SettingsCommand;
 import com.opinio.passform.service.CurrentUserService;
+
+import jakarta.validation.Valid;
 
 @RestController
 public class AccountController {
-
-	private static final String DEADLINE_REMINDER = "deadline_reminder";
 
 	private final AccountService accounts;
 
@@ -32,14 +31,13 @@ public class AccountController {
 		return accounts.find(currentUser.requireUserId());
 	}
 
-	// Boolean 필드로 받으면 Jackson이 "true"와 1을 true로 바꾸고 null과 생략을 구분하지 못해 본문을 그대로 읽는다.
 	@PatchMapping("/me/settings")
-	public void updateSettings(@RequestBody Map<String, Object> body) {
-		Object value = body.get(DEADLINE_REMINDER);
-		if (body.containsKey(DEADLINE_REMINDER) && !(value instanceof Boolean)) {
-			throw new DomainException(ErrorCode.INVALID_REQUEST);
-		}
-		accounts.updateSettings(currentUser.requireUserId(), (Boolean) value);
+	public void updateSettings(@Valid @RequestBody SettingsRequest request) {
+		accounts.updateSettings(new SettingsCommand(currentUser.requireUserId(), request.deadlineReminder()));
+	}
+
+	// 생략하면 null이고 값을 유지한다. "true", 1 같은 boolean 아닌 값과 명시한 null은 읽기 단계에서 거부해 invalid_request다.
+	public record SettingsRequest(@JsonDeserialize(using = StrictBooleanDeserializer.class) Boolean deadlineReminder) {
 	}
 
 }

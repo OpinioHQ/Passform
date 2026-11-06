@@ -46,12 +46,11 @@ public class AccountService {
 		return new AccountView(user.getId(), user.getName(), user.getEmail(), user.isDeadlineReminder());
 	}
 
-	// null이면 값을 유지한다.
 	@Transactional
-	public void updateSettings(UUID userId, Boolean deadlineReminder) {
-		User user = load(userId);
-		if (deadlineReminder != null) {
-			user.changeDeadlineReminder(deadlineReminder);
+	public void updateSettings(SettingsCommand command) {
+		User user = load(command.userId());
+		if (command.deadlineReminder() != null) {
+			user.changeDeadlineReminder(command.deadlineReminder());
 		}
 	}
 
@@ -60,6 +59,10 @@ public class AccountService {
 	}
 
 	public record AccountView(UUID userId, String name, String email, boolean deadlineReminder) {
+	}
+
+	// deadlineReminder가 null이면 값을 유지한다.
+	public record SettingsCommand(UUID userId, Boolean deadlineReminder) {
 	}
 
 }

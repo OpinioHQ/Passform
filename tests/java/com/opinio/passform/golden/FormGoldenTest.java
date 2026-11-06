@@ -39,10 +39,15 @@ import tools.jackson.databind.json.JsonMapper;
 
 import com.opinio.passform.domain.error.DomainException;
 import com.opinio.passform.domain.form.Form;
+import com.opinio.passform.repository.ConsentTemplateRepository;
 import com.opinio.passform.repository.FormRepository;
+import com.opinio.passform.repository.FormVersionRepository;
+import com.opinio.passform.repository.ResponseRepository;
+import com.opinio.passform.service.FormSchemaValidator;
 import com.opinio.passform.service.FormService;
 import com.opinio.passform.service.FormService.DefinitionView;
 import com.opinio.passform.service.FormService.UpdateCommand;
+import com.opinio.passform.service.ShareUrls;
 
 /**
  * 폼 골든 테스트. tests/harness/golden_cases.yaml의 form_cases만 읽어 케이스마다 동적 테스트를 하나 만든다.
@@ -253,7 +258,13 @@ class FormGoldenTest {
 				return form;
 			});
 			when(forms.findById(any(UUID.class))).thenAnswer(call -> Optional.ofNullable(saved[0]));
-			service = new FormService(forms, Clock.fixed(Instant.parse("2026-11-07T00:00:00Z"), ZoneOffset.UTC));
+			when(forms.findByIdForUpdate(any(UUID.class))).thenAnswer(call -> Optional.ofNullable(saved[0]));
+			// 시드의 consent_default는 fixture에 없어 실행기가 준비한다(data/seed/README.md 가정 7). 응답은 없다(모의 기본값 0건).
+			ConsentTemplateRepository consentTemplates = mock(ConsentTemplateRepository.class);
+			when(consentTemplates.existsById("consent_default")).thenReturn(true);
+			service = new FormService(forms, mock(FormVersionRepository.class), mock(ResponseRepository.class),
+					consentTemplates, new FormSchemaValidator(), new ShareUrls("https://app.example.com"),
+					Clock.fixed(Instant.parse("2026-11-07T00:00:00Z"), ZoneOffset.UTC));
 		}
 
 	}

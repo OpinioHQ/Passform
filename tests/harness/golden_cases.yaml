@@ -362,6 +362,34 @@ access_cases:
     expect_status: 401
     note: 사람이 401로 답했다. 로그인이 필요한 API를 로그인 없이 부른 경우다(SPEC 5절 90행, AC2).
 
+  - name: other_users_response_404
+    ac: [AC2]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      actor: other_user
+      method: GET
+      path: /me/responses/rb01
+    expect_status: 404
+    must_not_contain: [백엔드 개발을 좋아합니다.]
+    note: >-
+      남의 응답은 있는지도 알리지 않고 내용도 돌려주지 않는다(AC2, SPEC 5절 인증 구분). 유출 검사는 거절 응답 본문에 rb01의 자기소개 원문이 있는지 본다.
+
+  - name: non_owner_analyze_403
+    ac: [AC2]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      actor: other_user
+      method: POST
+      path: /forms/form_b/analyze
+      body: {context: {conditions: [], operation: list}}
+    expect_status: 403
+    must_not_contain: [rb01, 백엔드 개발을 좋아합니다.]
+    note: >-
+      주소의 폼 ID를 남의 것으로 바꿔 분석을 요청해도 아무 정보도 주지 않는다(사람 판단, AC2). context로 보내 파서를 거치지 않고 권한 판정만 본다.
+      유출 검사는 거절 응답 본문에 응답 ID와 원문이 있는지 본다.
+
 submission_cases:
   - name: submit_without_consent
     ac: [AC14]
@@ -607,3 +635,337 @@ summary_cases:
       사람 답. rs07은 미완성이라 count와 미동의 수에 넣지 않는다. rs04, rs06은 AI 요약 미동의라 q1~q10이 요청 본문에 없어야 하지만 집계에는 남는다.
       동의한 다른 응답이 있으므로 no_consented_responses가 아니라 ok다.
       다른 응답과 값이 겹치는 q6, q7은 어느 응답의 값인지 구분되지 않아 이 목록에서 뺐다(대조 뒤 사람이 정함). q6은 personal_question_never_sent가 검사한다.
+
+# ---------------------------------------------------------------- 필수 골든 (E2 #40, E5 #43, E6 #44, E7 #45)
+#   기대값과 근거는 기능 구현 전에 사람이 판단해 확정했다. 에이전트는 문서 근거와 예시를 제시하고 입력과 형식을 옮겼다.
+#   parser_outputs는 호출 순서대로 돌려줄 모의 파서 출력이다. 일부는 파서 실수를 일부러 재현한 값이며 note에 적었다.
+#   form_cases의 action: open은 폼을 초안으로 둔 채 배포를 요청하는 것이고, change는 그 요청에 함께 보내는 최상위 키다.
+#   expect_unchanged는 요청 뒤 값이 그대로여야 하는 폼 필드 이름이다.
+analysis_cases:
+  - name: missing_match_two_conditions
+    ac: [AC26]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      query: 소프트웨어학과랑 3학년 학생 수 알려줘
+      parser_outputs:
+        - {conditions: [소프트웨어학과, 3학년], operation: count}
+      matching:
+        - {condition: 소프트웨어학과, form_version: 1, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 소프트웨어학과, form_version: 2, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 3학년, form_version: 1, question_id: q2, kind: option, option: 3학년}
+        - {condition: 3학년, form_version: 2, question_id: q2, kind: option, option: 3학년}
+        - {condition: 3학년, form_version: 3, question_id: q2, kind: option, option: 3학년}
+    expect_reason: missing_match
+    expect_options: [all, any]
+    expect_parser_calls: 1
+    note: >-
+      "소프트웨어학과 3학년"은 둘 다 만족하는 한 묶음으로 읽히지만, "소프트웨어학과랑 3학년"은 각각일 가능성도 있어 불확실하므로 한 번 더 묻는다(사람 판단).
+      파서가 실제로 match를 생략하는지는 모델 품질이라 evals에서 잰다. AC26의 혼합 부정 입력("소프트웨어학과가 아닌 4학년 수", options [])은 이 케이스로 검사하지 않는다.
+
+  - name: unsupported_statistics_not_mapped_to_summary
+    ac: [AC27, AC77]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_summary.json
+      query: 학과별 통계 정리해줘
+      parser_outputs:
+        - {conditions: [], operation: summarize}
+      matching: []
+    expect_reason: missing_operation
+    expect_options: [count, list, summarize]
+    expect_parser_calls: 1
+    note: >-
+      "보여줘"에서 summarize가 나오는 것은 프롬프트 규칙과 맞지 않아(사람 지적) 프롬프트상 summarize로 가는 "정리해줘"로 입력을 바꿨다.
+      파서가 summarize를 내도 원문의 통계 요청을 보고 실행하지 않는다. AI 요약이 켜진 폼이라 세 동작을 안내한다(AC77, 표 3행).
+      대시보드 안내는 메시지 문구라 판정 키로 검사하지 않는다.
+
+  - name: missing_operation
+    ac: [AC27]
+    type: 정상
+    input:
+      fixture: data/seed/forms/form_summary.json
+      query: 응답 결과를 알려줘
+      parser_outputs:
+        - {conditions: [], operation: null}
+      matching: []
+    expect_reason: missing_operation
+    expect_options: [count, list, summarize]
+    expect_parser_calls: 1
+    note: >-
+      SPEC 표 3행과 AC27 테스트. operation null은 스키마에 맞는 출력이라 재호출하지 않고(parse_query.md 실패 모드 2번),
+      AI 요약이 켜진 폼이므로 세 동작을 안내한다. 사람이 문서 확인 결과를 검토해 확정했다(시험 데모 기록은 대조용으로만 봤다).
+
+  - name: extra_key_retry_once
+    ac: [AC30]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      query: 학년별로 인원 수 알려줘
+      parser_outputs:
+        - {conditions: [], operation: count, group_by: 학년}
+        - {conditions: [], operation: count, group_by: 학년}
+      matching: []
+    expect_reason: parse_failed
+    expect_options: []
+    expect_parser_calls: 2
+    note: >-
+      스키마에 없는 group_by는 형식 오류라 1회만 다시 부르고, 또 실패하면 추측하지 않는다(AC30, 실패 모드 9번).
+      표 순서상 parse_failed가 missing_operation보다 앞선다. 한 번 실패 후 정상인 경우는 이 케이스로 검사하지 않는다.
+
+  - name: confirmed_context_skips_parser
+    ac: [AC32]
+    type: 정상
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      context: {conditions: [소프트웨어학과], operation: count}
+      parser_outputs: []
+      matching:
+        - {condition: 소프트웨어학과, form_version: 1, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 소프트웨어학과, form_version: 2, question_id: q1, kind: option, option: 소프트웨어학과}
+    expect_parser_calls: 0
+    expect_count: 5
+    expect_not_evaluable_count: 4
+    note: >-
+      확정한 context는 파서를 부르지 않고 전체 제출 버전에서 결과를 낸다. 버전 1의 2건과 버전 2의 3건이 일치하고, 학과 문항이 없는 버전 3의 4건은 판정 불가다.
+      count의 response_ids는 null이라 ID는 판정하지 않는다.
+
+  - name: double_negation_unanswered
+    ac: [AC29]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      query: 관심 분야에 답하지 않은 학생 수 알려줘
+      parser_outputs:
+        - {conditions: [관심 분야 - 미응답], match: not, operation: count}
+      matching:
+        - {condition: 관심 분야 - 미응답, form_version: 1, question_id: q3, kind: unanswered, option: null}
+        - {condition: 관심 분야 - 미응답, form_version: 2, question_id: q3, kind: unanswered, option: null}
+        - {condition: 관심 분야 - 미응답, form_version: 3, question_id: q3, kind: unanswered, option: null}
+    expect_reason: double_negation
+    expect_options: [관심 분야 미응답자 수]
+    expect_parser_calls: 1
+    note: >-
+      "답하지 않은"은 이중 부정이 아니어서(사람 지적) 프롬프트 27행도 not을 쓰지 말라고 한다. 이 출력은 파서 실수(실패 모드 8번)를 재현한 값이다.
+      코드가 혼자 not을 버리지 않고 AC29대로 확정 문장을 확인받는다. 문장은 AC29 예시 형식을 따른다.
+
+  - name: all_responses_count_supported
+    ac: [AC77, AC20]
+    type: 정상
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      query: 전체 응답 수 알려줘
+      parser_outputs:
+        - {conditions: [], match: all, operation: count}
+      matching: []
+    expect_parser_calls: 1
+    expect_count: 14
+    expect_not_evaluable_count: 0
+    note: >-
+      단순 전체 수 요청은 되묻지 않고 count로 처리한다. 조건이 없으면 모든 제출 응답이 일치하고 판정 불가는 없다.
+      rb15(in_progress)와 rb16(abandoned)은 세지 않는다. 파서 출력은 시험 데모 3-1절의 실제 출력이며 match: all은 무해하다.
+
+  - name: natural_language_version_scope_rejected
+    ac: [AC77]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      query: 버전 1만 보여줘
+      parser_outputs: []
+      matching: []
+    expect_reason: unsupported_scope
+    expect_parser_calls: 0
+    note: >-
+      명시적 범위 표현은 파서에 보내기 전에 판정한다(표 1행, AC77). 범위 표현을 조건으로 해석하거나 전체 버전 결과로 바꾸지 않는다.
+      안내의 형태가 문서에 고정되어 있지 않아 expect_options는 쓰지 않는다. "버전별 응답 수 알려줘"는 이 케이스로 검사하지 않는다.
+
+  - name: ambiguous_single_choice
+    ac: [AC25]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      query: 소프트웨어학과, 컴퓨터공학과 학생 수 알려줘
+      parser_outputs:
+        - {conditions: [소프트웨어학과, 컴퓨터공학과], match: all, operation: count}
+      matching:
+        - {condition: 소프트웨어학과, form_version: 1, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 소프트웨어학과, form_version: 2, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 컴퓨터공학과, form_version: 1, question_id: q1, kind: option, option: 컴퓨터공학과}
+        - {condition: 컴퓨터공학과, form_version: 2, question_id: q1, kind: option, option: 컴퓨터공학과}
+    expect_reason: ambiguous_match
+    expect_options: [any]
+    expect_parser_calls: 1
+    note: >-
+      단일 선택 문항의 두 선택지를 all로 묶으면 항상 0건이라 0으로 답하지 않고 되묻는다. all은 다시 골라도 0건이므로 보기에 넣지 않는다(표 7행, 응답 스키마).
+
+  - name: checkbox_all_ok
+    ac: [AC25]
+    type: 정상
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      query: 기획과 디자인 둘 다 고른 학생 보여줘
+      parser_outputs:
+        - {conditions: [기획, 디자인], match: all, operation: list}
+      matching:
+        - {condition: 기획, form_version: 1, question_id: q3, kind: option, option: 기획}
+        - {condition: 기획, form_version: 2, question_id: q3, kind: option, option: 기획}
+        - {condition: 기획, form_version: 3, question_id: q3, kind: option, option: 기획}
+        - {condition: 디자인, form_version: 1, question_id: q3, kind: option, option: 디자인}
+        - {condition: 디자인, form_version: 2, question_id: q3, kind: option, option: 디자인}
+        - {condition: 디자인, form_version: 3, question_id: q3, kind: option, option: 디자인}
+    expect_parser_calls: 1
+    expect_count: 2
+    expect_response_ids: [rb06, rb07]
+    expect_not_evaluable_count: 0
+    note: >-
+      checkbox는 복수 선택이라 같은 문항의 두 선택지를 all로 계산한다. 두 선택지를 모두 고른 제출 응답만 일치한다.
+      rb10은 경로상 q3를 만났지만 비워서 판정 불가가 아니라 거짓이다(README 가정 14, SPEC 313행).
+
+  - name: ambiguous_question_meaning_across_versions
+    ac: [AC25]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      query: 경영학과 학생 수 알려줘
+      parser_outputs:
+        - {conditions: [경영학과], operation: count}
+      matching:
+        - {condition: 경영학과, form_version: 1, question_id: q1, kind: option, option: 경영학과}
+        - {condition: 경영학과, form_version: 2, question_id: q1, kind: option, option: 경영학과}
+        - {condition: 경영학과, form_version: 3, question_id: q7, kind: option, option: 경영학과}
+    expect_reason: ambiguous_match
+    expect_options:
+      - {form_version: 1, question_id: q1, question_note: 소속 학과, options: [소프트웨어학과, 컴퓨터공학과, 경영학과]}
+      - {form_version: 2, question_id: q1, question_note: 소속 학과, options: [소프트웨어학과, 컴퓨터공학부, 경영학과]}
+      - {form_version: 3, question_id: q7, question_note: 희망 학과, options: [데이터사이언스학과, 경영학과]}
+    expect_parser_calls: 1
+    note: >-
+      "경영학과"가 소속 학과인지 희망 학과인지 문장만으로 알 수 없으므로 합치거나 하나로 정하지 않고 되묻는다(사람 판단, 표 7행, AC25).
+      합친 값을 후보에 둘지는 SPEC에 없어 이번 케이스에 넣지 않고 팀 논의로 남겼다. 후보 형태는 응답 스키마의 question_option을 따른다.
+
+  - name: unknown_condition_all_versions
+    ac: [AC22]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      query: 경영학과 학생 수 알려줘
+      parser_outputs:
+        - {conditions: [경영학과], operation: count}
+      matching: []
+    expect_reason: unknown_condition
+    expect_options:
+      - {form_version: 1, question_id: q1, question_note: 학과, options: [소프트웨어학과, 컴퓨터공학과]}
+      - {form_version: 1, question_id: q2, question_note: 학년, options: [1학년, 2학년, 3학년, 4학년]}
+      - {form_version: 2, question_id: q1, question_note: 학과, options: [소프트웨어학과, 컴퓨터공학과, 전자공학과]}
+      - {form_version: 2, question_id: q2, question_note: 학년, options: [1학년, 2학년, 3학년, 4학년]}
+      - {form_version: 3, question_id: q2, question_note: 학년, options: [1학년, 2학년, 3학년, 4학년]}
+    expect_parser_calls: 1
+    note: >-
+      폼에 없는 선택지는 응답자가 고를 수 없었으므로 0건으로 답하지 않고 되묻는다(AC22). 목록은 표 6행대로 버전별 선택형 문항 전체다.
+      관련 문항만 고르면 코드가 관련성을 판단해야 하고, 관련 문항이 없는 조건에서 목록이 비므로 전체를 보여 준다(사람 판단). 순서는 버전 오름차순, 버전 안에서 문항 순서다.
+
+  - name: parser_dropped_condition_not_counted
+    ac: [AC22]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      query: 수의학과 학생 수 알려줘
+      parser_outputs:
+        - {conditions: [], match: all, operation: count}
+      matching: []
+    expect_reason: unknown_condition
+    expect_options:
+      - {form_version: 1, question_id: q1, question_note: 학과, options: [소프트웨어학과, 컴퓨터공학과]}
+      - {form_version: 1, question_id: q2, question_note: 학년, options: [1학년, 2학년, 3학년, 4학년]}
+      - {form_version: 2, question_id: q1, question_note: 학과, options: [소프트웨어학과, 컴퓨터공학과, 전자공학과]}
+      - {form_version: 2, question_id: q2, question_note: 학년, options: [1학년, 2학년, 3학년, 4학년]}
+      - {form_version: 3, question_id: q2, question_note: 학년, options: [1학년, 2학년, 3학년, 4학년]}
+    expect_parser_calls: 1
+    note: >-
+      파서 출력은 시험 데모 3-1절의 실제 출력이다. 스키마에는 맞아 재호출하지 않지만, 출력대로면 전체 9건이 나가는 틀린 숫자다.
+      SPEC 334행대로 버린 표현을 원문에서 되살려 매칭으로 보내고, 어느 버전에도 없으므로 되묻는다. 수의학과는 선택지에 없어 0건도 쓰지 않는다.
+
+  - name: unsummarizable_target_clarify
+    ac: [AC92]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_summary.json
+      query: 이름 요약해줘
+      parser_outputs:
+        - {conditions: [], operation: summarize, target: 이름}
+      matching: []
+    expect_reason: unsummarizable_field
+    expect_options:
+      - {form_version: 1, question_id: q8, question_note: 면접 희망 날짜}
+      - {form_version: 1, question_id: q9, question_note: 지원 동기}
+      - {form_version: 1, question_id: q10, question_note: 건의 사항}
+    expect_parser_calls: 1
+    note: >-
+      이름은 개인정보 문항이라 요약하지 않고 되묻는다(사람 판단, AC92, 표 10행). 요약 가능 문항은 개인정보가 아닌 단답·장문 전체이며(SPEC 316행), 날짜 단답을 빼는 것은 전체 요약일 때만이라 q8이 들어간다.
+      보호자 이름(q5)은 profile_key가 없어도 name 형식이라 빠진다. target "이름"은 문항 문구 완전 일치로 q1을 찾으므로 matching은 비운다. "지원 분야 요약해줘"는 이 케이스로 검사하지 않는다.
+
+  - name: branch_skipped_condition_not_evaluable
+    ac: [AC24, AC78]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      query: 맡은 역할이 팀장인 학생 보여줘
+      parser_outputs:
+        - {conditions: [팀장], operation: list}
+      matching:
+        - {condition: 팀장, form_version: 1, question_id: q6, kind: option, option: 팀장}
+        - {condition: 팀장, form_version: 2, question_id: q6, kind: option, option: 팀장}
+        - {condition: 팀장, form_version: 3, question_id: q6, kind: option, option: 팀장}
+    expect_parser_calls: 1
+    expect_count: 4
+    expect_response_ids: [rb01, rb03, rb07, rb14]
+    expect_not_evaluable_count: 3
+    expect_not_evaluable_by_version:
+      - {form_version: 1, response_count: 1, unavailable_conditions: [팀장]}
+      - {form_version: 2, response_count: 1, unavailable_conditions: [팀장]}
+      - {form_version: 3, response_count: 1, unavailable_conditions: [팀장]}
+    note: >-
+      q5에 아니요라고 답한 rb05·rb08·rb13은 q6을 보지 못했으니 팀장인지 알 수 없다(SPEC 313행). 비운 rb09는 q6을 봤으므로 판정 불가가 아니다.
+      저장된 답은 둘 다 q6이 없어 같으므로 서버가 q5 답으로 경로를 다시 계산해야 구분된다.
+
+  - name: branch_visited_blank_is_false
+    ac: [AC24]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      query: 맡은 역할이 팀장이 아닌 학생 보여줘
+      parser_outputs:
+        - {conditions: [팀장], match: not, operation: list}
+      matching:
+        - {condition: 팀장, form_version: 1, question_id: q6, kind: option, option: 팀장}
+        - {condition: 팀장, form_version: 2, question_id: q6, kind: option, option: 팀장}
+        - {condition: 팀장, form_version: 3, question_id: q6, kind: option, option: 팀장}
+    expect_parser_calls: 1
+    expect_count: 7
+    expect_response_ids: [rb02, rb04, rb06, rb09, rb10, rb11, rb12]
+    expect_not_evaluable_count: 3
+    expect_not_evaluable_by_version:
+      - {form_version: 1, response_count: 1, unavailable_conditions: [팀장]}
+      - {form_version: 2, response_count: 1, unavailable_conditions: [팀장]}
+      - {form_version: 3, response_count: 1, unavailable_conditions: [팀장]}
+    must_not_include: [rb05, rb08, rb13]
+    note: >-
+      rb09는 q6을 보고도 비웠으므로 팀장이 아닌 것으로 본다(사람 판단, README 가정 14, SPEC 313행). 건너뛴 rb05·rb08·rb13은 판정 불가라 넣지 않는다.
+      비운 응답을 "아닌" 쪽으로 셌다는 안내는 판정 키가 없어 이 케이스로 검사하지 않고 팀 논의로 남겼다(사람 제안).
+
+form_cases:
+  - name: every_open_form_needs_consent_template
+    ac: [AC12]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      actor: owner
+      change: {consent_template_id: null}
+      action: open
+    expect_error: consent_template_required
+    expect_unchanged: [status, definition_version, consent_template_id]
+    note: >-
+      동의 템플릿이 비어서 온 배포 요청은 거절하고 폼을 바꾸지 않는다(AC12, 절대 규칙 1번). action: open은 폼을 초안으로 둔 채 배포를 요청하는 것이고,
+      change는 그 요청에 함께 보내는 최상위 키다. 빌더가 기본 템플릿을 미리 선택해도(사람 결정, 별도 SPEC PR) 서버의 안전장치로 남는다.
+      이슈 #40에 따라 form_a로 쓰며, 이름·전화번호 형식 폼은 이 케이스로 검사하지 않는다.
+      이 케이스는 위 주석의 예외다. form_a의 최신 정의를 응답 없는 초안으로 만들어 시작한다.

@@ -35,6 +35,11 @@ public class SecurityConfig {
 				.requestMatchers(HttpMethod.GET, "/health").permitAll()
 				// 비로그인 응답 제출(SPEC 5절 188행). CSRF는 그대로 켠다.
 				.requestMatchers(HttpMethod.POST, "/forms/*/responses").permitAll()
+				// SPEC 5절에서 공개인 나머지 경로. 경로 한 칸만 맞춰 제작자 경로(/forms/*/definition 등)는 열지 않는다.
+				// 폼 공개 조회(187행). 초안·삭제된 폼의 404는 조회 API가 판정한다.
+				.requestMatchers(HttpMethod.GET, "/f/*", "/forms/*").permitAll()
+				// 폼 설명란·문항 첨부(196·197행). open 폼만 공개이고, 그 밖의 열람 권한은 첨부 API가 판정한다.
+				.requestMatchers(HttpMethod.GET, "/forms/*/attachments/*", "/forms/*/questions/*/attachments/*").permitAll()
 				.anyRequest().authenticated())
 			// 로그인 뒤에는 항상 설정한 프런트로 보낸다. 요청 파라미터의 주소로 보내지 않는다.
 			.oauth2Login(login -> login

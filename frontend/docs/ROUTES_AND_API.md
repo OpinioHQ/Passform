@@ -5,7 +5,7 @@
 | 경로                             | 화면         | Figma node            | 연동할 서버 API                                                          | 현재 상태                   | 담당 이슈 |
 | -------------------------------- | ------------ | --------------------- | ------------------------------------------------------------------------ | --------------------------- | --------- |
 | `/`                              | 랜딩페이지   | `34:75`               | 없음                                                                     | 정적 반응형 화면            | —         |
-| `/login`                         | 로그인       | —                     | `GET /oauth2/authorization/{provider}`                                   | 빈 화면                     | T2 #50    |
+| `/login`                         | 로그인       | —                     | `GET /oauth2/authorization/{provider}`                                   | Google 로그인 연결          | T2 #50    |
 | `/me/forms`                      | 내 폼함      | `5:6468`              | `GET /me/forms`, `POST /me/saved-forms`                                  | 가짜 데이터 (아래 주 1)     | E5 #43    |
 | `/me/responses`                  | 제출 이력    | `5:6811`              | `GET /me/responses`                                                      | 가짜 데이터                 | E5 #43    |
 | `/me/responses/:responseId`      | 이력 상세    | `5:6811`              | `GET /me/responses/{response_id}`                                        | 가짜 데이터                 | E5 #43    |
@@ -19,7 +19,7 @@
 | `/creator/forms/:formId/explore` | 응답 탐색    | `5:7219`              | `POST /forms/{form_id}/analyze`, `POST /forms/{form_id}/export`          | 가짜 데이터                 | E8 #46    |
 | 그 밖의 경로                     | 찾을 수 없음 | —                     | 없음                                                                     | `/`로 가는 안내 화면        | —         |
 
-주 1: `VITE_USE_API=true`일 때 이 화면만 실제로 호출한다. `/me/forms`는 `GET /me/forms`, `/f/:slug`는 `GET /f/{slug}`, `/forms/:formId`는 `GET /forms/{form_id}`, 응답 제출은 `POST /forms/{form_id}/responses`다. 공개 경로에서 로그인 전용 API를 부르지 않는다.
+주 1: `VITE_USE_API=true`일 때 이 화면만 실제로 호출한다. `/me/forms`는 `GET /me/forms`, `/f/:slug`는 `GET /f/{slug}`, `/forms/:formId`는 `GET /forms/{form_id}`, 응답 제출은 `POST /forms/{form_id}/responses`다. 공개 경로의 화면은 로그인 전용 API를 부르지 않는다. 예외로 헤더는 로그인 상태를 표시하려고 모든 화면에서 `GET /me`를 부른다(비로그인이면 401이고 로그인 링크를 보인다).
 
 주 2: 헤더 종 아이콘의 "마감 하루 전 알림" 스위치는 화면 상태로만 동작한다. 서버 저장(`PATCH /me/settings`의 `deadline_reminder`)과 알림 목록은 E12 #57이 연결한다.
 
@@ -31,8 +31,8 @@
 - 경로는 `src/routes/paths.ts` 한 곳에 두고, 라우트 등록은 `src/App.tsx`에 한다. 화면에서 주소를 문자열로 쓰지 않고 `paths`를 쓴다.
 - 라우트와 화면의 연결은 `src/routes/respondentRoutes.tsx`(응답자)와 `src/routes/creatorRoutes.tsx`(제작자)에 둔다.
 - 공통 레이아웃은 `src/components/AppLayout.tsx`다. 화면이 상단 알림을 띄울 때는 `useNotice()`를 쓴다.
-- 헤더 메뉴는 모든 사용자에게 같다. 화면에서 권한을 판정하지 않고 라우트 접근도 막지 않는다. 로그인 상태는 T2에서 연결한다.
-- API 호출은 `src/api/client.ts`에만 둔다. CSRF 헤더는 `csrfHeaders()` 한 곳에 넣는다(T2).
+- 헤더 메뉴는 모든 사용자에게 같다. 화면에서 권한을 판정하지 않고 라우트 접근도 막지 않는다. 로그인 상태는 헤더가 `GET /me`로 표시한다.
+- API 호출은 `src/api/client.ts`에만 둔다. CSRF 헤더는 `csrfHeaders()` 한 곳에서 `XSRF-TOKEN` 쿠키를 옮겨 넣는다.
 - 가짜 데이터는 `src/demo/`에만 둔다. 화면을 서버 데이터로 바꾼 담당자는 그 값을 지우고, 가짜 값이 없어진 경로를 `src/demo/demoRoutes.ts`에서 뺀다.
 - 타입 필드 이름은 백엔드 DTO와 같은 snake_case를 쓴다. 화면 전용 축약 타입은 `...ViewModel`로 이름을 구분해 `src/types/` 밖에 둔다.
 

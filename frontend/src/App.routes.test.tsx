@@ -302,25 +302,25 @@ describe('VITE_USE_API=true', () => {
   it('/f/:slug 는 공개 조회만 부르고 내 폼함을 부르지 않는다', async () => {
     const urls = await openLiveAt('/f/test');
     expect(await screen.findByText('서버에서 받은 폼')).toBeTruthy();
-    expect(urls()).toEqual(['http://api.test/f/test']);
+    expect(urls()).toEqual(['http://api.test/me', 'http://api.test/f/test']);
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('/forms/:formId 는 formById 를 부른다', async () => {
     const urls = await openLiveAt('/forms/abc');
     expect(await screen.findByText('서버에서 받은 폼')).toBeTruthy();
-    expect(urls()).toEqual(['http://api.test/forms/abc']);
+    expect(urls()).toEqual(['http://api.test/me', 'http://api.test/forms/abc']);
   });
 
   it('/me/forms 에서만 내 폼함을 부른다', async () => {
     const urls = await openLiveAt('/me/forms', []);
-    await waitFor(() => expect(urls()).toEqual(['http://api.test/me/forms']));
+    await waitFor(() => expect(urls()).toEqual(['http://api.test/me', 'http://api.test/me/forms']));
   });
 
   it('연결한 세 호출 밖의 화면은 API를 부르지 않는다', async () => {
     const urls = await openLiveAt('/me/responses');
     await waitFor(() => expect(screen.getByRole('banner')).toBeTruthy());
-    expect(urls()).toEqual([]);
+    expect(urls()).toEqual(['http://api.test/me']);
   });
 
   it('가짜 값이 남은 화면에는 띠를 보이고, 없는 화면에는 보이지 않는다', async () => {

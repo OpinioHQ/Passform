@@ -32,6 +32,7 @@ skip 2건 `branch_skipped_condition_not_evaluable`, `branch_visited_blank_is_fal
 | 2 | 골든 9건 NPE | `Set.of().contains(null)`이 입력 형식 없는 문항에서 터졌다 | `instanceof`로 확인 |
 | 3 | 파서 클라이언트 테스트 | `parse_query.md` 7행 설명문에도 마커 글자가 있어 `indexOf`로 찾으면 프롬프트가 "`와 `"만 남았다 | 마커만 있는 줄을 찾는다 |
 | 4 | 1차 코드 검토 반영 4건. 테스트를 먼저 써서 고치기 전 실패를 확인했다 | ① 버려질 키에 담긴 표현을 복원하지 않아 전체 건수가 나갔다 ② 동작어 필터가 "수의학과만세어줘"를 통째로 지웠다 ③ 여러 낱말의 단일 부정을 혼합 부정으로 봤다 ④ `must_not_include`가 `response_ids` null이면 통과했다 | ① 그 동작에서 쓰이는 키만 인정 ② 알려진 동작어만 꼬리에서 뗀다 ③ 조건 하나의 부정이고 남은 낱말이 그 조건 안이면 혼합이 아니다 ④ 배열이 없으면 실패 |
+| 5 | #78 머지로 PR이 충돌해 CI가 돌지 않았다 | `ErrorCode`, `ApiExceptionHandler`, `ApiExceptionHandlerTest`에 양쪽이 오류 코드를 더했다 | 사람 승인으로 `main`을 merge하고 양쪽 줄을 모두 남겼다. 기존 값은 바꾸지 않았다 |
 
 **3회차의 영향:** `origin/feat/demo`의 `PromptLoader`가 같은 `indexOf` 방식이고 같은 7행이 있다. 코드와 파일 내용으로 보면 시험 데모의 실제 호출은 프롬프트 없이 나갔을 수 있다. 다시 실행해 확인하지는 않았다. 3-1절 출력 패턴과 프롬프트 v3 판단은 재측정 전에 확인이 필요하다.
 

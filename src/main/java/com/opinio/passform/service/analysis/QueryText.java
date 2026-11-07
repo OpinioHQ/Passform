@@ -27,7 +27,8 @@ final class QueryText {
 
 	private static final Pattern EDGE_PUNCTUATION = Pattern.compile("^[\\p{P}\\p{S}]+|[\\p{P}\\p{S}]+$");
 
-	private static final Pattern ACTION = Pattern.compile("^.*(줘|주세요|줄래|줄래요|주라)$");
+	// 알려진 동작어만 꼬리에서 뗀다. 모르는 "~줘"는 조건으로 남겨 되묻는다(SPEC 334행).
+	private static final Pattern ACTION_TAIL = Pattern.compile("(알려|보여|세어|정리해|요약해|나열해|찾아|뽑아)(줘|주세요|줄래요|줄래|주라)$");
 
 	private static final Pattern TRAILING_PARTICLE = Pattern.compile("(들|을|를|은|는|이|가|의|도|만|에)$");
 
@@ -52,18 +53,18 @@ final class QueryText {
 
 	// 표 5행 혼합 부정: 부정 표현이 있는데 부정된 낱말 말고 다른 조건 표현도 남아 있다.
 	static boolean mixesNegation(String query, RequestContext context) {
-		List<String> tokens = tokens(query);
+		List<String> words = wordsWithoutAction(query);
 		List<String> positive = new ArrayList<>();
 		boolean negated = false;
-		for (int index = 0; index < tokens.size(); index++) {
-			String token = tokens.get(index);
-			if (isNegation(token)) {
+		for (int index = 0; index < words.size(); index++) {
+			String word = words.get(index);
+			if (isNegation(word)) {
 				negated = true;
 				continue;
 			}
-			boolean beforeBareNegation = index + 1 < tokens.size() && NEGATIONS.contains(tokens.get(index + 1));
-			if (!beforeBareNegation && isConditionWord(token, context)) {
-				positive.add(token);
+			boolean beforeBareNegation = index + 1 < words.size() && NEGATIONS.contains(words.get(index + 1));
+			if (!beforeBareNegation && isConditionWord(word, context)) {
+				positive.add(word);
 			}
 		}
 		return negated && !positive.isEmpty();
@@ -75,12 +76,20 @@ final class QueryText {
 		if (!parsed.conditions().isEmpty()) {
 			return parsed;
 		}
-		List<String> words = tokens(query).stream().filter(token -> isConditionWord(token, parsed)).toList();
+		List<String> allWords = wordsWithoutAction(query);
+		List<String> words = allWords.stream().filter(word -> isConditionWord(word, parsed)).toList();
 		if (words.isEmpty()) {
 			return parsed;
 		}
-		boolean negated = tokens(query).stream().anyMatch(QueryText::isNegation);
+		boolean negated = allWords.stream().anyMatch(QueryText::isNegation);
 		return parsed.withRevivedConditions(negated ? List.of(String.join(" ", words)) : words);
+	}
+
+	private static List<String> wordsWithoutAction(String query) {
+		return tokens(query).stream()
+			.map(token -> ACTION_TAIL.matcher(token).replaceFirst(""))
+			.filter(word -> !word.isEmpty())
+			.toList();
 	}
 
 	private static boolean isConditionWord(String token, RequestContext context) {
@@ -88,7 +97,7 @@ final class QueryText {
 	}
 
 	private static boolean isGeneric(String token) {
-		if (ACTION.matcher(token).matches() || token.startsWith("몇") || GENERIC.contains(token)) {
+		if (token.startsWith("몇") || GENERIC.contains(token)) {
 			return true;
 		}
 		String stem = token;
@@ -101,10 +110,12 @@ final class QueryText {
 		return false;
 	}
 
-	// 파서가 target·topic·sort.by에 담은 표현은 버린 것이 아니다.
+	// 그 동작에서 실제로 쓰이는 키에 담긴 표현만 버린 것이 아니다. 쓰이지 않는 키는 곧 지워진다(SPEC 311·312행).
 	private static boolean coveredByParsedKeys(String token, RequestContext context) {
-		String sortBy = context.sort() == null ? null : context.sort().by();
-		return Stream.of(context.target(), context.topic(), sortBy)
+		boolean summarize = RequestContext.SUMMARIZE.equals(context.operation());
+		boolean list = RequestContext.LIST.equals(context.operation());
+		String sortBy = list && context.sort() != null ? context.sort().by() : null;
+		return Stream.of(summarize ? context.target() : null, summarize ? context.topic() : null, sortBy)
 			.filter(Objects::nonNull)
 			.flatMap(phrase -> tokens(phrase).stream())
 			.anyMatch(word -> token.contains(word) || word.contains(token));

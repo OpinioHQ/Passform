@@ -2,6 +2,7 @@ package com.opinio.passform.service.analysis;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -24,12 +25,15 @@ import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.opinio.passform.domain.analysis.ConditionMatch;
+import com.opinio.passform.domain.analysis.MatchKind;
 import com.opinio.passform.domain.error.DomainException;
 import com.opinio.passform.domain.error.ErrorCode;
 import com.opinio.passform.domain.form.Form;
 import com.opinio.passform.domain.form.FormVersion;
 import com.opinio.passform.domain.form.FormVersionId;
 import com.opinio.passform.domain.response.Response;
+import com.opinio.passform.llm.ConditionMatcher;
 import com.opinio.passform.llm.PendingConditionMatcher;
 import com.opinio.passform.llm.QueryParser;
 import com.opinio.passform.repository.FormRepository;
@@ -49,6 +53,10 @@ class AnalysisServiceTest {
 	private final QueryParser parser = mock(QueryParser.class);
 
 	private AnalysisService service(boolean aiSummary) {
+		return service(aiSummary, new PendingConditionMatcher());
+	}
+
+	private AnalysisService service(boolean aiSummary, ConditionMatcher matcher) {
 		Map<String, Object> definition = Map.of("settings", Map.of("ai_summary", Map.of("enabled", aiSummary)), "sections",
 				List.of(Map.of("section_id", "s1", "questions",
 						List.of(Map.of("question_id", "q1", "question_note", "학과", "question_type", "dropdown", "options",
@@ -66,8 +74,17 @@ class AnalysisServiceTest {
 		ReflectionTestUtils.setField(response, "id", UUID.randomUUID());
 		ResponseRepository responses = mock(ResponseRepository.class);
 		when(responses.findSubmittedNotDeletedByFormId(FORM_ID)).thenReturn(List.of(response));
-		return new AnalysisService(forms, versions, responses, parser, new PendingConditionMatcher(),
-				new RequestContextSchema());
+		return new AnalysisService(forms, versions, responses, parser, matcher, new RequestContextSchema());
+	}
+
+	private ConditionMatcher matcherReturning(ConditionMatch... matches) {
+		ConditionMatcher matcher = mock(ConditionMatcher.class);
+		when(matcher.match(anyList(), anyList())).thenReturn(List.of(matches));
+		return matcher;
+	}
+
+	private static String queryBody(String query) {
+		return "{\"query\":\"" + query + "\"}";
 	}
 
 	private void parserReturns(String first, String... rest) {
@@ -178,6 +195,40 @@ class AnalysisServiceTest {
 
 		assertThat(view.clarify().reason()).isEqualTo("missing_match");
 		assertThat(view.clarify().options()).isEmpty();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "{\"conditions\":[],\"operation\":\"count\",\"target\":\"수의학과\"}",
+			"{\"conditions\":[],\"operation\":\"count\",\"topic\":\"수의학과\"}",
+			"{\"conditions\":[],\"operation\":\"count\",\"sort\":{\"by\":\"수의학과\",\"order\":\"asc\"}}" })
+	void 동작에_쓰이지_않는_키의_표현은_조건으로_되살려_전체_건수를_내지_않는다(String parserOutput) {
+		parserReturns(parserOutput);
+
+		AnalyzeView view = service(false, matcherReturning()).analyze(command(queryBody("수의학과 수 알려줘")));
+
+		assertThat(view.clarify().reason()).isEqualTo("unknown_condition");
+		assertThat(view.context().conditions()).containsExactly("수의학과");
+		assertThat(view.result()).isNull();
+	}
+
+	@Test
+	void 요약에_쓰이는_target의_표현은_되살리지_않고_target을_유지한다() {
+		RequestContext parsed = new RequestContext(List.of(), null, "summarize", null, "지원 동기", null);
+
+		RequestContext repaired = QueryText.reviveDroppedConditions("지원 동기 요약해줘", parsed).withoutUnusedKeys();
+
+		assertThat(repaired.conditions()).isEmpty();
+		assertThat(repaired.target()).isEqualTo("지원 동기");
+	}
+
+	@Test
+	void 동작어가_붙은_낱말의_앞부분은_조건으로_되살린다() {
+		parserReturns("{\"conditions\":[],\"operation\":\"count\"}");
+
+		AnalyzeView view = service(false, matcherReturning()).analyze(command(queryBody("수의학과만세어줘")));
+
+		assertThat(view.clarify().reason()).isEqualTo("unknown_condition");
+		assertThat(view.result()).isNull();
 	}
 
 	@Test

@@ -28,6 +28,8 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -42,6 +44,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import com.opinio.passform.config.JacksonConfig;
 import com.opinio.passform.config.SecurityConfig;
 import com.opinio.passform.domain.form.Form;
 import com.opinio.passform.domain.form.FormStatus;
@@ -51,11 +54,14 @@ import com.opinio.passform.domain.response.Response;
 import com.opinio.passform.repository.FormRepository;
 import com.opinio.passform.repository.FormVersionRepository;
 import com.opinio.passform.repository.ResponseRepository;
+import com.opinio.passform.repository.UserRepository;
+import com.opinio.passform.service.CurrentUserService;
 import com.opinio.passform.service.SubmissionService;
 
 // 비로그인 제출과 오류별 HTTP 상태. service는 실제 코드, 저장소만 모의 객체다.
 @WebMvcTest(SubmissionController.class)
-@Import({ SecurityConfig.class, SubmissionService.class, SubmissionControllerTest.FixedClock.class })
+@Import({ SecurityConfig.class, JacksonConfig.class, SubmissionService.class, CurrentUserService.class,
+		SubmissionControllerTest.FixedClock.class })
 class SubmissionControllerTest {
 
 	private static final Instant NOW = Instant.parse("2026-11-01T00:00:00Z");
@@ -93,6 +99,9 @@ class SubmissionControllerTest {
 
 	@MockitoBean
 	private ResponseRepository responses;
+
+	@MockitoBean
+	private UserRepository users;
 
 	private Form form;
 
@@ -156,12 +165,37 @@ class SubmissionControllerTest {
 	void 로그인_제출은_그_사용자의_응답으로_저장한다() throws Exception {
 		UUID userId = UUID.randomUUID();
 
+		when(users.existsById(userId)).thenReturn(true);
+
 		mockMvc.perform(request(URL, consented("[" + Q1 + "]")).with(user(userId.toString())))
 			.andExpect(status().isCreated());
 
 		ArgumentCaptor<Response> saved = ArgumentCaptor.forClass(Response.class);
 		verify(responses).save(saved.capture());
 		assertThat(saved.getValue().getUserId()).isEqualTo(userId);
+	}
+
+	@Test
+	void 세션은_있으나_User_행이_없으면_401이고_저장하지_않는다() throws Exception {
+		mockMvc.perform(request(URL, consented("[" + Q1 + "]")).with(user(UUID.randomUUID().toString())))
+			.andExpect(status().isUnauthorized());
+		verify(responses, never()).save(any());
+	}
+
+	// 리뷰: 동의는 JSON boolean, 버전은 정수만 받는다. 잘못된 타입은 invalid_request다.
+	@ParameterizedTest
+	@ValueSource(strings = { "\"consent_agreed\":\"true\"", "\"consent_agreed\":2", "\"consent_agreed\":1",
+			"\"consent_agreed\":true,\"ai_summary_agreed\":1", "\"consent_agreed\":true,\"ai_summary_agreed\":\"true\"" })
+	void 동의_값이_boolean이_아니면_invalid_request다(String consent) throws Exception {
+		assertError(send("{\"form_version\":2,\"answers\":[" + Q1 + "]," + consent + "}"), 400,
+				"{\"error\":\"invalid_request\"}");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "2.9", "2.0", "\"2\"", "true" })
+	void 버전이_정수가_아니면_invalid_request다(String version) throws Exception {
+		assertError(send("{\"form_version\":" + version + ",\"answers\":[" + Q1 + "],\"consent_agreed\":true}"), 400,
+				"{\"error\":\"invalid_request\"}");
 	}
 
 	@Test

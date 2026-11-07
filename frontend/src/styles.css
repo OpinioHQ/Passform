@@ -960,6 +960,70 @@ h3 {
   outline-color: #3158d5;
   padding: 8px 0;
 }
+.builder-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.builder-actions {
+  margin-left: auto;
+}
+.builder-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 14px;
+  font-size: 13px;
+}
+.builder-question .builder-field input,
+.builder-question .builder-option input,
+.builder-field input,
+.builder-field select,
+.builder-section-title {
+  font-size: 14px;
+  font-weight: 400;
+  border: 1px solid #e3e5dd;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #fff;
+}
+.builder-section-title {
+  flex: 1;
+  font-weight: 700;
+}
+.builder-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.builder-own-info {
+  border: 0;
+  padding: 0;
+}
+.builder-own-info label {
+  margin-right: 14px;
+}
+.builder-question input[type='radio'],
+.builder-question input[type='checkbox'] {
+  width: auto;
+}
+.builder-check {
+  display: block;
+  margin-top: 14px;
+  font-size: 13px;
+}
+.builder-add-section {
+  margin-top: 20px;
+}
+.builder-share-url {
+  overflow-wrap: anywhere;
+  margin: 10px 0;
+}
+.keep-lines {
+  white-space: pre-line;
+}
 .builder-question .muted {
   margin-top: 14px;
 }

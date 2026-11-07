@@ -4,7 +4,6 @@ import bellOriginal from '../assets/figma/bell.svg';
 import chevronOriginal from '../assets/figma/chevron-down.svg';
 import searchOriginal from '../assets/figma/search.svg';
 import bookmarkOriginal from '../assets/figma/bookmark-check.svg';
-import plusOriginal from '../assets/figma/plus.svg';
 import arrowOriginal from '../assets/figma/arrow-right.svg';
 
 export function Icon({ name, size = 18 }: { name: string; size?: number }) {
@@ -13,7 +12,6 @@ export function Icon({ name, size = 18 }: { name: string; size?: number }) {
     chevron: chevronOriginal,
     search: searchOriginal,
     bookmark: bookmarkOriginal,
-    plus: plusOriginal,
     arrow: arrowOriginal,
   };
   if (original[name])

@@ -189,6 +189,7 @@ PR #75(T3, 아직 main에 없을 수 있음)는 Form.java, ErrorCode, ApiExcepti
 | `retention`의 제출 취소 문장 | 로그인 제출만 취소할 수 있게 수정 | 머지 전이라 `V2`를 직접 고쳤다. 새 Flyway를 만들지 않았다 |
 | `ApiExceptionHandlerTest`의 `Map.ofEntries` 변경 | 승인(diff에서 기존 4쌍의 값이 그대로인 것을 확인) | `Map.of`의 10쌍 제한 때문이다 |
 | `retention` 구조 변경(팀원 리뷰, 삭제 뒤 취소 불가를 반영) | 승인된 전문으로 변경 | 머지 전이라 `V2`를 직접 고쳤다. 줄바꿈은 체크아웃 환경과 무관하게 LF다. `FormApiDatabaseTest`의 문구 단언 2곳을 맞췄다 |
+| ARCHITECTURE F4 반영(팀원 리뷰) | 승인된 줄로 변경 | 173행에 문항 1개 이상, 섹션·문항 ID 중복 없음과 `schema_invalid` 결정을 적었다 |
 
 사람에게 묻지 않고 정한 작은 판단이다. 리뷰에서 다르게 정할 수 있다.
 

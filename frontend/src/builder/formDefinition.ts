@@ -318,7 +318,13 @@ export function toPreviewForm(
     note_attachments: def.note_attachments,
     deadline: def.deadline ?? null,
     sections: def.sections,
-    display: { default_mode: def.settings.display.default_mode, allowed_modes: [] },
+    display: {
+      default_mode: def.settings.display.default_mode,
+      // 공개 조회와 같은 규칙이다(PublicFormService, SPEC 5절 187행). 분기가 없으면 두 보기를 오갈 수 있다.
+      allowed_modes: def.sections.some((s) => s.questions.some((q) => q.branch_rules.length > 0))
+        ? [def.settings.display.default_mode]
+        : ['one_question', 'all_questions'],
+    },
     payment_link: def.payment_link,
     consent: {
       items: [...new Set(items)],

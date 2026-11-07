@@ -22,15 +22,6 @@ export const demoInbox = {
   draftProgress: { label: '3 / 5문항 작성', percent: '60%', savedAt: '오늘 10:32 저장됨' },
 };
 
-export const demoResponseScreen = {
-  longAnswerPlaceholder: '작은 제안도 좋아요. 다음 달에 함께 바꿔갈 점을 알려주세요.',
-  autofillAnswers: { q1: demoUser.name, q2: demoUser.email },
-  autofillRows: [
-    { label: '이름', value: demoUser.name },
-    { label: '이메일', value: demoUser.email },
-  ],
-};
-
 export const demoHistory = {
   latestTitle: demoForm.title,
   otherTitle: '팀 경험 설문 · 데모 응답',

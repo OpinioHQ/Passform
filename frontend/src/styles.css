@@ -579,7 +579,7 @@ h3 {
   margin-left: 33px;
   position: relative;
 }
-.question-input input:not([type='radio']),
+.question-input input:not([type='radio']):not([type='checkbox']),
 .question-input select,
 .question-input textarea,
 .field input {
@@ -1424,4 +1424,156 @@ h3 {
   margin-bottom: 6px;
   font-size: 14px;
   overflow-wrap: anywhere;
+}
+
+/* 응답 화면(T4 #52). 360px에서도 가로 스크롤이 생기지 않게 줄바꿈과 최소 폭을 둔다. */
+.response-page .panel,
+.response-page .question,
+.response-page .question-input {
+  min-width: 0;
+}
+.response-page .response-hero-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.question-label {
+  font-weight: 700;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.question-heading {
+  flex-wrap: wrap;
+}
+.question-desc,
+.field-hint {
+  margin: 0 0 10px 33px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.field-hint {
+  margin: 26px 0 0 33px;
+}
+.field-count.over {
+  color: #b42f36;
+  font-weight: 700;
+}
+.field-error {
+  margin: 26px 0 0 33px;
+  color: #b42f36;
+  font-size: 12px;
+  font-weight: 700;
+}
+.field-hint + .field-error {
+  margin-top: 6px;
+}
+.option {
+  min-height: 44px;
+  overflow-wrap: anywhere;
+}
+.option input {
+  flex: none;
+  margin: 0;
+}
+.attachment-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.payment-link {
+  margin-bottom: 16px;
+  padding: 18px 22px;
+}
+.payment-link a {
+  display: inline-block;
+  margin-top: 6px;
+  color: #3158d5;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+.response-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 26px 30px;
+  margin-bottom: 16px;
+}
+.view-switch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 4px;
+  border: 1px solid #e3e5dd;
+  border-radius: 8px;
+  background: #fff;
+}
+.view-switch-btn {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  color: #62685f;
+}
+.view-switch-btn.active {
+  background: #eef2ff;
+  color: #3158d5;
+  font-weight: 700;
+}
+.consent h3 {
+  margin-bottom: 12px;
+}
+.consent-terms {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 14px;
+  margin: 0 0 14px;
+  font-size: 12px;
+}
+.consent-terms dt {
+  font-weight: 700;
+  color: #62685f;
+}
+.consent-terms dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.ai-consent {
+  margin-top: 12px;
+}
+.consent-toggle {
+  margin-bottom: 10px;
+  padding: 0 8px;
+}
+.response-page .info {
+  width: 100%;
+  margin: 0;
+  color: #3158d5;
+  font-size: 12px;
+  font-weight: 700;
+}
+@media (max-width: 760px) {
+  .question-desc,
+  .field-hint,
+  .field-error {
+    margin-left: 0;
+  }
+  .consent-terms {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .consent p {
+    margin-left: 0;
+  }
+  .response-notice,
+  .payment-link {
+    padding: 18px;
+  }
+  .form-footer .btn {
+    min-height: 44px;
+  }
 }

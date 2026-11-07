@@ -33,6 +33,8 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			case FORBIDDEN -> HttpStatus.FORBIDDEN;
 			case INVALID_REQUEST -> HttpStatus.BAD_REQUEST;
 			case INTERNAL_ERROR -> HttpStatus.INTERNAL_SERVER_ERROR;
+			case INVALID_CONTEXT -> HttpStatus.BAD_REQUEST;
+			case LLM_UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;
 		};
 	}
 

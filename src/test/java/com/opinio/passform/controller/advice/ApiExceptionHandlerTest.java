@@ -46,7 +46,9 @@ class ApiExceptionHandlerTest {
 			ErrorCode.NOT_FOUND, HttpStatus.NOT_FOUND,
 			ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN,
 			ErrorCode.INVALID_REQUEST, HttpStatus.BAD_REQUEST,
-			ErrorCode.INTERNAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR);
+			ErrorCode.INTERNAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR,
+			ErrorCode.INVALID_CONTEXT, HttpStatus.BAD_REQUEST,
+			ErrorCode.LLM_UNAVAILABLE, HttpStatus.SERVICE_UNAVAILABLE);
 
 	@Autowired
 	private MockMvc mockMvc;

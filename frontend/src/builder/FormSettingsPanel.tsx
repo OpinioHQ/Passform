@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Panel } from '../components/UI';
 import type { ConsentTemplate, DisplayMode, FormDefinition, FormSettings } from '../types/api';
 import { isoToKstInput, kstInputToIso } from './deadline';
@@ -109,6 +110,9 @@ export function FormSettingsPanel({
   onChange: (change: (def: FormDefinition) => FormDefinition) => void;
 }) {
   const settings = def.settings;
+  // 송금 링크 칸은 숨긴다(사람 결정, #83). 열 때 값이 있던 폼만 보여 지울 수 있게 하고,
+  // 입력 중에 비워도 칸이 사라지지 않도록 처음 연 시점의 값으로 정한다.
+  const [showPaymentLink] = useState(() => Boolean(def.payment_link));
   const setSettings = (next: Partial<FormSettings>) =>
     onChange((d) => ({ ...d, settings: { ...d.settings, ...next } }));
   return (
@@ -175,21 +179,23 @@ export function FormSettingsPanel({
         selectedId={def.consent_template_id}
         onChange={(id) => onChange((d) => ({ ...d, consent_template_id: id }))}
       />
-      <label className="builder-field">
-        <span>송금 링크 (선택)</span>
-        <input
-          type="url"
-          placeholder="https://"
-          value={def.payment_link ?? ''}
-          onChange={(e) => {
-            const link = e.target.value.trim() || null;
-            onChange((d) => ({ ...d, payment_link: link }));
-          }}
-        />
-        <small className="muted">
-          응답자에게 링크만 보여 줘요. Passform은 송금을 처리하거나 확인하지 않아요.
-        </small>
-      </label>
+      {showPaymentLink && (
+        <label className="builder-field">
+          <span>송금 링크 (선택)</span>
+          <input
+            type="url"
+            placeholder="https://"
+            value={def.payment_link ?? ''}
+            onChange={(e) => {
+              const link = e.target.value.trim() || null;
+              onChange((d) => ({ ...d, payment_link: link }));
+            }}
+          />
+          <small className="muted">
+            응답자에게 링크만 보여 줘요. Passform은 송금을 처리하거나 확인하지 않아요.
+          </small>
+        </label>
+      )}
     </Panel>
   );
 }

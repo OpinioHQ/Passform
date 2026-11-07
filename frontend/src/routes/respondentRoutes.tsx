@@ -8,6 +8,7 @@ import { demoForm, demoSavedForms, demoSubmission } from '../demo/data';
 import { HistoryPage } from '../pages/HistoryPage';
 import { InboxPage } from '../pages/InboxPage';
 import { ClosedNotice, ResponsePage } from '../pages/ResponsePage';
+import { DraftGate } from '../response/DraftGate';
 import type { PublicForm, SavedFormSummary, SubmitResponseInput } from '../types/api';
 import { paths } from './paths';
 
@@ -110,16 +111,16 @@ export function FormResponseRoute() {
       setBusy(false);
     }
   }
-  return (
-    <ResponsePage
-      key={`${form.form_id}:${form.definition_version}:${reloads}`}
-      form={form}
-      onBack={() => navigate(paths.myForms)}
-      onSubmit={submit}
-      onReload={() => setReloads((n) => n + 1)}
-      saving={busy}
-    />
-  );
+  const page = {
+    form,
+    onBack: () => navigate(paths.myForms),
+    onSubmit: submit,
+    onReload: () => setReloads((n) => n + 1),
+    saving: busy,
+  };
+  const key = `${form.form_id}:${form.definition_version}:${reloads}`;
+  // 실제 API에서만 초안을 저장·복원한다(T5 #53). 가짜 데이터 모드는 저장하지 않는다.
+  return useLiveApi ? <DraftGate key={key} {...page} /> : <ResponsePage key={key} {...page} />;
 }
 
 /** `/me/responses`는 첫 항목을, `/me/responses/:responseId`는 그 항목을 보여 준다. */

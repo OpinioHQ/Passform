@@ -152,6 +152,34 @@ class AnswerValidatorTest {
 				questions(text("q1", true), text("q2", false), text("q3", true)), new Answer("q2", "값"));
 	}
 
+	// 리뷰: 선택형의 공백 값은 지우지 않고 선택지 밖 값으로 거부한다.
+	@Test
+	void 선택형의_공백_값은_invalid_option이다() {
+		assertRejected(ErrorCode.INVALID_OPTION, List.of("q1"),
+				questions(question("q1", "checkbox", false, List.of("가", "나"))), new Answer("q1", List.of("가", " ")));
+		assertRejected(ErrorCode.INVALID_OPTION, List.of("q1"),
+				questions(question("q1", "multiple_choice", false, List.of("가", "나"))), new Answer("q1", " "));
+		assertRejected(ErrorCode.INVALID_OPTION, List.of("q1"),
+				questions(question("q1", "dropdown", true, List.of("가", "나"))), new Answer("q1", "  "));
+		assertRejected(ErrorCode.INVALID_OPTION, List.of("q1"),
+				questions(question("q1", "checkbox", true, List.of("가", "나"))), new Answer("q1", List.of(" ")));
+		assertRejected(ErrorCode.INVALID_OPTION, List.of("q1"),
+				questions(question("q1", "checkbox", false, List.of("가", "나"))), new Answer("q1", List.of("가", "")));
+	}
+
+	// 지금 동작을 고정한다: 선택형에서 null, 빈 문자열, 빈 배열은 비운 답이다.
+	@Test
+	void 선택형의_null_빈_문자열_빈_배열은_비운_답이다() {
+		List<Question> optional = questions(question("q1", "multiple_choice", false, List.of("가")),
+				question("q2", "checkbox", false, List.of("가")), question("q3", "dropdown", false, List.of("가")));
+		assertThat(AnswerValidator.validate(optional,
+				List.of(new Answer("q1", ""), new Answer("q2", List.of()), new Answer("q3", null)))).isEmpty();
+
+		assertRejected(ErrorCode.REQUIRED_MISSING, List.of("q1", "q2"),
+				questions(question("q1", "multiple_choice", true, List.of("가")), question("q2", "checkbox", true, List.of("가"))),
+				new Answer("q1", ""), new Answer("q2", List.of()));
+	}
+
 	@Test
 	void 값_모양이_유형과_다르면_invalid_request다() {
 		List<String> options = List.of("가", "나");

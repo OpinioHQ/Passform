@@ -37,7 +37,7 @@ public final class AnswerValidator {
 		Map<String, Answer> answers = new LinkedHashMap<>();
 		for (Question question : onPath) {
 			List<Answer> sameQuestion = byQuestion.get(question.questionId());
-			if (!sameQuestion.isEmpty() && !sameQuestion.get(0).values().isEmpty()) {
+			if (!sameQuestion.isEmpty() && present(question, sameQuestion.get(0))) {
 				answers.put(question.questionId(), sameQuestion.get(0));
 			}
 		}
@@ -47,7 +47,7 @@ public final class AnswerValidator {
 		List<Question> answered = onPath.stream().filter(question -> answers.containsKey(question.questionId())).toList();
 		reject(ErrorCode.INVALID_OPTION, answered,
 				question -> (question.isCheckbox() || question.isSingleChoice())
-						&& !question.options().containsAll(answers.get(question.questionId()).values()));
+						&& !question.options().containsAll(rawValues(answers.get(question.questionId()))));
 		reject(ErrorCode.INVALID_INPUT_FORMAT_VALUE, answered,
 				question -> question.inputFormatKind() != null && normalize(question.inputFormatKind(),
 						(String) answers.get(question.questionId()).value()).isEmpty());
@@ -56,6 +56,30 @@ public final class AnswerValidator {
 						&& ((String) answers.get(question.questionId()).value()).length() > question.characterLimit());
 
 		return answered.stream().map(question -> saved(question, answers.get(question.questionId()))).toList();
+	}
+
+	// 비운 답: null, 빈 문자열, 빈 배열. 주관식은 공백만 있어도 비운 답이다(AC73).
+	// 선택형은 공백만 있는 값도 보낸 값으로 보고 선택지 검사에서 거부한다(SPEC 5절 188행 invalid_option).
+	private static boolean present(Question question, Answer answer) {
+		if (!question.isCheckbox() && !question.isSingleChoice()) {
+			return !answer.values().isEmpty();
+		}
+		Object value = answer.value();
+		if (value instanceof String text) {
+			return !text.isEmpty();
+		}
+		if (value instanceof List<?> items) {
+			return !items.isEmpty();
+		}
+		return value != null;
+	}
+
+	// 값 모양 검사를 지난 원본 값. 공백을 지우지 않는다.
+	private static List<String> rawValues(Answer answer) {
+		if (answer.value() instanceof List<?> items) {
+			return items.stream().map(String.class::cast).toList();
+		}
+		return List.of((String) answer.value());
 	}
 
 	private static void reject(ErrorCode code, List<Question> questions, Predicate<Question> invalid) {
@@ -80,13 +104,13 @@ public final class AnswerValidator {
 		if (!(value instanceof List<?> items) || !items.stream().allMatch(String.class::isInstance)) {
 			return false;
 		}
-		List<String> values = sameQuestion.get(0).values();
+		List<String> values = rawValues(sameQuestion.get(0));
 		return new HashSet<>(values).size() == values.size();
 	}
 
 	private static Answer saved(Question question, Answer answer) {
 		if (question.isCheckbox()) {
-			return new Answer(question.questionId(), answer.values());
+			return new Answer(question.questionId(), rawValues(answer));
 		}
 		String value = (String) answer.value();
 		if (question.inputFormatKind() == null) {

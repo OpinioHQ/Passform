@@ -953,6 +953,49 @@ analysis_cases:
       rb09는 q6을 보고도 비웠으므로 팀장이 아닌 것으로 본다(사람 판단, README 가정 14, SPEC 313행). 건너뛴 rb05·rb08·rb13은 판정 불가라 넣지 않는다.
       비운 응답을 "아닌" 쪽으로 셌다는 안내는 판정 키가 없어 이 케이스로 검사하지 않고 팀 논의로 남겼다(사람 제안).
 
+  - name: parser_partially_dropped_condition_clarify
+    ac: [AC22, AC26]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      query: 소프트웨어학과 3학년 학생 수 알려줘
+      parser_outputs:
+        - {conditions: [소프트웨어학과], operation: count}
+      matching:
+        - {condition: 소프트웨어학과, form_version: 1, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 소프트웨어학과, form_version: 2, question_id: q1, kind: option, option: 소프트웨어학과}
+        - {condition: 3학년, form_version: 1, question_id: q2, kind: option, option: 3학년}
+        - {condition: 3학년, form_version: 2, question_id: q2, kind: option, option: 3학년}
+        - {condition: 3학년, form_version: 3, question_id: q2, kind: option, option: 3학년}
+    expect_reason: missing_match
+    expect_options: [all, any]
+    expect_parser_calls: 1
+    note: >-
+      팀원 지적(PR #79): 파서가 3학년을 버린 출력대로면 3학년이 빠진 인원이 되묻기 없이 나간다. 파서 출력은 일부러 재현한 실수이며 스키마에는 맞아 재호출하지 않는다.
+      SPEC 334행대로 3학년을 원문에서 되살리면 조건이 2개인데 match가 없어 표 5행 missing_match로 되묻는다(사람 판단). 645행과 달리 파서가 조건을 하나만 낸 경우다.
+      사람은 "소프트웨어학과 3학년"을 한 묶음으로 읽을 수 있어도(645행 note) 파서가 결합 방식을 내지 않았으므로 코드가 all로 추측하지 않는다.
+      파서가 match: all을 내면 되살린 뒤에도 match가 있어 5행에 걸리지 않으므로 match는 생략했다(사람이 에이전트 판단에 맡김).
+
+  - name: question_wording_not_dropped_condition
+    ac: [AC22]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      query: 학년이 3학년인 학생 수 알려줘
+      parser_outputs:
+        - {conditions: [3학년], operation: count}
+      matching:
+        - {condition: 3학년, form_version: 1, question_id: q2, kind: option, option: 3학년}
+        - {condition: 3학년, form_version: 2, question_id: q2, kind: option, option: 3학년}
+        - {condition: 3학년, form_version: 3, question_id: q2, kind: option, option: 3학년}
+    expect_parser_calls: 1
+    expect_count: 2
+    expect_not_evaluable_count: 0
+    note: >-
+      "학년이"는 q2의 문항 문구라 파서가 버린 조건이 아니다. 되살려 조건으로 보내면 unknown_condition이나 missing_match로 잘못 되묻는다(907행과 같은 규칙).
+      조건 1개, match 없음이라 AC26대로 되묻지 않는다. 3학년은 ra01(버전 2), ra09(버전 3)이고 q2가 모든 버전에 있어 판정 불가가 없다(사람 판단).
+      count의 response_ids는 null이라 ID는 판정하지 않는다.
+
 form_cases:
   - name: every_open_form_needs_consent_template
     ac: [AC12]

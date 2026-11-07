@@ -598,11 +598,11 @@
 | AC19 | `results_option_counts_combined_and_by_version`, `results_changed_question_separate` | 미구현 |
 | AC20 | `submitted_only`, `response_count_across_versions`, `injection_in_response` | 일부 구현 |
 | AC21 | `matching_labeled_set` (규칙이면 골든 / LLM이면 evals) | 스파이크 1차 미달. MVP는 규칙 우선과 임시 LLM 프롬프트, 재도전 미룸 |
-| AC22 | `unknown_condition_all_versions`, `unknown_sort_field`, `condition_missing_one_version_keeps_matches`, `option_renamed_version_not_evaluable`, `parser_dropped_condition_not_counted` | 일부 구현 |
+| AC22 | `unknown_condition_all_versions`, `unknown_sort_field`, `condition_missing_one_version_keeps_matches`, `option_renamed_version_not_evaluable`, `parser_dropped_condition_not_counted`, `parser_partially_dropped_condition_clarify`, `question_wording_not_dropped_condition` | 일부 구현 |
 | AC23 | `matched_for_applicable_versions`, `coverage_for_unavailable_version`, `unavailable_version_without_unknown_omitted` | 일부 구현 |
 | AC24 | `match_not_excludes_unknown`, `match_any_known_true_with_unknown`, `checkbox_all_requires_both_options`, `unanswered_kind_counts_blank_only`, `answered_kind_excludes_blank`, `match_all_unknown_when_no_false`, `no_condition_counts_all`, `negation_does_not_count_unknown`, `no_condition_match_any_counts_all`, `no_condition_match_not_counts_all`, `unavailable_version_without_unknown_omitted`, `branch_skipped_condition_not_evaluable`, `branch_visited_blank_is_false` | 일부 구현 |
 | AC25 | `ambiguous_single_choice`, `checkbox_all_ok`, `ambiguous_question_meaning_across_versions` | 미구현 |
-| AC26 | `missing_match_two_conditions` | 미구현 |
+| AC26 | `missing_match_two_conditions`, `parser_partially_dropped_condition_clarify` | 미구현 |
 | AC27 | `missing_operation`, `unsupported_statistics_not_mapped_to_summary`, `missing_operation_without_summary_option` | 미구현 |
 | AC28 | `unsortable_long_answer`, `unsortable_text_age`, `sort_missing_version_last` | 미구현 |
 | AC29 | `double_negation_unanswered` | 미구현 |

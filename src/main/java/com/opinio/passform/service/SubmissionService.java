@@ -26,7 +26,7 @@ import com.opinio.passform.repository.ResponseRepository;
 import com.opinio.passform.service.SubmissionResult.SubmittedAnswer;
 
 // 응답 제출. 문항·분기·형식은 제출 버전의 정의에서, status·deadline·response_limit은 forms의 현재 값에서 읽는다(SPEC 5절 156행).
-// 판정 순서: 없는 폼 → 버전 → 닫힘 → 동의 → 경로 → 답 검증. 실패하면 아무것도 저장하지 않는다.
+// 판정 순서: 없는 폼 → 초안 소유 → 버전 → 닫힘 → 동의 → 경로 → 답 검증. 실패하면 아무것도 저장하지 않는다.
 @Service
 public class SubmissionService {
 
@@ -53,8 +53,15 @@ public class SubmissionService {
 			.filter(found -> !found.isHiddenFromPublic())
 			.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND));
 		Instant now = clock.instant();
+		// 본인의 작성 중 응답만 제출할 수 있다. 남의 것·제출된 것·다른 폼의 것·비로그인은 없는 초안이다(SPEC 5절 188행 404).
+		Response draft = command.draftResponseId() == null ? null
+				: responses.findByIdForUpdate(command.draftResponseId())
+					.filter(found -> found.isDraftOf(command.userId(), command.formId()))
+					.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND));
 
-		if (!Objects.equals(form.getDefinitionVersion(), command.formVersion())) {
+		// 옛 버전에서 시작한 초안은 그대로 제출할 수 없다(SPEC 5절 208행, AC83).
+		if (!Objects.equals(form.getDefinitionVersion(), command.formVersion())
+				|| (draft != null && draft.getFormVersion() != command.formVersion())) {
 			throw new DomainException(ErrorCode.FORM_VERSION_CHANGED);
 		}
 		long submittedCount = form.getResponseLimit() == null ? 0
@@ -75,8 +82,16 @@ public class SubmissionService {
 
 		// AI 요약이 꺼진 폼은 보낸 값을 무시하고 false로 저장한다(SPEC 5절 212행).
 		boolean aiSummaryAgreed = definition.aiSummaryEnabled() && Boolean.TRUE.equals(command.aiSummaryAgreed());
-		Response saved = responses.save(Response.submitted(command.formId(), command.userId(), command.formVersion(),
-				content, aiSummaryAgreed, now));
+		Response saved;
+		if (draft == null) {
+			saved = responses.save(Response.submitted(command.formId(), command.userId(), command.formVersion(), content,
+					aiSummaryAgreed, now));
+		}
+		else {
+			// 같은 response_id를 submitted로 바꾼다(AC83). 검증이 실패하면 여기까지 오지 않아 초안은 그대로다.
+			draft.submitDraft(content, aiSummaryAgreed, now);
+			saved = draft;
+		}
 		if (form.isResponseLimitReached(submittedCount + 1)) {
 			form.closeByResponseLimit(now);
 		}

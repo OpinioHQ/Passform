@@ -44,7 +44,8 @@ public class SubmissionController {
 			.map(answer -> new Answer(answer.questionId(), answer.value()))
 			.toList();
 		SubmissionResult result = submissions.submit(new SubmitCommand(parseFormId(formId), currentUser.findUserId().orElse(null),
-				request.formVersion(), answers, request.consentAgreed(), request.aiSummaryAgreed()));
+				request.formVersion(), answers, request.consentAgreed(), request.aiSummaryAgreed(),
+				request.draftResponseId()));
 		return SubmissionResponse.from(result);
 	}
 
@@ -59,8 +60,9 @@ public class SubmissionController {
 	}
 
 	// consent_agreed는 필수 표시를 하지 않는다. 생략도 service에서 consent_required로 거부한다(AC14).
+	// draft_response_id는 로그인한 본인의 작성 중 응답 ID다(SPEC 5절 188행).
 	public record SubmissionRequest(@NotNull Integer formVersion, @NotNull List<@NotNull @Valid AnswerRequest> answers,
-			Boolean consentAgreed, Boolean aiSummaryAgreed) {
+			Boolean consentAgreed, Boolean aiSummaryAgreed, UUID draftResponseId) {
 	}
 
 	public record AnswerRequest(@NotBlank String questionId, Object value) {

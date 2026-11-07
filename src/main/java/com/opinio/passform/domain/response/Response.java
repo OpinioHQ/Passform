@@ -94,6 +94,41 @@ public class Response {
 				submittedAt);
 	}
 
+	// 로그인 사용자의 작성 중 응답(SPEC 5절 205~207행). 제출 검증을 하지 않고, 동의·제출로 처리하지 않는다.
+	public static Response draft(UUID formId, UUID userId, int formVersion, List<Answer> content, Instant savedAt) {
+		if (userId == null) {
+			throw new IllegalArgumentException("계정 초안은 로그인 사용자만 만든다");
+		}
+		return new Response(formId, userId, formVersion, ResponseStatus.IN_PROGRESS, content, false, savedAt, null);
+	}
+
+	public boolean isDraftOf(UUID userId, UUID formId) {
+		return status == ResponseStatus.IN_PROGRESS && this.userId != null && this.userId.equals(userId)
+				&& this.formId.equals(formId);
+	}
+
+	// 같은 초안의 답을 통째로 바꾼다. 작성 시작 버전은 바꾸지 않는다(SPEC 5절 208행).
+	public void replaceDraftAnswers(List<Answer> answers, Instant now) {
+		requireInProgress();
+		this.content = answers;
+		this.savedAt = now;
+	}
+
+	// 같은 response_id를 submitted로 바꾼다(AC83). 검증은 제출 경로가 끝낸 뒤 부른다.
+	public void submitDraft(List<Answer> answers, boolean aiSummaryAgreed, Instant now) {
+		requireInProgress();
+		this.status = ResponseStatus.SUBMITTED;
+		this.content = answers;
+		this.aiSummaryAgreed = aiSummaryAgreed;
+		this.submittedAt = now;
+	}
+
+	private void requireInProgress() {
+		if (status != ResponseStatus.IN_PROGRESS) {
+			throw new IllegalStateException("작성 중 응답이 아니다");
+		}
+	}
+
 	// 분석 입력으로 변환한다. 단일 값도 1개짜리 목록이고 비운 문항은 키를 두지 않는다(ResponseRecord 주석).
 	public ResponseRecord toResponseRecord() {
 		Map<String, List<String>> answers = new LinkedHashMap<>();

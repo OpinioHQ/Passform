@@ -324,7 +324,7 @@ describe('VITE_USE_API=true', () => {
   });
 
   it('가짜 값이 남은 화면에는 띠를 보이고, 없는 화면에는 보이지 않는다', async () => {
-    await openLiveAt('/creator');
+    await openLiveAt('/me/forms');
     expect(screen.getByText(/가상 값이 남아 있습니다/)).toBeTruthy();
     cleanup();
     await openLiveAt('/login');

@@ -379,6 +379,27 @@ export function BuilderPage({
             firstPublished={version !== null}
             templates={templates}
             onChange={edit}
+            share={
+              shareUrl && (
+                // 위쪽 공유 링크와 같은 칸을 하나 더 둔다(사람 결정, #83). 화면 글자는 같고,
+                // 화면 읽기 프로그램이 구분하도록 접근성 이름에 "(폼 설정)"을 붙인다.
+                <div className="builder-share">
+                  <div className="builder-field">
+                    <span aria-hidden="true">공유 링크</span>
+                    <input readOnly value={shareUrl} aria-label="공유 링크 (폼 설정)" />
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={copyShareUrl}
+                    aria-label="링크 복사 (폼 설정)"
+                  >
+                    링크 복사
+                  </button>
+                  {copyNote && <small className="muted">{copyNote}</small>}
+                </div>
+              )
+            }
           />
           <div className="builder-add-section">{actions('bottom')}</div>
         </div>

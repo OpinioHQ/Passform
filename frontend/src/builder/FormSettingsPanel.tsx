@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Panel } from '../components/UI';
 import type { ConsentTemplate, DisplayMode, FormDefinition, FormSettings } from '../types/api';
 import { isoToKstInput, kstInputToIso } from './deadline';
@@ -103,11 +103,14 @@ export function FormSettingsPanel({
   firstPublished,
   templates,
   onChange,
+  share,
 }: {
   definition: FormDefinition;
   firstPublished: boolean;
   templates: ConsentTemplate[] | null;
   onChange: (change: (def: FormDefinition) => FormDefinition) => void;
+  /** 배포 뒤 공유 링크 영역. 제목 바로 아래, 마감 위에 둔다. */
+  share?: ReactNode;
 }) {
   const settings = def.settings;
   // 송금 링크 칸은 숨긴다(사람 결정, #83). 열 때 값이 있던 폼만 보여 지울 수 있게 하고,
@@ -118,6 +121,7 @@ export function FormSettingsPanel({
   return (
     <Panel className="builder-section builder-settings">
       <h3>폼 설정</h3>
+      {share}
       <label className="builder-field">
         <span>마감 (한국 시간, 선택)</span>
         <input

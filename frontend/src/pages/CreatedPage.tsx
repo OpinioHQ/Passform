@@ -5,17 +5,19 @@ import type { CreatorFormSummary } from '../types/api';
 
 export type CreatedFormsLoad = 'loading' | 'failed' | 'ready';
 
-/** 결과·탐색 버튼은 T6, E8이 실제 화면을 연결할 때 더한다. */
+/** 탐색 버튼은 E8이 실제 화면을 연결할 때 더한다. */
 export function CreatedPage({
   forms,
   load,
   onCreate,
   onEdit,
+  onResults,
 }: {
   forms: CreatorFormSummary[];
   load: CreatedFormsLoad;
   onCreate: () => void;
   onEdit: (formId: string) => void;
+  onResults: (formId: string) => void;
 }) {
   const now = Date.now();
   return (
@@ -75,6 +77,14 @@ export function CreatedPage({
                   onClick={() => onEdit(form.form_id)}
                 >
                   <Icon name="edit" size={16} /> 폼 편집
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  aria-label={`${form.title.trim() || '제목 없는 폼'} 결과`}
+                  onClick={() => onResults(form.form_id)}
+                >
+                  결과 보기 <Icon name="arrow" size={16} />
                 </button>
               </div>
             </Panel>

@@ -102,6 +102,7 @@ function LiveCreatedForms() {
       load={load}
       onCreate={() => navigate(paths.newForm)}
       onEdit={(id) => navigate(paths.editForm(id))}
+      onResults={(id) => navigate(paths.formResults(id))}
     />
   );
 }

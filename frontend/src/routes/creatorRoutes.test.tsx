@@ -251,7 +251,7 @@ describe('미리보기 (AC81)', () => {
 });
 
 describe('내가 만든 폼', () => {
-  it('실제 목록을 보여 주고 가짜 데이터와 결과·탐색 버튼을 보이지 않는다', async () => {
+  it('실제 목록과 결과 버튼을 보여 주고 가짜 데이터와 탐색 버튼을 보이지 않는다', async () => {
     stubApi((method, path) =>
       method === 'GET' && path === '/me/created-forms'
         ? {
@@ -276,6 +276,8 @@ describe('내가 만든 폼', () => {
     expect(screen.getByRole('link', { name: 'https://app.test/f/abc' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /응답 탐색/ })).toBeNull();
     expect(screen.queryByText('함께 일하는 경험에 대한 설문')).toBeNull();
+
+    expect(screen.getByRole('button', { name: '서버 폼 결과' })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: '서버 폼 편집' }));
     expect(screen.getByTestId('path').textContent).toBe('/creator/forms/f1/edit');

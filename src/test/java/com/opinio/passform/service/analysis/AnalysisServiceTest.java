@@ -57,24 +57,42 @@ class AnalysisServiceTest {
 	}
 
 	private AnalysisService service(boolean aiSummary, ConditionMatcher matcher) {
-		Map<String, Object> definition = Map.of("settings", Map.of("ai_summary", Map.of("enabled", aiSummary)), "sections",
-				List.of(Map.of("section_id", "s1", "questions",
-						List.of(Map.of("question_id", "q1", "question_note", "학과", "question_type", "dropdown", "options",
-								List.of("소프트웨어학과", "경영학과")),
-								Map.of("question_id", "q2", "question_note", "지원 동기", "question_type", "long_answer")))));
+		return service(aiSummary, matcher, List.of(List.of(question("q1", "학과", "dropdown", "소프트웨어학과", "경영학과"),
+				question("q2", "지원 동기", "long_answer"))));
+	}
+
+	// 버전마다 문항 목록 하나와 제출 응답 하나를 둔다. 폼의 최신 버전은 마지막 버전이다.
+	private AnalysisService service(boolean aiSummary, ConditionMatcher matcher,
+			List<List<Map<String, Object>>> versionQuestions) {
+		FormVersionRepository versions = mock(FormVersionRepository.class);
+		List<Response> submitted = new java.util.ArrayList<>();
+		Map<String, Object> definition = Map.of();
+		for (int index = 0; index < versionQuestions.size(); index++) {
+			int version = index + 1;
+			definition = Map.of("settings", Map.of("ai_summary", Map.of("enabled", aiSummary)), "sections",
+					List.of(Map.of("section_id", "s1", "questions", versionQuestions.get(index))));
+			when(versions.findById(new FormVersionId(FORM_ID, version)))
+				.thenReturn(Optional.of(new FormVersion(FORM_ID, version, definition, Instant.EPOCH)));
+			Response response = TestData.submitted(FORM_ID, OWNER, version, TestData.NOW);
+			ReflectionTestUtils.setField(response, "id", UUID.randomUUID());
+			submitted.add(response);
+		}
 		Form form = new Form(OWNER, definition, Instant.EPOCH);
 		ReflectionTestUtils.setField(form, "id", FORM_ID);
-		ReflectionTestUtils.setField(form, "definitionVersion", 1);
+		ReflectionTestUtils.setField(form, "definitionVersion", versionQuestions.size());
 		FormRepository forms = mock(FormRepository.class);
 		when(forms.findById(FORM_ID)).thenReturn(Optional.of(form));
-		FormVersionRepository versions = mock(FormVersionRepository.class);
-		when(versions.findById(new FormVersionId(FORM_ID, 1)))
-			.thenReturn(Optional.of(new FormVersion(FORM_ID, 1, definition, Instant.EPOCH)));
-		Response response = TestData.submitted(FORM_ID, OWNER, 1, TestData.NOW);
-		ReflectionTestUtils.setField(response, "id", UUID.randomUUID());
 		ResponseRepository responses = mock(ResponseRepository.class);
-		when(responses.findSubmittedNotDeletedByFormId(FORM_ID)).thenReturn(List.of(response));
+		when(responses.findSubmittedNotDeletedByFormId(FORM_ID)).thenReturn(submitted);
 		return new AnalysisService(forms, versions, responses, parser, matcher, new RequestContextSchema());
+	}
+
+	private static Map<String, Object> question(String id, String note, String type, String... options) {
+		return Map.of("question_id", id, "question_note", note, "question_type", type, "options", List.of(options));
+	}
+
+	private static ConditionMatch option(String condition, int version, String questionId, String option) {
+		return new ConditionMatch(condition, version, questionId, MatchKind.OPTION, option);
 	}
 
 	private ConditionMatcher matcherReturning(ConditionMatch... matches) {
@@ -251,6 +269,51 @@ class AnalysisServiceTest {
 
 		assertThat(view.clarify().reason()).isEqualTo("missing_match");
 		assertThat(view.clarify().options()).isEmpty();
+	}
+
+	@Test
+	void 문구와_유형이_같고_ID만_다른_두_버전은_같은_문항으로_보고_되묻지_않는다() {
+		ConditionMatcher matcher = matcherReturning(option("경영학과", 1, "q1", "경영학과"), option("경영학과", 2, "q9", "경영학과"));
+		AnalysisService service = service(false, matcher,
+				List.of(List.of(question("q1", "학과", "dropdown", "소프트웨어학과", "경영학과")),
+						List.of(question("q9", "학과", "dropdown", "소프트웨어학과", "경영학과"))));
+
+		AnalyzeView view = service.analyze(command("{\"context\":{\"conditions\":[\"경영학과\"],\"operation\":\"count\"}}"));
+
+		assertThat(view.status()).isEqualTo("ok");
+		assertThat(view.matched()).extracting(AnalyzeView.MatchedView::formVersion).containsExactly(1, 2);
+	}
+
+	@Test
+	void 문구가_같아도_유형이_다르면_ambiguous_match다() {
+		ConditionMatcher matcher = matcherReturning(option("경영학과", 1, "q1", "경영학과"), option("경영학과", 2, "q9", "경영학과"));
+		AnalysisService service = service(false, matcher,
+				List.of(List.of(question("q1", "학과", "dropdown", "소프트웨어학과", "경영학과")),
+						List.of(question("q9", "학과", "checkbox", "소프트웨어학과", "경영학과"))));
+
+		AnalyzeView view = service.analyze(command("{\"context\":{\"conditions\":[\"경영학과\"],\"operation\":\"count\"}}"));
+
+		assertThat(view.clarify().reason()).isEqualTo("ambiguous_match");
+	}
+
+	@Test
+	void 같은_버전의_같은_문구_두_문항은_ambiguous_match다() {
+		ConditionMatcher matcher = matcherReturning(option("경영학과", 1, "q1", "경영학과"), option("경영학과", 1, "q2", "경영학과"));
+		AnalysisService service = service(false, matcher,
+				List.of(List.of(question("q1", "학과", "dropdown", "경영학과"), question("q2", "학과", "dropdown", "경영학과"))));
+
+		AnalyzeView view = service.analyze(command("{\"context\":{\"conditions\":[\"경영학과\"],\"operation\":\"count\"}}"));
+
+		assertThat(view.clarify().reason()).isEqualTo("ambiguous_match");
+	}
+
+	@Test
+	void 문구와_유형이_같고_ID만_다른_target은_되묻지_않는다() {
+		AnalysisService service = service(true, matcherReturning(),
+				List.of(List.of(question("q2", "지원 동기", "long_answer")), List.of(question("q8", "지원 동기", "long_answer"))));
+		String body = "{\"context\":{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"지원 동기\"}}";
+
+		assertThatThrownBy(() -> service.analyze(command(body))).isInstanceOf(AnalysisStepPendingException.class);
 	}
 
 	@Test

@@ -72,7 +72,7 @@ final class ClarifyRules {
 		return unknown(context, matches, versions, targetMatches)
 			.or(() -> contradictorySingleChoice(context, matches, lookup))
 			.or(() -> ambiguousCondition(context, matches, lookup))
-			.or(() -> ambiguousTarget(targetMatches))
+			.or(() -> ambiguousTarget(targetMatches, lookup))
 			.or(() -> doubleNegation(context, matches, lookup))
 			.or(() -> unsummarizableTarget(context, targetMatches, versions, lookup));
 	}
@@ -125,12 +125,34 @@ final class ClarifyRules {
 				"한 가지만 고를 수 있는 문항의 선택지를 모두 만족하는 응답은 없어요. 하나라도 해당하는 응답을 볼까요?", List.of("any"))) : Optional.empty();
 	}
 
-	// 표 7행 후자: 같은 표현이 question_id가 다른 문항에 걸리면 합치거나 고르지 않는다.
+	// 표 7행 후자: 같은 표현이 뜻이 다른 문항에 걸리면 합치거나 고르지 않는다.
+	// 버전 사이에 question_id만 다르고 문구·유형이 같으면 같은 문항이다(지웠다 다시 만든 문항). 한 버전 안의 두 문항은 항상 되묻는다.
+	private static boolean differentMeanings(List<QuestionAt> questions) {
+		boolean twoInOneVersion = questions.stream()
+			.collect(Collectors.groupingBy(QuestionAt::formVersion,
+					Collectors.mapping(at -> at.question().questionId(), Collectors.toSet())))
+			.values()
+			.stream()
+			.anyMatch(ids -> ids.size() >= 2);
+		boolean differentIds = questions.stream().map(at -> at.question().questionId()).distinct().count() >= 2;
+		boolean differentWording = questions.stream()
+			.map(at -> at.question().questionNote() + "\n" + at.question().questionType())
+			.distinct()
+			.count() >= 2;
+		return twoInOneVersion || differentIds && differentWording;
+	}
+
+	private record QuestionAt(int formVersion, Question question) {
+	}
+
 	private static Optional<ClarifyView> ambiguousCondition(RequestContext context, List<ConditionMatch> matches,
 			Map<Integer, Map<String, Question>> lookup) {
 		for (String condition : context.conditions()) {
 			List<ConditionMatch> entries = matches.stream().filter(entry -> entry.condition().equals(condition)).toList();
-			if (entries.stream().map(ConditionMatch::questionId).distinct().count() >= 2) {
+			List<QuestionAt> questions = entries.stream()
+				.map(entry -> new QuestionAt(entry.formVersion(), question(lookup, entry.formVersion(), entry.questionId())))
+				.toList();
+			if (differentMeanings(questions)) {
 				Set<QuestionOption> candidates = new LinkedHashSet<>();
 				for (ConditionMatch entry : entries) {
 					candidates.add(questionOption(entry.formVersion(), question(lookup, entry.formVersion(), entry.questionId())));
@@ -142,8 +164,12 @@ final class ClarifyRules {
 		return Optional.empty();
 	}
 
-	private static Optional<ClarifyView> ambiguousTarget(List<QuestionOption> targetMatches) {
-		if (targetMatches.stream().map(QuestionOption::questionId).distinct().count() >= 2) {
+	private static Optional<ClarifyView> ambiguousTarget(List<QuestionOption> targetMatches,
+			Map<Integer, Map<String, Question>> lookup) {
+		List<QuestionAt> questions = targetMatches.stream()
+			.map(match -> new QuestionAt(match.formVersion(), question(lookup, match.formVersion(), match.questionId())))
+			.toList();
+		if (differentMeanings(questions)) {
 			return Optional.of(new ClarifyView("ambiguous_match", "요약할 문항이 여러 개에 걸려 있어요. 어느 문항인지 골라 주세요.", targetMatches));
 		}
 		return Optional.empty();

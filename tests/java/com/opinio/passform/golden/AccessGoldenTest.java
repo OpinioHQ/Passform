@@ -45,6 +45,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -60,7 +61,10 @@ import tools.jackson.databind.json.JsonMapper;
 
 import com.opinio.passform.config.ClockConfig;
 import com.opinio.passform.config.SecurityConfig;
+import com.opinio.passform.domain.form.Form;
 import com.opinio.passform.domain.user.User;
+import com.opinio.passform.llm.ConditionMatcher;
+import com.opinio.passform.llm.QueryParser;
 import com.opinio.passform.repository.AttachmentRepository;
 import com.opinio.passform.repository.ConsentTemplateRepository;
 import com.opinio.passform.repository.FormRepository;
@@ -142,6 +146,12 @@ class AccessGoldenTest {
 	@MockitoBean
 	private AttachmentRepository attachments;
 
+	@MockitoBean
+	private QueryParser queryParser;
+
+	@MockitoBean
+	private ConditionMatcher conditionMatcher;
+
 	private final Map<UUID, User> actorUsers = new HashMap<>();
 
 	@BeforeEach
@@ -215,11 +225,19 @@ class AccessGoldenTest {
 		assertTrue(problems.isEmpty(), () -> "케이스 형식 오류: " + problems);
 
 		Map<String, Object> input = map(c.get("input"), "input");
-		readFixture(Path.of(string(input.get("fixture"), "input.fixture")));
+		String seedFormId = readFixture(Path.of(string(input.get("fixture"), "input.fixture")));
 		// 기대값은 실행 전에 읽는다. 스텁 상태에서도 기대값 형식 오류는 skip이 아니라 실패로 드러난다.
 		List<Consumer<MockHttpServletResponse>> checks = expectations(c);
 
-		MockHttpServletResponse response = perform(input);
+		// 시드 폼 ID는 UUID가 아니다. 소유자는 owner로 두고 경로의 ID만 UUID로 바꿔 저장소에 넣는다.
+		UUID formId = uuidOf(seedFormId);
+		Form form = new Form(uuidOf("owner"), Map.of(), Instant.EPOCH);
+		ReflectionTestUtils.setField(form, "id", formId);
+		when(forms.findById(formId)).thenReturn(Optional.of(form));
+		String path = string(input.get("path"), "input.path").replace("/forms/" + seedFormId + "/",
+				"/forms/" + formId + "/");
+
+		MockHttpServletResponse response = perform(with(input, "path", path));
 		assertAll(checks.stream().map(check -> (Executable) () -> check.accept(response)));
 	}
 
@@ -405,9 +423,9 @@ class AccessGoldenTest {
 		return result;
 	}
 
-	// fixture가 읽히는 JSON이고 폼 ID가 있는지 본다.
-	private static void readFixture(Path fixture) throws IOException {
-		string(map(JSON.readValue(Files.readString(fixture), Object.class), fixture.toString()).get("form_id"),
+	// fixture가 읽히는 JSON이고 폼 ID가 있는지 보고 그 ID를 돌려준다.
+	private static String readFixture(Path fixture) throws IOException {
+		return string(map(JSON.readValue(Files.readString(fixture), Object.class), fixture.toString()).get("form_id"),
 				fixture + " form_id");
 	}
 

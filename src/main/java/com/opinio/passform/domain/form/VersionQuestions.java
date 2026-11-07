@@ -27,7 +27,7 @@ public record VersionQuestions(int formVersion, List<Question> questions) {
 		private static Question of(Map<String, Object> question) {
 			List<String> options = listAt(question, "options").stream().map(String::valueOf).toList();
 			boolean personal = question.get("profile_key") != null
-					|| PERSONAL_FORMATS.contains(asMap(question.get("input_format")).get("kind"));
+					|| asMap(question.get("input_format")).get("kind") instanceof String kind && PERSONAL_FORMATS.contains(kind);
 			return new Question(String.valueOf(question.get("question_id")), String.valueOf(question.get("question_note")),
 					String.valueOf(question.get("question_type")), options, personal);
 		}

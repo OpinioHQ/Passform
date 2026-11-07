@@ -720,7 +720,9 @@ class FormApiDatabaseTest extends DatabaseTest {
 		assertThat(json.get("consent").get("items").toString()).isEqualTo("[\"문항별 응답 내용\",\"이름\",\"휴대전화 번호\"]");
 		assertThat(json.get("consent").get("refusal_notice").asString()).isEqualTo(ConsentNotices.REFUSAL_NOTICE);
 		assertThat(json.get("consent").get("purpose").asString()).startsWith("폼을 만든 제작자가");
-		assertThat(json.get("consent").get("retention").asString()).startsWith("정해진 보유 기간이나 자동 삭제는 없습니다.");
+		assertThat(json.get("consent").get("retention").asString()).startsWith("정해진 보유 기간은 없습니다.")
+			.contains("로그인하지 않고 제출한 경우: 직접 취소하거나 지울 수 없습니다.")
+			.doesNotContain("\r");
 		assertThat(json.get("display").get("allowed_modes").toString()).isEqualTo("[\"one_question\",\"all_questions\"]");
 		assertThat(json.get("deadline").asString()).isEqualTo("2099-11-30T14:59:00Z");
 		assertThat(body).doesNotContain("owner_id", "status", "slug", "share_url");
@@ -857,7 +859,7 @@ class FormApiDatabaseTest extends DatabaseTest {
 			.andExpect(jsonPath("$", hasSize(1)))
 			.andExpect(jsonPath("$[0].consent_template_id").value("consent_default"))
 			.andExpect(jsonPath("$[0].purpose").value(org.hamcrest.Matchers.startsWith("폼을 만든 제작자가")))
-			.andExpect(jsonPath("$[0].retention").value(org.hamcrest.Matchers.containsString("자동 삭제는 없습니다")));
+			.andExpect(jsonPath("$[0].retention").value(org.hamcrest.Matchers.containsString("자동으로 삭제되지 않습니다")));
 	}
 
 }

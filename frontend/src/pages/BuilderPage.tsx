@@ -313,11 +313,13 @@ export function BuilderPage({
                 return (
                   <QuestionEditor
                     key={questionId}
+                    definition={definition}
                     question={question}
                     number={questionsBefore(sectionIndex) + questionIndex + 1}
                     canMoveUp={questionIndex > 0}
                     canMoveDown={questionIndex < section.questions.length - 1}
                     onChange={(next) => edit((d) => replaceQuestion(d, sectionId, next))}
+                    onEdit={edit}
                     onMove={(delta) => edit((d) => moveQuestion(d, sectionId, questionId, delta))}
                     onDuplicate={() => edit((d) => duplicateQuestion(d, sectionId, questionId))}
                     onRemove={() => edit((d) => removeQuestion(d, sectionId, questionId))}

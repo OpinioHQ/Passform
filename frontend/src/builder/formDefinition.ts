@@ -8,6 +8,8 @@ import type {
   Question,
   QuestionType,
 } from '../types/api';
+import { AI_SUMMARY_NOTICE } from './aiSummaryNotice';
+import { branchPublishProblems } from './branchRules';
 
 /**
  * 폼 정의 편집 함수. 화면 상태는 `form.schema.json` 구조 하나이고, 어느 모드든 이 함수들로 고친다.
@@ -253,9 +255,6 @@ export function setOwnInfo(question: Question, yes: boolean): Question {
   return { ...question, profile_key: yes && kind ? OWN_INFO[kind].key : null };
 }
 
-export const countBranchRules = (def: FormDefinition) =>
-  def.sections.flatMap((s) => s.questions).reduce((sum, q) => sum + q.branch_rules.length, 0);
-
 function describeQuestion(def: FormDefinition, question: Question): string {
   const all = def.sections.flatMap((s) => s.questions);
   const position = all.findIndex((q) => q.question_id === question.question_id) + 1;
@@ -289,6 +288,8 @@ export function publishProblems(def: FormDefinition): string[] {
       );
     }
   }
+  // 서버는 이 두 검사에 invalid_branch, invalid_display_mode를 준다. 어느 규칙인지 알리려고 먼저 본다.
+  problems.push(...branchPublishProblems(def));
   return problems;
 }
 
@@ -332,7 +333,7 @@ export function toPreviewForm(
       retention: consent?.retention ?? '',
       refusal_notice:
         '동의를 거부할 수 있습니다. 동의하지 않으면 이 폼에 응답을 제출할 수 없습니다.',
-      ai_summary: null,
+      ai_summary: def.settings.ai_summary?.enabled ? AI_SUMMARY_NOTICE : null,
     },
   };
 }

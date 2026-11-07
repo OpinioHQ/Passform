@@ -7,3 +7,4 @@ export * from './account';
 export * from './form';
 export * from './response';
 export * from './analyze';
+export * from './results';

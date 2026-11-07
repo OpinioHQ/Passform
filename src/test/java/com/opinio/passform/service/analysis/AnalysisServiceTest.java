@@ -232,6 +232,28 @@ class AnalysisServiceTest {
 	}
 
 	@Test
+	void 여러_낱말로_된_단일_부정은_혼합_부정이_아니다() {
+		parserReturns("{\"conditions\":[\"소프트웨어 학과\"],\"match\":\"not\",\"operation\":\"count\"}");
+		ConditionMatcher matcher = matcherReturning(
+				new ConditionMatch("소프트웨어 학과", 1, "q1", MatchKind.OPTION, "소프트웨어학과"));
+
+		AnalyzeView view = service(false, matcher).analyze(command(queryBody("소프트웨어 학과가 아닌 학생 수")));
+
+		assertThat(view.status()).isEqualTo("ok");
+		assertThat(view.result().count()).isEqualTo(1);
+	}
+
+	@Test
+	void 파서가_버린_낱말이_조건_밖에_남으면_여전히_혼합_부정이다() {
+		parserReturns("{\"conditions\":[\"소프트웨어학과\"],\"match\":\"not\",\"operation\":\"count\"}");
+
+		AnalyzeView view = askQuery(false, "소프트웨어학과가 아닌 4학년 수");
+
+		assertThat(view.clarify().reason()).isEqualTo("missing_match");
+		assertThat(view.clarify().options()).isEmpty();
+	}
+
+	@Test
 	void AC92_target이_선택형_문항이면_요약_가능_문항만_안내한다() {
 		AnalyzeView view = askContext(true, "{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"학과\"}");
 

@@ -67,7 +67,13 @@ final class QueryText {
 				positive.add(word);
 			}
 		}
-		return negated && !positive.isEmpty();
+		return negated && !positive.isEmpty() && !withinSingleNegatedCondition(positive, context);
+	}
+
+	// "소프트웨어 학과가 아닌"처럼 여러 낱말로 된 조건 하나를 부정하면 혼합이 아니다(SPEC 342행).
+	private static boolean withinSingleNegatedCondition(List<String> positive, RequestContext context) {
+		return "not".equals(context.match()) && context.conditions().size() == 1
+				&& positive.stream().allMatch(context.conditions().get(0)::contains);
 	}
 
 	// SPEC 334행: 파서가 조건을 버린 출력을 전체 건수로 내보내지 않는다. 남는 표현을 되살려 매칭으로 보낸다.

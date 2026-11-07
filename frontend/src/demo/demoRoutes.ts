@@ -10,8 +10,6 @@ const routesWithDemoValues: string[] = [
   routePatterns.myResponses,
   routePatterns.myResponse,
   routePatterns.myProfile,
-  routePatterns.publicForm,
-  routePatterns.form,
   routePatterns.creator,
   routePatterns.newForm,
   routePatterns.editForm,

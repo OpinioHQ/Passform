@@ -521,6 +521,9 @@ describe('AC91 AI 요약 선택 동의', () => {
     expect(optional).not.toBe(
       screen.getByRole('checkbox', { name: /개인정보 수집·이용에 동의합니다/ }),
     );
+    // 고지는 필수 동의와 같은 박스에서 접혀 있고 "내용 보기"로 편다(사람 결정, #42).
+    expect(screen.queryByText(notice.provider)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'AI 요약을 위한 외부 전송 안내 보기' }));
     for (const value of Object.values(notice).flat()) expect(screen.getByText(value)).toBeTruthy();
     // 제출 버튼 바로 앞(폼 맨 끝)에 있다.
     expect(

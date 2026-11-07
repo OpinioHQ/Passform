@@ -1,6 +1,8 @@
 import React from 'react';
 import { Badge } from '../components/UI';
-import type { InputFormatKind, Question, QuestionType } from '../types/api';
+import type { FormDefinition, InputFormatKind, Question, QuestionType } from '../types/api';
+import { BranchRulesEditor } from './BranchRulesEditor';
+import { renameOption } from './branchRules';
 import {
   addOption,
   isChoiceType,
@@ -8,7 +10,6 @@ import {
   removeOption,
   setCharacterLimit,
   setInputFormat,
-  setOption,
   setOwnInfo,
   setQuestionNote,
   setQuestionType,
@@ -65,20 +66,25 @@ export function RowButton({
 }
 
 export function QuestionEditor({
+  definition,
   question: q,
   number,
   canMoveUp,
   canMoveDown,
   onChange,
+  onEdit,
   onMove,
   onDuplicate,
   onRemove,
 }: {
+  definition: FormDefinition;
   question: Question;
   number: number;
   canMoveUp: boolean;
   canMoveDown: boolean;
   onChange: (next: Question) => void;
+  /** 다른 문항의 분기 조건까지 바꾸는 편집(선택지 문구, 분기 규칙). */
+  onEdit: (change: (def: FormDefinition) => FormDefinition) => void;
   onMove: (delta: -1 | 1) => void;
   onDuplicate: () => void;
   onRemove: () => void;
@@ -98,7 +104,6 @@ export function QuestionEditor({
       <div className="question-top">
         <span className="overline">질문 {String(number).padStart(2, '0')}</span>
         <Badge>{QUESTION_TYPE_LABELS[q.question_type]}</Badge>
-        {q.branch_rules.length > 0 && <Badge tone="amber">분기 {q.branch_rules.length}개</Badge>}
         <div className="button-row builder-actions">
           <RowButton
             label={`${name} 위로`}
@@ -151,7 +156,10 @@ export function QuestionEditor({
               <input
                 value={option}
                 aria-label={`${name} 선택지 ${index + 1}`}
-                onChange={(e) => onChange(setOption(q, index, e.target.value))}
+                onChange={(e) => {
+                  const text = e.target.value;
+                  onEdit((d) => renameOption(d, q.question_id, index, text));
+                }}
               />
               <RowButton
                 label={`${name} 선택지 ${index + 1} 삭제`}
@@ -253,6 +261,13 @@ export function QuestionEditor({
         />{' '}
         필수 문항
       </label>
+
+      <BranchRulesEditor
+        definition={definition}
+        questionId={q.question_id}
+        name={name}
+        onChange={onEdit}
+      />
     </div>
   );
 }

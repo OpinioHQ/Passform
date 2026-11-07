@@ -1,7 +1,7 @@
 import { Panel } from '../components/UI';
 import type { ConsentTemplate, DisplayMode, FormDefinition, FormSettings } from '../types/api';
 import { isoToKstInput, kstInputToIso } from './deadline';
-import { countBranchRules } from './formDefinition';
+import { allowedDisplayModes, displayModeProblem, hasBranchRules } from './branchRules';
 import { parsePositiveInt } from './QuestionEditor';
 
 const DISPLAY_LABELS: Record<DisplayMode, string> = {
@@ -17,36 +17,36 @@ const templateLabel = (template: ConsentTemplate, index: number) =>
     ? '기본 동의 안내'
     : `동의 안내 ${index + 1}`;
 
+/**
+ * 분기 유무에 따라 고를 수 있는 시작 방식만 둔다(SPEC 177행, AC46). 분기가 생기거나 없어져 지금 값이
+ * 허용 밖이 되면 조용히 바꾸지 않고 알린 뒤 고르게 한다.
+ */
 function DisplayModeField({
-  mode,
-  branchCount,
+  definition,
   onChange,
 }: {
-  mode: DisplayMode;
-  branchCount: number;
+  definition: FormDefinition;
   onChange: (mode: DisplayMode) => void;
 }) {
-  if (branchCount > 0) {
-    return (
-      <div className="builder-field">
-        <span>시작 방식</span>
-        <strong>{DISPLAY_LABELS[mode]}</strong>
-        <small className="muted">분기 {branchCount}개, 분기 편집은 준비 중이에요.</small>
-      </div>
-    );
-  }
+  const mode = definition.settings.display.default_mode;
+  const allowed = allowedDisplayModes(hasBranchRules(definition));
+  const problem = displayModeProblem(definition);
   return (
     <label className="builder-field">
       <span>시작 방식</span>
       <select value={mode} onChange={(e) => onChange(e.target.value as DisplayMode)}>
-        <option value="one_question">{DISPLAY_LABELS.one_question}</option>
-        <option value="all_questions">{DISPLAY_LABELS.all_questions}</option>
-        {mode === 'section_page' && (
-          <option value="section_page" disabled>
-            {DISPLAY_LABELS.section_page}
+        {!allowed.includes(mode) && (
+          <option value={mode} disabled>
+            {DISPLAY_LABELS[mode]}
           </option>
         )}
+        {allowed.map((value) => (
+          <option key={value} value={value}>
+            {DISPLAY_LABELS[value]}
+          </option>
+        ))}
       </select>
+      {problem && <small className="error">{problem}</small>}
     </label>
   );
 }
@@ -155,8 +155,7 @@ export function FormSettingsPanel({
         제출 취소 허용
       </label>
       <DisplayModeField
-        mode={settings.display.default_mode}
-        branchCount={countBranchRules(def)}
+        definition={def}
         onChange={(mode) => setSettings({ display: { default_mode: mode } })}
       />
       <label className="builder-check">

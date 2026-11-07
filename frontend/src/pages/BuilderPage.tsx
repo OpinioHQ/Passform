@@ -1,5 +1,6 @@
 import React from 'react';
 import { api } from '../api/client';
+import { branchPublishProblems } from '../builder/branchRules';
 import { FormSettingsPanel } from '../builder/FormSettingsPanel';
 import {
   addQuestion,
@@ -68,6 +69,14 @@ export function BuilderPage({
 
   const { status, share_url: shareUrl, definition_version: version } = formState;
   const busy = pending !== '';
+  const messagesRef = React.useRef<HTMLDivElement>(null);
+
+  // 아래쪽 버튼을 눌러도 결과와 문제 목록(맨 위)이 보이게 한다. 이미 보이면 움직이지 않는다.
+  React.useEffect(() => {
+    if (outcome || failure || problems.length > 0) {
+      messagesRef.current?.scrollIntoView?.({ block: 'nearest' });
+    }
+  }, [outcome, failure, problems]);
 
   function edit(change: (def: FormDefinition) => FormDefinition) {
     setDefinition(change);
@@ -153,6 +162,46 @@ export function BuilderPage({
     }
   }
 
+  /** 분기·시작 방식에 문제가 있으면 서버가 허용하지 않을 경로를 보여 주게 되므로 미리보기를 열지 않는다(사람 결정). */
+  function openPreview() {
+    const found = branchPublishProblems(definition);
+    if (found.length > 0) {
+      setOutcome('');
+      setFailure('');
+      setProblems(['미리보기 전에 분기 설정을 고쳐 주세요.', ...found]);
+      return;
+    }
+    setPreviewing(true);
+  }
+
+  /**
+   * 맨 위와 맨 아래에 같은 작업 버튼을 둔다(사람 요청). 아래쪽은 화면 글자는 같고, 화면 읽기 프로그램이
+   * 위쪽과 구분하도록 이름에 "(아래)"를 붙인다.
+   */
+  function actions(placement: 'top' | 'bottom') {
+    // 공통 Button은 이름을 따로 받지 않아 같은 클래스의 버튼을 쓴다.
+    const action = (text: string, onClick: () => void, primary = false) => (
+      <button
+        type="button"
+        className={`btn btn-${primary ? 'primary' : 'secondary'}`}
+        onClick={onClick}
+        disabled={busy}
+        aria-label={placement === 'bottom' ? `${text} (아래)` : undefined}
+      >
+        {text}
+      </button>
+    );
+    return (
+      <div className="button-row">
+        {action('미리보기', openPreview)}
+        {action(status === 'draft' ? '초안 저장' : '변경 저장', save)}
+        {status === 'draft' && action('배포', publish, true)}
+        {status === 'open' && action('응답 받기 끄기', () => changeStatus('closed'))}
+        {status === 'closed' && action('다시 열기', () => changeStatus('open'), true)}
+      </div>
+    );
+  }
+
   if (previewing) {
     const consent =
       templates?.find((t) => t.consent_template_id === definition.consent_template_id) ?? null;
@@ -176,56 +225,37 @@ export function BuilderPage({
         eyebrow="제작자 워크스페이스 / 폼 편집"
         title="폼 편집"
         desc="질문을 구성하고, 확인한 뒤 배포할 수 있어요."
-        action={
-          <div className="button-row">
-            <Button variant="secondary" onClick={() => setPreviewing(true)} disabled={busy}>
-              미리보기
-            </Button>
-            <Button variant="secondary" onClick={save} disabled={busy}>
-              {status === 'draft' ? '초안 저장' : '변경 저장'}
-            </Button>
-            {status === 'draft' && (
-              <Button onClick={publish} disabled={busy}>
-                배포
-              </Button>
-            )}
-            {status === 'open' && (
-              <Button variant="secondary" onClick={() => changeStatus('closed')} disabled={busy}>
-                응답 받기 끄기
-              </Button>
-            )}
-            {status === 'closed' && (
-              <Button onClick={() => changeStatus('open')} disabled={busy}>
-                다시 열기
-              </Button>
-            )}
-          </div>
-        }
+        action={actions('top')}
       />
-      <div className="builder-tools">
-        <div className="button-row">
-          <Badge tone={STATUS_TONE[status]}>
-            {statusLabel(status, definition.deadline, Date.now())}
-            {version !== null && ` · 폼 버전 ${version}`}
-          </Badge>
-          <span className="small muted" role="status">
-            {busy ? PENDING_TEXT[pending as Exclude<Pending, ''>] : outcome}
-            {!busy && dirty && !failure && (outcome ? ' · ' : '') + '저장하지 않은 변경이 있어요.'}
-          </span>
+      <div ref={messagesRef}>
+        <div className="builder-tools">
+          <div className="button-row">
+            <Badge tone={STATUS_TONE[status]}>
+              {statusLabel(status, definition.deadline, Date.now())}
+              {version !== null && ` · 폼 버전 ${version}`}
+            </Badge>
+            <span className="small muted" role="status">
+              {busy ? PENDING_TEXT[pending as Exclude<Pending, ''>] : outcome}
+              {!busy &&
+                dirty &&
+                !failure &&
+                (outcome ? ' · ' : '') + '저장하지 않은 변경이 있어요.'}
+            </span>
+          </div>
         </div>
+        {failure && (
+          <p className="error" role="alert">
+            {failure}
+          </p>
+        )}
+        {problems.length > 0 && (
+          <div className="error" role="alert">
+            {problems.map((problem) => (
+              <p key={problem}>{problem}</p>
+            ))}
+          </div>
+        )}
       </div>
-      {failure && (
-        <p className="error" role="alert">
-          {failure}
-        </p>
-      )}
-      {problems.length > 0 && (
-        <div className="error" role="alert">
-          {problems.map((problem) => (
-            <p key={problem}>{problem}</p>
-          ))}
-        </div>
-      )}
       {status !== 'draft' && (
         <p className="small muted">
           변경은 저장해야 반영돼요. 응답자가 보는 내용이 바뀌면 새 폼 버전이 되고, 공유 링크는
@@ -313,11 +343,13 @@ export function BuilderPage({
                 return (
                   <QuestionEditor
                     key={questionId}
+                    definition={definition}
                     question={question}
                     number={questionsBefore(sectionIndex) + questionIndex + 1}
                     canMoveUp={questionIndex > 0}
                     canMoveDown={questionIndex < section.questions.length - 1}
                     onChange={(next) => edit((d) => replaceQuestion(d, sectionId, next))}
+                    onEdit={edit}
                     onMove={(delta) => edit((d) => moveQuestion(d, sectionId, questionId, delta))}
                     onDuplicate={() => edit((d) => duplicateQuestion(d, sectionId, questionId))}
                     onRemove={() => edit((d) => removeQuestion(d, sectionId, questionId))}
@@ -346,6 +378,7 @@ export function BuilderPage({
           onChange={edit}
         />
       </fieldset>
+      <div className="builder-add-section">{actions('bottom')}</div>
     </div>
   );
 }

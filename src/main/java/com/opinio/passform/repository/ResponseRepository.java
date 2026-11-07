@@ -2,13 +2,17 @@ package com.opinio.passform.repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.opinio.passform.domain.response.Response;
+
+import jakarta.persistence.LockModeType;
 
 public interface ResponseRepository extends JpaRepository<Response, UUID> {
 
@@ -41,6 +45,38 @@ public interface ResponseRepository extends JpaRepository<Response, UUID> {
 			group by r.formId
 			""")
 	List<FormResponseCount> countSubmittedNotDeletedByFormIds(@Param("formIds") Collection<UUID> formIds);
+
+	// 로그인 사용자의 계정 초안. 폼당 하나다(V1 부분 유일 인덱스 uq_responses_login_draft, SPEC 5절 206행).
+	@Query("""
+			select r from Response r
+			where r.userId = :userId
+			  and r.formId = :formId
+			  and r.status = com.opinio.passform.domain.analysis.ResponseStatus.IN_PROGRESS
+			""")
+	Optional<Response> findDraft(@Param("userId") UUID userId, @Param("formId") UUID formId);
+
+	// 초안을 바꾸거나 제출할 때 같은 행을 한 번에 하나씩 다룬다.
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("""
+			select r from Response r
+			where r.userId = :userId
+			  and r.formId = :formId
+			  and r.status = com.opinio.passform.domain.analysis.ResponseStatus.IN_PROGRESS
+			""")
+	Optional<Response> findDraftForUpdate(@Param("userId") UUID userId, @Param("formId") UUID formId);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("select r from Response r where r.id = :responseId")
+	Optional<Response> findByIdForUpdate(@Param("responseId") UUID responseId);
+
+	// 내 폼함 has_draft의 근거다(SPEC 5절 200행). E5의 GET /me/forms가 쓴다.
+	@Query("""
+			select count(r) > 0 from Response r
+			where r.userId = :userId
+			  and r.formId = :formId
+			  and r.status = com.opinio.passform.domain.analysis.ResponseStatus.IN_PROGRESS
+			""")
+	boolean hasDraft(@Param("userId") UUID userId, @Param("formId") UUID formId);
 
 	interface FormResponseCount {
 

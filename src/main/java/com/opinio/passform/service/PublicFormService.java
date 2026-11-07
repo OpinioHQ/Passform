@@ -60,7 +60,13 @@ public class PublicFormService {
 		if (form.isClosedAt(clock.instant())) {
 			throw new DomainException(ErrorCode.FORM_CLOSED);
 		}
-		Map<String, Object> definition = versions.findById(new FormVersionId(form.getId(), form.getDefinitionVersion()))
+		return viewOfVersion(form, form.getDefinitionVersion());
+	}
+
+	// 배포 버전 하나를 응답 화면이 읽는 모양으로 만든다. 응답 초안이 작성 시작 버전의 문항을 보일 때도 쓴다(SPEC 5절 189행).
+	// 마감 여부는 보지 않는다. 운영 설정(deadline)과 AI 요약 고지는 폼의 현재 값이다.
+	PublicFormView viewOfVersion(Form form, int version) {
+		Map<String, Object> definition = versions.findById(new FormVersionId(form.getId(), version))
 			.orElseThrow(() -> new IllegalStateException("배포 버전의 정의가 없다"))
 			.getDefinition();
 		ConsentTemplate template = consentTemplates.findById((String) definition.get("consent_template_id"))
@@ -71,7 +77,7 @@ public class PublicFormService {
 				: UNBRANCHED_MODES;
 		Consent consent = new Consent(ConsentItems.of(definition), template.getPurpose(), template.getRetention(),
 				ConsentNotices.REFUSAL_NOTICE, form.getAiSummaryNotice());
-		return new PublicFormView(form.getId(), form.getDefinitionVersion(), (String) definition.get("title"),
+		return new PublicFormView(form.getId(), version, (String) definition.get("title"),
 				(String) definition.get("note"), definition.get("note_attachments"), form.getDeadline(),
 				definition.get("sections"), new Display(defaultMode, allowedModes),
 				(String) definition.get("payment_link"), consent);

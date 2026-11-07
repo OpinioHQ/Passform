@@ -156,6 +156,26 @@ describe('AC47 보기 방식과 전환', () => {
     ).toBe('true');
   });
 
+  it('unbranched_respondent_switch_preserves_answers: 한 질문씩 → 전체 → 한 질문씩 왕복해도 지금 문항으로 돌아온다', () => {
+    open(
+      form({
+        display: { default_mode: 'one_question', allowed_modes: ['one_question', 'all_questions'] },
+      }),
+    );
+    click(/시작하기/);
+    // 실제 입력처럼 첫 문항에 초점을 둔 뒤 쓴다. 이 초점이 왕복 뒤에 남으면 안 된다(PR #82 리뷰).
+    fireEvent.focus(input('이름'));
+    type('이름', '김하나');
+    click(/다음/);
+    expect(screen.getByLabelText('하고 싶은 말')).toBeTruthy();
+    click('전체 질문 보기');
+    click('한 질문씩');
+    expect(screen.getByLabelText('하고 싶은 말')).toBeTruthy();
+    expect(screen.queryByLabelText('이름')).toBeNull();
+    click('이전');
+    expect(input('이름').value).toBe('김하나');
+  });
+
   it('branched_mode_fixed: 분기가 있는 폼에는 전환 버튼이 없다', () => {
     open(branchedForm());
     expect(screen.queryByRole('group', { name: '보기 방식' })).toBeNull();

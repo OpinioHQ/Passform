@@ -182,6 +182,8 @@ function ResponseForm({
     if (next === view) return;
     const target = currentQuestionId();
     if (next === 'all_questions') {
+      // 전체 보기의 현재 문항을 보던 문항으로 맞춘다. 예전 초점이 남으면 되돌아올 때 그 문항으로 간다(PR #82 리뷰).
+      setFocusId(target);
       setScrollTarget(target);
     } else {
       const nextPages = pagesOf(form.sections, defaultMode, 'one_question', answers);

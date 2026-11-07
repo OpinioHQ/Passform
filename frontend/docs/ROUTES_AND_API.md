@@ -2,28 +2,31 @@
 
 기준: Figma `Omj6sDT7BKq5ExD7ukJw9F`, `ver1(blue color)` 주요 프레임. API는 `docs/SPEC.md` 5절이 정본이므로 변경 전 다시 확인한다.
 
-| 경로                             | 화면         | Figma node            | 연동할 서버 API                                                          | 현재 상태                   | 담당 이슈 |
-| -------------------------------- | ------------ | --------------------- | ------------------------------------------------------------------------ | --------------------------- | --------- |
-| `/`                              | 랜딩페이지   | `34:75`               | 없음                                                                     | 정적 반응형 화면            | —         |
-| `/login`                         | 로그인       | —                     | `GET /oauth2/authorization/{provider}`                                   | Google 로그인 연결          | T2 #50    |
-| `/me/forms`                      | 내 폼함      | `5:6468`              | `GET /me/forms`, `POST /me/saved-forms`                                  | 가짜 데이터 (아래 주 1)     | E5 #43    |
-| `/me/responses`                  | 제출 이력    | `5:6811`              | `GET /me/responses`                                                      | 가짜 데이터                 | E5 #43    |
-| `/me/responses/:responseId`      | 이력 상세    | `5:6811`              | `GET /me/responses/{response_id}`                                        | 가짜 데이터                 | E5 #43    |
-| `/me/profile`                    | 내 프로필    | Figma 메뉴/자동채우기 | `GET /me/profiles` 등                                                    | 가짜 데이터                 | T9 #60    |
-| `/f/:slug`                       | 응답 작성    | `5:6640`              | `GET /f/{slug}`, `POST /forms/{form_id}/responses`, 응답 초안 API        | 가짜 데이터 (아래 주 1)     | T4 #52    |
-| `/forms/:formId`                 | 응답 작성    | `5:6640`              | `GET /forms/{form_id}`, `POST /forms/{form_id}/responses`, 응답 초안 API | 가짜 데이터 (아래 주 1)     | T4 #52    |
-| `/creator`                       | 내가 만든 폼 | Figma 메뉴/폼 편집    | `GET /me/created-forms`                                                  | 가짜 데이터                 | E3 #41    |
-| `/creator/forms/new`             | 빌더(새 폼)  | `5:6940`              | `POST /forms`, `PATCH /forms/{form_id}`                                  | 빈 폼, 저장 연결 필요       | E3 #41    |
-| `/creator/forms/:formId/edit`    | 빌더(편집)   | `5:6940`              | `GET /forms/{form_id}/definition`, `PATCH /forms/{form_id}`              | 가짜 데이터, 저장 연결 필요 | E3 #41    |
-| `/creator/forms/:formId/results` | 결과         | —                     | `GET /forms/{form_id}/results`                                           | 빈 화면                     | T6 #54    |
-| `/creator/forms/:formId/explore` | 응답 탐색    | `5:7219`              | `POST /forms/{form_id}/analyze`, `POST /forms/{form_id}/export`          | 가짜 데이터                 | E8 #46    |
-| 그 밖의 경로                     | 찾을 수 없음 | —                     | 없음                                                                     | `/`로 가는 안내 화면        | —         |
+| 경로                                           | 화면         | Figma node            | 연동할 서버 API                                                          | 현재 상태                   | 담당 이슈 |
+| ---------------------------------------------- | ------------ | --------------------- | ------------------------------------------------------------------------ | --------------------------- | --------- |
+| `/`                                            | 랜딩페이지   | `34:75`               | 없음                                                                     | 정적 반응형 화면            | —         |
+| `/login`                                       | 로그인       | —                     | `GET /oauth2/authorization/{provider}`                                   | Google 로그인 연결          | T2 #50    |
+| `/me/forms`                                    | 내 폼함      | `5:6468`              | `GET /me/forms`, `POST /me/saved-forms`                                  | 가짜 데이터 (아래 주 1)     | E5 #43    |
+| `/me/responses`                                | 제출 이력    | `5:6811`              | `GET /me/responses`                                                      | 가짜 데이터                 | E5 #43    |
+| `/me/responses/:responseId`                    | 이력 상세    | `5:6811`              | `GET /me/responses/{response_id}`                                        | 가짜 데이터                 | E5 #43    |
+| `/me/profile`                                  | 내 프로필    | Figma 메뉴/자동채우기 | `GET /me/profiles` 등                                                    | 가짜 데이터                 | T9 #60    |
+| `/f/:slug`                                     | 응답 작성    | `5:6640`              | `GET /f/{slug}`, `POST /forms/{form_id}/responses`, 응답 초안 API        | 가짜 데이터 (아래 주 1)     | T4 #52    |
+| `/forms/:formId`                               | 응답 작성    | `5:6640`              | `GET /forms/{form_id}`, `POST /forms/{form_id}/responses`, 응답 초안 API | 가짜 데이터 (아래 주 1)     | T4 #52    |
+| `/creator`                                     | 내가 만든 폼 | Figma 메뉴/폼 편집    | `GET /me/created-forms`                                                  | 가짜 데이터                 | E3 #41    |
+| `/creator/forms/new`                           | 빌더(새 폼)  | `5:6940`              | `POST /forms`, `PATCH /forms/{form_id}`                                  | 빈 폼, 저장 연결 필요       | E3 #41    |
+| `/creator/forms/:formId/edit`                  | 빌더(편집)   | `5:6940`              | `GET /forms/{form_id}/definition`, `PATCH /forms/{form_id}`              | 가짜 데이터, 저장 연결 필요 | E3 #41    |
+| `/creator/forms/:formId/results`               | 결과         | —                     | `GET /forms/{form_id}/results`                                           | 실제 API (아래 주 4)        | T6 #54    |
+| `/creator/forms/:formId/responses/:responseId` | 응답 상세    | —                     | `GET /forms/{form_id}/responses/{response_id}`                           | 실제 API (아래 주 4)        | T6 #54    |
+| `/creator/forms/:formId/explore`               | 응답 탐색    | `5:7219`              | `POST /forms/{form_id}/analyze`, `POST /forms/{form_id}/export`          | 가짜 데이터                 | E8 #46    |
+| 그 밖의 경로                                   | 찾을 수 없음 | —                     | 없음                                                                     | `/`로 가는 안내 화면        | —         |
 
 주 1: `VITE_USE_API=true`일 때 이 화면만 실제로 호출한다. `/me/forms`는 `GET /me/forms`, `/f/:slug`는 `GET /f/{slug}`, `/forms/:formId`는 `GET /forms/{form_id}`, 응답 제출은 `POST /forms/{form_id}/responses`다. 공개 경로의 화면은 로그인 전용 API를 부르지 않는다. 예외로 헤더는 로그인 상태를 표시하려고 모든 화면에서 `GET /me`를 부른다(비로그인이면 401이고 로그인 링크를 보인다).
 
 주 2: 헤더 종 아이콘의 "마감 하루 전 알림" 스위치는 화면 상태로만 동작한다. 서버 저장(`PATCH /me/settings`의 `deadline_reminder`)과 알림 목록은 E12 #57이 연결한다.
 
 주 3: 탐색 화면의 내보내기 창은 표에 보이는 가상 응답을 CSV로 받는 데모다. 실제 JSON·YAML·CSV 내보내기와 범위 선택(전체 응답, AI 필터 결과)은 T11 #62가 연결한다.
+
+주 4: 결과와 응답 상세는 가짜 데이터가 없다. `VITE_USE_API=true`일 때만 서버를 부르고, `false`이면 API를 부르지 않고 안내 문구만 보인다. 목록에서 응답 상세로 가는 링크는 E6·E7이 단다.
 
 ## 공통 파일 규칙
 

@@ -82,6 +82,16 @@ public class Form {
 		this.updatedAt = createdAt;
 	}
 
+	public boolean isResponseLimitReached(long submittedCount) {
+		return responseLimit != null && submittedCount >= responseLimit;
+	}
+
+	// N번째 제출을 저장하는 처리 안에서 부른다(SPEC 5절 176행).
+	public void closeByResponseLimit(Instant now) {
+		this.status = FormStatus.CLOSED;
+		this.updatedAt = now;
+	}
+
 	public UUID getId() {
 		return id;
 	}

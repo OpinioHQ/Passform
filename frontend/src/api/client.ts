@@ -6,10 +6,12 @@ import type {
   CreatorFormDefinition,
   CreatorFormSummary,
   FormDefinition,
+  FormResults,
   FormStateView,
   FormStatus,
   MeResponse,
   PublicForm,
+  ResponseDetail,
   ResponseHistoryItem,
   SavedFormSummary,
   SubmitResponseInput,
@@ -66,7 +68,7 @@ const json = (data: unknown): RequestInit => ({
 
 const segment = encodeURIComponent;
 
-/** 실제 API 연결점. 화면이 호출하는 것은 `/me`, `/me/forms`, 폼 공개 조회, 제출뿐이다. */
+/** 실제 API 연결점. 화면이 호출하는 것은 `/me`, `/me/forms`, 폼 공개 조회, 제출, 결과, 응답 상세뿐이다. */
 export const api = {
   me: () => request<MeResponse>('/me'),
   savedForms: () => request<SavedFormSummary[]>('/me/forms'),
@@ -84,4 +86,7 @@ export const api = {
   analyze: (formId: string, body: AnalyzeRequest) =>
     request<AnalyzeResponse>(`/forms/${segment(formId)}/analyze`, json(body)),
   myResponses: () => request<ResponseHistoryItem[]>('/me/responses'),
+  results: (formId: string) => request<FormResults>(`/forms/${segment(formId)}/results`),
+  responseDetail: (formId: string, responseId: string) =>
+    request<ResponseDetail>(`/forms/${segment(formId)}/responses/${segment(responseId)}`),
 };

@@ -282,6 +282,12 @@ export function publishProblems(def: FormDefinition): string[] {
     if (isChoiceType(q.question_type) && q.options.length === 0) {
       problems.push(`${describeQuestion(def, q)}에 선택지를 추가해 주세요.`);
     }
+    // 빈 선택지만 고를 수 있으면 필수 문항을 제출할 수 없다. 서버는 개수만 본다(후속 PR).
+    if (isChoiceType(q.question_type) && q.options.some((o) => !o.trim())) {
+      problems.push(
+        `${describeQuestion(def, q)}에 빈 선택지가 있어요. 선택지 문구를 입력해 주세요.`,
+      );
+    }
   }
   return problems;
 }

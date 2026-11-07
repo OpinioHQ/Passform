@@ -9,6 +9,7 @@ import {
   moveQuestion,
   moveSection,
   newFormDefinition,
+  publishProblems,
   setCharacterLimit,
   setInputFormat,
   setOwnInfo,
@@ -352,5 +353,29 @@ describe('저장할 값', () => {
     expect(next.attachments).toEqual(question.attachments);
     expect(next.template_id).toBe('tpl-1');
     expect(next.question_description).toBe('보조 설명');
+  });
+});
+
+describe('배포 전 검사', () => {
+  it('선택형 문항에 빈 선택지가 하나라도 있으면 배포 문제로 알린다', () => {
+    const withOptions = (options: string[]): FormDefinition => ({
+      ...newFormDefinition('consent_default'),
+      sections: [
+        {
+          section_id: 's1',
+          title: '',
+          questions: [
+            { ...emptyQuestion(), question_note: '색', question_type: 'dropdown', options },
+          ],
+        },
+      ],
+    });
+    expect(publishProblems(withOptions(['']))).toEqual([
+      '1번째 문항(색)에 빈 선택지가 있어요. 선택지 문구를 입력해 주세요.',
+    ]);
+    expect(publishProblems(withOptions(['A', ' ']))).toEqual([
+      '1번째 문항(색)에 빈 선택지가 있어요. 선택지 문구를 입력해 주세요.',
+    ]);
+    expect(publishProblems(withOptions(['A', 'B']))).toEqual([]);
   });
 });

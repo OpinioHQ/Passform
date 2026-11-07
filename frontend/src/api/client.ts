@@ -13,7 +13,10 @@ import type {
   PublicForm,
   ResponseDetail,
   ResponseHistoryItem,
+  ResponseDraft,
+  SaveResponseDraftInput,
   SavedFormSummary,
+  SavedResponseDraft,
   SubmitResponseInput,
   SubmittedResponse,
 } from '../types/api';
@@ -68,9 +71,22 @@ const json = (data: unknown): RequestInit => ({
 
 const segment = encodeURIComponent;
 
-/** 실제 API 연결점. 화면이 호출하는 것은 `/me`, `/me/forms`, 폼 공개 조회, 제출, 결과, 응답 상세뿐이다. */
+// 로그인 상태는 한 페이지에서 한 번만 묻는다. 헤더와 응답 화면이 같은 결과를 쓴다. 로그인은 전체 페이지 이동이라 새로 읽힌다.
+let mePromise: Promise<MeResponse> | null = null;
+function me(): Promise<MeResponse> {
+  if (!mePromise) {
+    mePromise = request<MeResponse>('/me');
+    // 401(비로그인)은 그대로 둔다. 그 밖의 실패는 다음에 다시 묻는다.
+    mePromise.catch((e: unknown) => {
+      if (!(e instanceof ApiError && e.status === 401)) mePromise = null;
+    });
+  }
+  return mePromise;
+}
+
+/** 실제 API 연결점. 화면이 호출하는 것은 `/me`, `/me/forms`, 폼 공개 조회, 응답 초안, 제출, 결과, 응답 상세, 빌더뿐이다. */
 export const api = {
-  me: () => request<MeResponse>('/me'),
+  me,
   savedForms: () => request<SavedFormSummary[]>('/me/forms'),
   createdForms: () => request<CreatorFormSummary[]>('/me/created-forms'),
   consentTemplates: () => request<ConsentTemplate[]>('/consent-templates'),
@@ -81,6 +97,15 @@ export const api = {
     request<FormStateView>(`/forms/${segment(formId)}`, { ...json(body), method: 'PATCH' }),
   formBySlug: (slug: string) => request<PublicForm>(`/f/${segment(slug)}`),
   formById: (formId: string) => request<PublicForm>(`/forms/${segment(formId)}`),
+  responseDraft: (formId: string) =>
+    request<ResponseDraft>(`/me/forms/${segment(formId)}/response-draft`),
+  saveResponseDraft: (formId: string, body: SaveResponseDraftInput) =>
+    request<SavedResponseDraft>(`/me/forms/${segment(formId)}/response-draft`, {
+      ...json(body),
+      method: 'PUT',
+    }),
+  deleteResponseDraft: (formId: string) =>
+    request<void>(`/me/forms/${segment(formId)}/response-draft`, { method: 'DELETE' }),
   submit: (formId: string, body: SubmitResponseInput) =>
     request<SubmittedResponse>(`/forms/${segment(formId)}/responses`, json(body)),
   analyze: (formId: string, body: AnalyzeRequest) =>

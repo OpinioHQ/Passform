@@ -1,5 +1,5 @@
 /** 응답 제출과 내 폼함·제출 이력. SPEC 5절 188~200행의 입출력과 같은 이름을 쓴다. */
-import type { Attachment } from './form';
+import type { Attachment, PublicForm } from './form';
 
 export type AnswerValue = string | string[];
 export interface ResponseAnswer {
@@ -22,6 +22,25 @@ export interface SubmitResponseInput {
   consent_agreed: true;
   ai_summary_agreed?: boolean;
   draft_response_id?: string;
+}
+/** `PUT /me/forms/{form_id}/response-draft`의 입력(SPEC 190행). 미완성 답을 받는다. */
+export interface SaveResponseDraftInput {
+  form_version: number;
+  answers: ResponseAnswer[];
+}
+/** `PUT /me/forms/{form_id}/response-draft`의 200·201(SPEC 190행). */
+export interface SavedResponseDraft {
+  response_id: string;
+  status: 'in_progress';
+  saved_at: string;
+}
+/** `GET /me/forms/{form_id}/response-draft`(SPEC 189행). `form_definition`은 작성 시작 버전의 공개 조회 모양이다. */
+export interface ResponseDraft {
+  response_id: string;
+  form_version: number;
+  form_definition: PublicForm;
+  answers: ResponseAnswer[];
+  saved_at: string;
 }
 /** `POST /forms/{form_id}/responses`의 201(SPEC 188행). */
 export interface SubmittedResponse {

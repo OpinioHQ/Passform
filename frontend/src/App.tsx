@@ -3,6 +3,7 @@ import { AppLayout } from './components/AppLayout';
 import { DemoDataProvider } from './demo/DemoDataContext';
 import { demoForm } from './demo/data';
 import { LandingPage } from './pages/LandingPage';
+import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -32,10 +33,7 @@ export function App() {
       <Routes>
         <Route element={<AppLayout />}>
           <Route path={routePatterns.home} element={<LandingRoute />} />
-          <Route
-            path={routePatterns.login}
-            element={<PlaceholderPage eyebrow="계정" title="로그인" issue="T2" />}
-          />
+          <Route path={routePatterns.login} element={<LoginPage />} />
           <Route path={routePatterns.myForms} element={<MyFormsRoute />} />
           <Route path={routePatterns.myResponses} element={<MyResponsesRoute />} />
           <Route path={routePatterns.myResponse} element={<MyResponsesRoute />} />

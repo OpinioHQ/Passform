@@ -1,5 +1,6 @@
 package com.opinio.passform.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,5 +31,23 @@ public interface ResponseRepository extends JpaRepository<Response, UUID> {
 			  and r.creatorDeletedAt is null
 			""")
 	long countSubmittedNotDeleted(@Param("formId") UUID formId);
+
+	// 내가 만든 폼 목록의 response_count다(SPEC 5절 120행). 응답이 없는 폼은 결과에 없다.
+	@Query("""
+			select r.formId as formId, count(r) as responseCount from Response r
+			where r.formId in :formIds
+			  and r.status = com.opinio.passform.domain.analysis.ResponseStatus.SUBMITTED
+			  and r.creatorDeletedAt is null
+			group by r.formId
+			""")
+	List<FormResponseCount> countSubmittedNotDeletedByFormIds(@Param("formIds") Collection<UUID> formIds);
+
+	interface FormResponseCount {
+
+		UUID getFormId();
+
+		long getResponseCount();
+
+	}
 
 }

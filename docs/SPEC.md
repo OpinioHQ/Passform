@@ -598,9 +598,9 @@
 | AC19 | `results_option_counts_combined_and_by_version`, `results_changed_question_separate` | 미구현 |
 | AC20 | `submitted_only`, `response_count_across_versions`, `injection_in_response` | 일부 구현 |
 | AC21 | `matching_labeled_set` (규칙이면 골든 / LLM이면 evals) | 스파이크 1차 미달. MVP는 규칙 우선과 임시 LLM 프롬프트, 재도전 미룸 |
-| AC22 | `unknown_condition_all_versions`, `unknown_sort_field`, `condition_missing_one_version_keeps_matches`, `option_renamed_version_not_evaluable` | 일부 구현 |
+| AC22 | `unknown_condition_all_versions`, `unknown_sort_field`, `condition_missing_one_version_keeps_matches`, `option_renamed_version_not_evaluable`, `parser_dropped_condition_not_counted` | 일부 구현 |
 | AC23 | `matched_for_applicable_versions`, `coverage_for_unavailable_version`, `unavailable_version_without_unknown_omitted` | 일부 구현 |
-| AC24 | `match_not_excludes_unknown`, `match_any_known_true_with_unknown`, `checkbox_all_requires_both_options`, `unanswered_kind_counts_blank_only`, `answered_kind_excludes_blank`, `match_all_unknown_when_no_false`, `no_condition_counts_all`, `negation_does_not_count_unknown`, `no_condition_match_any_counts_all`, `no_condition_match_not_counts_all`, `unavailable_version_without_unknown_omitted` | 일부 구현 |
+| AC24 | `match_not_excludes_unknown`, `match_any_known_true_with_unknown`, `checkbox_all_requires_both_options`, `unanswered_kind_counts_blank_only`, `answered_kind_excludes_blank`, `match_all_unknown_when_no_false`, `no_condition_counts_all`, `negation_does_not_count_unknown`, `no_condition_match_any_counts_all`, `no_condition_match_not_counts_all`, `unavailable_version_without_unknown_omitted`, `branch_skipped_condition_not_evaluable`, `branch_visited_blank_is_false` | 일부 구현 |
 | AC25 | `ambiguous_single_choice`, `checkbox_all_ok`, `ambiguous_question_meaning_across_versions` | 미구현 |
 | AC26 | `missing_match_two_conditions` | 미구현 |
 | AC27 | `missing_operation`, `unsupported_statistics_not_mapped_to_summary`, `missing_operation_without_summary_option` | 미구현 |
@@ -652,14 +652,14 @@
 | AC75 | `analyze_all_versions_fixed_scope`, `context_matches_lecture03_schema`, `full_export_groups_versions` | 미구현 |
 | AC76 | `stale_form_version_rejected`, `latest_form_version_submits` | 미구현 |
 | AC77 | `natural_language_version_scope_rejected`, `unsupported_statistics_explained`, `all_responses_count_supported` | 미구현 |
-| AC78 | `all_versions_condition_filter_with_coverage`, `negation_does_not_count_unknown`, `no_condition_counts_all`, `option_renamed_version_not_evaluable`, `match_all_unknown_when_no_false`, `condition_missing_one_version_keeps_matches`, `no_condition_match_any_counts_all`, `no_condition_match_not_counts_all` | 일부 구현 |
+| AC78 | `all_versions_condition_filter_with_coverage`, `negation_does_not_count_unknown`, `no_condition_counts_all`, `option_renamed_version_not_evaluable`, `match_all_unknown_when_no_false`, `condition_missing_one_version_keeps_matches`, `no_condition_match_any_counts_all`, `no_condition_match_not_counts_all`, `branch_skipped_condition_not_evaluable` | 일부 구현 |
 | AC79 | `basic_builder_edit_save_reopen`, `question_and_section_duplicate_new_ids`, `duplicate_resets_branch_and_profile_key` (프론트엔드·E2E 테스트) | 미구현 |
 | AC80 | `basic_builder_five_question_types`, `basic_builder_settings_roundtrip`, `published_controls_match_builder` (프론트엔드·E2E 테스트) | 미구현 |
 | AC81 | `builder_preview_unsaved_definition`, `builder_preview_branch_path`, `builder_preview_no_response` (프론트엔드·E2E 테스트) | 미구현 |
 | AC82 | `respondent_draft_restores_same_browser`, `login_draft_text_cross_device`, `draft_file_same_browser_only` (프론트엔드·E2E 테스트) | 미구현 |
 | AC83 | `in_progress_owner_only_and_not_counted`, `submit_draft_same_response_id`, `stale_draft_not_submitted` (API 골든 + 프론트엔드 확인) | 미구현 |
 | AC84 | `creator_draft_autosave_both_modes`, `creator_autosave_no_publish`, `creator_autosave_failure_visible` (프론트엔드·E2E 테스트) | 미구현 |
-| AC85 | `response_limit_auto_close`, `response_limit_concurrent_submit`, `response_limit_reopen_requires_increase` | 미구현 |
+| AC85 | `response_limit_auto_close`, `response_limit_concurrent_submit`(통합 시험), `response_limit_reopen_requires_increase` | 미구현 |
 | AC86 | `summarize_target_question_only`, `summarize_all_includes_option_stats`, `summarize_target_partial_versions` | 미구현 |
 | AC87 | `theme_counts_from_labels`, `theme_ids_subset_of_consented_matches`, `theme_order_deterministic` | 미구현 |
 | AC88 | `evidence_within_matched_consented`, `evidence_excludes_personal_questions` | 미구현 |

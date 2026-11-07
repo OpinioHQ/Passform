@@ -2,10 +2,14 @@ package com.opinio.passform.domain.form;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
+import com.opinio.passform.domain.error.DomainException;
+import com.opinio.passform.domain.error.ErrorCode;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -78,16 +82,6 @@ public class Form {
 		this.updatedAt = createdAt;
 	}
 
-	// 배포된 적 있고 삭제되지 않은 폼. 초안과 삭제된 폼은 응답자에게 없는 폼이다(AC38).
-	public boolean isPublished() {
-		return status != FormStatus.DRAFT && deletedAt == null;
-	}
-
-	// deadline이 지나면 status가 open이어도 닫힌 것이다. now == deadline도 닫힘이다(AC16).
-	public boolean acceptsSubmissionAt(Instant now) {
-		return status == FormStatus.OPEN && (deadline == null || now.isBefore(deadline));
-	}
-
 	public boolean isResponseLimitReached(long submittedCount) {
 		return responseLimit != null && submittedCount >= responseLimit;
 	}
@@ -152,6 +146,78 @@ public class Form {
 
 	public Instant getUpdatedAt() {
 		return updatedAt;
+	}
+
+	// 초안과 삭제된 폼은 공개 조회에서 없는 폼이다(AC38).
+	public boolean isHiddenFromPublic() {
+		return status == FormStatus.DRAFT || deletedAt != null;
+	}
+
+	// deadline이 지나면 status가 open이어도 닫힌 것이다. now == deadline도 닫힘이다(AC16, AC41).
+	public boolean isClosedAt(Instant now) {
+		return status == FormStatus.CLOSED || (deadline != null && !now.isBefore(deadline));
+	}
+
+	public boolean isDeleted() {
+		return deletedAt != null;
+	}
+
+	public boolean isOwnedBy(UUID userId) {
+		return ownerId.equals(userId);
+	}
+
+	// 첫 배포 뒤에는 되돌리거나 새 버전을 배포해도 바꿀 수 없다(SPEC 5절 157행, AC90).
+	public void checkAiSummaryChange(boolean current, boolean next) {
+		if (definitionVersion != null && current != next) {
+			throw new DomainException(ErrorCode.AI_SUMMARY_LOCKED);
+		}
+	}
+
+	// draft → open, open ↔ closed, 응답이 0건일 때만 open → draft(SPEC 5절 175행, AC57). 같은 상태는 전이가 아니다.
+	public void checkTransition(FormStatus target, long submittedCount) {
+		boolean allowed = target == status || switch (status) {
+			case DRAFT -> target == FormStatus.OPEN;
+			case OPEN -> target == FormStatus.CLOSED || (target == FormStatus.DRAFT && submittedCount == 0);
+			case CLOSED -> target == FormStatus.OPEN;
+		};
+		if (!allowed) {
+			throw new DomainException(ErrorCode.INVALID_TRANSITION);
+		}
+	}
+
+	// 다시 open하거나 open 폼의 인원을 바꿀 때 현재 제출 수 이하면 거부한다(SPEC 5절 176행, AC85).
+	public void checkResponseLimit(FormStatus target, Integer newLimit, long submittedCount) {
+		boolean applies = target == FormStatus.OPEN && (status != FormStatus.OPEN || !Objects.equals(responseLimit, newLimit));
+		if (applies && newLimit != null && newLimit <= submittedCount) {
+			throw new DomainException(ErrorCode.RESPONSE_LIMIT_REACHED);
+		}
+	}
+
+	// 작업 정의와 현재 운영 설정을 함께 바꾼다. 운영 설정은 이 컬럼이 정본이다.
+	public void replaceDefinition(Map<String, Object> definition, Instant newDeadline, boolean newEditable,
+			boolean newCancellable, Integer newResponseLimit, Instant now) {
+		this.workingDefinition = definition;
+		this.deadline = newDeadline;
+		this.editable = newEditable;
+		this.cancellable = newCancellable;
+		this.responseLimit = newResponseLimit;
+		this.updatedAt = now;
+	}
+
+	// 전이는 checkTransition을 통과한 뒤에 부른다.
+	public void moveTo(FormStatus target) {
+		this.status = target;
+	}
+
+	// 새 배포 버전을 기록한다. slug와 AI 요약 고지는 처음 정해지면 바꾸지 않는다(SPEC 5절 158행, 175행).
+	public void recordPublishedVersion(int version, String newSlug, Map<String, Object> notice) {
+		this.definitionVersion = version;
+		if (slug == null) {
+			this.slug = newSlug;
+		}
+		if (version == 1) {
+			this.aiSummaryNotice = notice;
+		}
 	}
 
 }

@@ -50,7 +50,7 @@ public class SubmissionService {
 	public SubmissionResult submit(SubmitCommand command) {
 		// 폼 행을 잠그므로 같은 폼의 제출은 한 번에 하나씩 인원을 세고 저장한다(AC85). 시각은 잠금을 얻은 뒤에 읽는다.
 		Form form = forms.findByIdForUpdate(command.formId())
-			.filter(Form::isPublished)
+			.filter(found -> !found.isHiddenFromPublic())
 			.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND));
 		Instant now = clock.instant();
 
@@ -59,7 +59,7 @@ public class SubmissionService {
 		}
 		long submittedCount = form.getResponseLimit() == null ? 0
 				: responses.countSubmittedNotDeleted(command.formId());
-		if (!form.acceptsSubmissionAt(now) || form.isResponseLimitReached(submittedCount)) {
+		if (form.isClosedAt(now) || form.isResponseLimitReached(submittedCount)) {
 			throw new DomainException(ErrorCode.FORM_CLOSED);
 		}
 		if (!Boolean.TRUE.equals(command.consentAgreed())) {

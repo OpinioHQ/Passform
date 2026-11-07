@@ -47,12 +47,20 @@ class ApiExceptionHandlerTest {
 			Map.entry(ErrorCode.FORBIDDEN, HttpStatus.FORBIDDEN),
 			Map.entry(ErrorCode.INVALID_REQUEST, HttpStatus.BAD_REQUEST),
 			Map.entry(ErrorCode.INTERNAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR),
+			Map.entry(ErrorCode.SCHEMA_INVALID, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.INVALID_PAYMENT_LINK, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.INVALID_BRANCH, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.INVALID_DISPLAY_MODE, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.CONSENT_TEMPLATE_REQUIRED, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.AI_SUMMARY_LOCKED, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.INVALID_TRANSITION, HttpStatus.CONFLICT),
+			Map.entry(ErrorCode.RESPONSE_LIMIT_REACHED, HttpStatus.CONFLICT),
+			Map.entry(ErrorCode.FORM_CLOSED, HttpStatus.CONFLICT),
 			Map.entry(ErrorCode.CONSENT_REQUIRED, HttpStatus.BAD_REQUEST),
 			Map.entry(ErrorCode.REQUIRED_MISSING, HttpStatus.BAD_REQUEST),
 			Map.entry(ErrorCode.INVALID_INPUT_FORMAT_VALUE, HttpStatus.BAD_REQUEST),
 			Map.entry(ErrorCode.INVALID_OPTION, HttpStatus.BAD_REQUEST),
 			Map.entry(ErrorCode.CHARACTER_LIMIT_EXCEEDED, HttpStatus.BAD_REQUEST),
-			Map.entry(ErrorCode.FORM_CLOSED, HttpStatus.CONFLICT),
 			Map.entry(ErrorCode.FORM_VERSION_CHANGED, HttpStatus.CONFLICT));
 
 	@Autowired

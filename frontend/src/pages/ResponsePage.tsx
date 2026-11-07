@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatKst } from '../builder/deadline';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
 import { demoResponseScreen } from '../demo/screens';
 import type { PublicForm, Question, ResponseAnswer, SubmitResponseInput } from '../types/api';
@@ -9,15 +10,19 @@ interface Props {
   onSubmit: (data: SubmitResponseInput) => Promise<void>;
   saving: boolean;
   onDraftChange?: (answers: Record<string, string>) => void;
+  /** 빌더 미리보기(AC81). 제출을 부르지 않고, 데모 값과 임시 저장을 숨긴다. */
+  preview?: boolean;
 }
-export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange }: Props) {
+export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange, preview }: Props) {
   const [answers, setAnswers] = React.useState<Record<string, string>>({});
   const [consent, setConsent] = React.useState(false);
   const [autofill, setAutofill] = React.useState(false);
   const [error, setError] = React.useState('');
   const [saved, setSaved] = React.useState(false);
+  const [previewNotice, setPreviewNotice] = React.useState(false);
   const questions = form.sections.flatMap((x) => x.questions);
   const filled = questions.filter((x) => Boolean(answers[x.question_id])).length;
+  const percent = questions.length ? Math.round((filled / questions.length) * 100) : 0;
   function update(k: string, v: string) {
     const next = { ...answers, [k]: v };
     setAnswers(next);
@@ -34,6 +39,11 @@ export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange }: 
     onDraftChange?.(answers);
   }
   async function submit() {
+    if (preview) {
+      setError('');
+      setPreviewNotice(true);
+      return;
+    }
     const missing = questions.filter((q) => q.required && !answers[q.question_id]?.trim());
     if (missing.length) {
       setError(`필수 문항 ${missing.map((q) => q.question_note).join(', ')}을(를) 채워 주세요.`);
@@ -90,7 +100,7 @@ export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange }: 
           <textarea
             value={value}
             maxLength={q.character_limit || undefined}
-            placeholder={demoResponseScreen.longAnswerPlaceholder}
+            placeholder={preview ? undefined : demoResponseScreen.longAnswerPlaceholder}
             onChange={(e) => update(q.question_id, e.target.value)}
             rows={4}
           />
@@ -117,48 +127,70 @@ export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange }: 
   return (
     <div className="page-shell response-page">
       <Heading
-        eyebrow="내 워크스페이스  /  내 폼함 / 응답 작성"
-        title="응답 작성"
-        desc="질문을 확인하고, 편한 속도로 답변해 주세요."
+        eyebrow={
+          preview
+            ? '제작자 워크스페이스 / 폼 편집 / 미리보기'
+            : '내 워크스페이스  /  내 폼함 / 응답 작성'
+        }
+        title={preview ? '미리보기' : '응답 작성'}
+        desc={
+          preview
+            ? '응답자에게 보이는 모습이에요. 저장 전 내용이고, 답을 입력해도 응답이 만들어지지 않아요.'
+            : '질문을 확인하고, 편한 속도로 답변해 주세요.'
+        }
         action={
           <Button variant="secondary" onClick={onBack}>
-            <Icon name="back" size={16} /> 내 폼함으로
+            <Icon name="back" size={16} /> {preview ? '편집으로 돌아가기' : '내 폼함으로'}
           </Button>
         }
       />
       <Panel className="response-hero">
         <div>
-          <Badge tone="amber">작성 중 · 데모</Badge>
+          <Badge tone="amber">{preview ? '미리보기' : '작성 중 · 데모'}</Badge>
           <h2>{form.title}</h2>
           {form.note.trim() && <p className="form-note">{form.note}</p>}
           <p className="muted">
-            {demoResponseScreen.owner} ·{' '}
-            {form.deadline ? new Date(form.deadline).toLocaleDateString('ko-KR') : ''} 마감
+            {!preview && `${demoResponseScreen.owner} · `}
+            {form.deadline ? `${formatKst(form.deadline)} 마감` : '마감 없음'}
           </p>
+          {form.payment_link?.startsWith('https://') && (
+            <p className="small">
+              송금 링크:{' '}
+              <a href={form.payment_link} target="_blank" rel="noopener noreferrer">
+                {form.payment_link}
+              </a>
+            </p>
+          )}
         </div>
         <div className="completion">
           <span>나의 작성 진행</span>
           <strong>
-            {filled} / {questions.length}문항 · {Math.round((filled / questions.length) * 100)}%
+            {filled} / {questions.length}문항 · {percent}%
           </strong>
           <div className="track">
-            <div style={{ width: `${(filled / questions.length) * 100}%` }} />
+            <div style={{ width: `${percent}%` }} />
           </div>
-          <small className="muted">
-            현재 브라우저의 데모 상태입니다. 실제 계정 초안 저장과 별개예요.
-          </small>
+          {!preview && (
+            <small className="muted">
+              현재 브라우저의 데모 상태입니다. 실제 계정 초안 저장과 별개예요.
+            </small>
+          )}
         </div>
       </Panel>
-      {form.sections.map((section) => (
+      {form.sections.map((section, sectionIndex) => (
         <Panel className="questions" key={section.section_id}>
           <div className="section-title">
             <div>
-              <span className="overline">01 · {section.title}</span>
-              <h3>{demoResponseScreen.sectionHeading}</h3>
+              <span className="overline">
+                {String(sectionIndex + 1).padStart(2, '0')} · {section.title}
+              </span>
+              {!preview && <h3>{demoResponseScreen.sectionHeading}</h3>}
             </div>
-            <Button variant="secondary" onClick={() => setAutofill(true)}>
-              내 정보로 채우기
-            </Button>
+            {!preview && (
+              <Button variant="secondary" onClick={() => setAutofill(true)}>
+                내 정보로 채우기
+              </Button>
+            )}
           </div>
           {section.questions.map((q, i) => (
             <div className="question" key={q.question_id}>
@@ -167,10 +199,11 @@ export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange }: 
                 <label htmlFor={q.question_id}>{q.question_note}</label>
                 <Badge tone={q.required ? 'blue' : 'neutral'}>{q.required ? '필수' : '선택'}</Badge>
               </div>
+              {q.question_description && <small className="muted">{q.question_description}</small>}
               <div className="question-input" id={q.question_id}>
                 {renderInput(q)}
               </div>
-              {q.profile_key && <small className="muted">본인 정보 · {q.profile_key}</small>}
+              {q.profile_key && <small className="muted">본인 정보</small>}
             </div>
           ))}
         </Panel>
@@ -181,19 +214,27 @@ export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange }: 
           개인정보 수집 및 이용에 동의합니다. (필수)
         </label>
         <p className="small muted">
-          수집 항목: {form.consent.items.join(', ')} · 목적: {form.consent.purpose} · 보유:{' '}
-          {form.consent.retention}
+          수집 항목: {form.consent.items.join(', ')} · 목적: {form.consent.purpose}
         </p>
+        <p className="small muted keep-lines">보유 기간: {form.consent.retention}</p>
+        <p className="small muted">{form.consent.refusal_notice}</p>
       </Panel>
       {error && (
         <p className="error" role="alert">
           {error}
         </p>
       )}
+      {previewNotice && (
+        <p className="info" role="status">
+          미리보기라 제출되지 않아요.
+        </p>
+      )}
       <div className="form-footer">
-        <Button variant="secondary" onClick={storeDraft}>
-          임시 저장
-        </Button>
+        {!preview && (
+          <Button variant="secondary" onClick={storeDraft}>
+            임시 저장
+          </Button>
+        )}
         <span className="small muted">
           {saved
             ? '데모 초안이 현재 화면에 보관되었습니다.'

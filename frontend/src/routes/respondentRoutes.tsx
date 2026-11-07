@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api, useLiveApi } from '../api/client';
+import { isFormClosedError } from '../builder/messages';
 import { useNotice } from '../components/AppLayout';
 import { Heading, Panel } from '../components/UI';
 import { useDemoData } from '../demo/DemoDataContext';
@@ -50,20 +51,25 @@ export function FormResponseRoute() {
   const { setNotice } = useNotice();
   const { addResponse } = useDemoData();
   const [form, setForm] = React.useState<PublicForm | null>(useLiveApi ? null : demoForm);
-  const [failed, setFailed] = React.useState(false);
+  const [failure, setFailure] = React.useState('');
   const [busy, setBusy] = React.useState(false);
   React.useEffect(() => {
     if (!useLiveApi) return;
     let active = true;
     setForm(null);
-    setFailed(false);
+    setFailure('');
     const request = slug !== undefined ? api.formBySlug(slug) : api.formById(formId ?? '');
     request
       .then((next) => {
         if (active) setForm(next);
       })
-      .catch(() => {
-        if (active) setFailed(true);
+      .catch((error: unknown) => {
+        if (!active) return;
+        setFailure(
+          isFormClosedError(error)
+            ? '마감된 폼이에요. 더 이상 응답을 받지 않아요.'
+            : '폼을 열 수 없어요.',
+        );
       });
     return () => {
       active = false;
@@ -74,7 +80,7 @@ export function FormResponseRoute() {
       <div className="page-shell">
         <Heading eyebrow="응답 작성" title="응답 작성" />
         <Panel>
-          <p className="muted">{failed ? '폼을 열 수 없어요.' : '폼을 불러오는 중이에요.'}</p>
+          <p className="muted">{failure || '폼을 불러오는 중이에요.'}</p>
         </Panel>
       </div>
     );

@@ -1,14 +1,23 @@
+import { formatKst } from '../builder/deadline';
+import { statusLabel } from '../builder/messages';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
-import { demoCreated } from '../demo/screens';
+import type { CreatorFormSummary } from '../types/api';
+
+export type CreatedFormsLoad = 'loading' | 'failed' | 'ready';
+
+/** 결과·탐색 버튼은 T6, E8이 실제 화면을 연결할 때 더한다. */
 export function CreatedPage({
+  forms,
+  load,
   onCreate,
   onEdit,
-  onExplore,
 }: {
+  forms: CreatorFormSummary[];
+  load: CreatedFormsLoad;
   onCreate: () => void;
-  onEdit: () => void;
-  onExplore: () => void;
+  onEdit: (formId: string) => void;
 }) {
+  const now = Date.now();
   return (
     <div className="page-shell">
       <Heading
@@ -21,42 +30,56 @@ export function CreatedPage({
           </Button>
         }
       />
+      {load === 'loading' && <p className="muted">목록을 불러오는 중이에요.</p>}
+      {load === 'failed' && (
+        <p className="error" role="alert">
+          목록을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.
+        </p>
+      )}
+      {load === 'ready' && forms.length === 0 && (
+        <p className="muted">아직 만든 폼이 없어요. 새 폼을 만들어 보세요.</p>
+      )}
       <div className="creator-grid">
-        <Panel className="creator-card">
-          <div className="creator-title">
-            <Badge tone="green">{demoCreated.statusBadge}</Badge>
-            <h2>{demoCreated.title}</h2>
-            <p className="muted">{demoCreated.description}</p>
-          </div>
-          <div className="creator-metrics">
-            <div>
-              <small>전체 응답</small>
-              <strong>{demoCreated.responseCount}</strong>
-            </div>
-            <div>
-              <small>폼 상태</small>
-              <strong>{demoCreated.statusLabel}</strong>
-            </div>
-          </div>
-          <div className="button-row">
-            <Button variant="secondary" onClick={onEdit}>
-              <Icon name="edit" size={16} /> 폼 편집
-            </Button>
-            <Button onClick={onExplore}>
-              응답 탐색 <Icon name="arrow" size={16} />
-            </Button>
-          </div>
-        </Panel>
-        <Panel className="creator-card dashed-card">
-          <div className="create-icon">
-            <Icon name="plus" size={26} />
-          </div>
-          <h2>새로운 폼을 만들어보세요</h2>
-          <p className="muted">기본 편집 화면에서 문항을 구성할 수 있어요.</p>
-          <Button variant="secondary" onClick={onCreate}>
-            폼 제작 시작
-          </Button>
-        </Panel>
+        {forms.map((form) => {
+          const label = statusLabel(form.status, form.deadline, now);
+          return (
+            <Panel className="creator-card" key={form.form_id}>
+              <div className="creator-title">
+                <Badge
+                  tone={label === '배포 중' ? 'green' : label === '마감' ? 'amber' : 'neutral'}
+                >
+                  {label}
+                </Badge>
+                <h2>{form.title.trim() || '제목 없는 폼'}</h2>
+              </div>
+              <div className="creator-metrics">
+                <div>
+                  <small>전체 응답</small>
+                  <strong>{form.response_count}</strong>
+                </div>
+                <div>
+                  <small>마감</small>
+                  <strong>{form.deadline ? formatKst(form.deadline) : '없음'}</strong>
+                </div>
+              </div>
+              {form.share_url && (
+                <p className="small muted builder-share-url">
+                  공유 링크: <a href={form.share_url}>{form.share_url}</a>
+                </p>
+              )}
+              <div className="button-row">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  aria-label={`${form.title.trim() || '제목 없는 폼'} 편집`}
+                  onClick={() => onEdit(form.form_id)}
+                >
+                  <Icon name="edit" size={16} /> 폼 편집
+                </button>
+              </div>
+            </Panel>
+          );
+        })}
       </div>
     </div>
   );

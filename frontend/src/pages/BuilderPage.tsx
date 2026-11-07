@@ -1,46 +1,175 @@
 import React from 'react';
+import { api } from '../api/client';
+import { FormSettingsPanel } from '../builder/FormSettingsPanel';
+import {
+  addQuestion,
+  addSection,
+  duplicateQuestion,
+  duplicateSection,
+  moveQuestion,
+  moveSection,
+  publishProblems,
+  removeQuestion,
+  removeSection,
+  replaceQuestion,
+  saveProblems,
+  toDefinition,
+  toPreviewForm,
+  updateSectionTitle,
+} from '../builder/formDefinition';
+import { friendlyError, statusLabel } from '../builder/messages';
+import { QuestionEditor, RowButton } from '../builder/QuestionEditor';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
-import { demoBuilder } from '../demo/screens';
-import type { FormDefinition, Question } from '../types/api';
+import type {
+  ConsentTemplate,
+  CreatorFormDefinition,
+  FormDefinition,
+  FormStateView,
+  FormStatus,
+} from '../types/api';
+import { ResponsePage } from './ResponsePage';
+
+type Pending = '' | 'save' | 'publish' | 'status';
+
+const PENDING_TEXT: Record<Exclude<Pending, ''>, string> = {
+  save: '저장 중…',
+  publish: '배포 중…',
+  status: '상태를 바꾸는 중…',
+};
+
+const STATUS_TONE: Record<FormStatus, 'neutral' | 'green' | 'amber'> = {
+  draft: 'neutral',
+  open: 'green',
+  closed: 'amber',
+};
+
 export function BuilderPage({
+  formId,
   initial,
-  isNew = false,
-  onPreview,
-  onExplore,
+  templates,
 }: {
-  initial: Pick<FormDefinition, 'title' | 'note' | 'sections'>;
-  isNew?: boolean;
-  onPreview?: () => void;
-  onExplore?: () => void;
+  formId: string;
+  initial: CreatorFormDefinition;
+  templates: ConsentTemplate[] | null;
 }) {
-  const [title, setTitle] = React.useState(initial.title);
-  const [note, setNote] = React.useState(initial.note);
-  const [questions, setQuestions] = React.useState<Question[]>(
-    initial.sections.flatMap((s) => s.questions),
-  );
-  const [mode, setMode] = React.useState<'default' | 'quick'>('default');
-  const [saved, setSaved] = React.useState('');
-  function add() {
-    setQuestions((q) => [
-      ...q,
-      {
-        question_id: `draft-${q.length + 1}`,
-        template_id: null,
-        question_note: '새 질문',
-        question_type: 'short_answer',
-        required: false,
-        options: [],
-        profile_key: null,
-        attachments: [],
-        branch_rules: [],
-      },
-    ]);
-    setSaved('');
+  const [definition, setDefinition] = React.useState<FormDefinition>(() => toDefinition(initial));
+  const [formState, setFormState] = React.useState<FormStateView>({
+    status: initial.status,
+    share_url: initial.share_url,
+    definition_version: initial.definition_version,
+  });
+  const [dirty, setDirty] = React.useState(false);
+  const [pending, setPending] = React.useState<Pending>('');
+  const [outcome, setOutcome] = React.useState('');
+  const [failure, setFailure] = React.useState('');
+  const [problems, setProblems] = React.useState<string[]>([]);
+  const [copyNote, setCopyNote] = React.useState('');
+  const [previewing, setPreviewing] = React.useState(false);
+
+  const { status, share_url: shareUrl, definition_version: version } = formState;
+  const busy = pending !== '';
+
+  function edit(change: (def: FormDefinition) => FormDefinition) {
+    setDefinition(change);
+    setDirty(true);
+    setOutcome('');
+    setFailure('');
+    setProblems([]);
   }
-  function updateQuestion(id: string, v: string) {
-    setQuestions((xs) => xs.map((x) => (x.question_id === id ? { ...x, question_note: v } : x)));
-    setSaved('');
+
+  async function send(
+    kind: Exclude<Pending, ''>,
+    body: Partial<FormDefinition> & { status?: FormStatus },
+    describe: (view: FormStateView) => string,
+    failureText: string,
+  ) {
+    setPending(kind);
+    setOutcome('');
+    setFailure('');
+    setProblems([]);
+    try {
+      const view = await api.updateForm(formId, body);
+      setFormState(view);
+      if (kind !== 'status') setDirty(false);
+      setOutcome(describe(view));
+    } catch (error) {
+      setFailure(`${failureText} ${friendlyError(error)}`);
+    } finally {
+      setPending('');
+    }
   }
+
+  function save() {
+    const found = saveProblems(definition);
+    if (found.length > 0) {
+      setOutcome('');
+      setFailure('');
+      setProblems(found);
+      return;
+    }
+    void send(
+      'save',
+      definition,
+      (view) =>
+        view.definition_version !== version
+          ? `저장됨 · 폼 버전 ${view.definition_version}이 되었어요.`
+          : '저장됨',
+      '저장하지 못했어요. 지금 편집 내용은 아직 저장되지 않았어요.',
+    );
+  }
+
+  function publish() {
+    const found = publishProblems(definition);
+    if (found.length > 0) {
+      setOutcome('');
+      setFailure('');
+      setProblems(found);
+      return;
+    }
+    void send(
+      'publish',
+      { ...definition, status: 'open' },
+      (view) => `배포했어요 · 폼 버전 ${view.definition_version}`,
+      '배포하지 못했어요. 초안은 그대로예요.',
+    );
+  }
+
+  /** 상태만 바꾼다. 저장하지 않은 편집 내용은 함께 보내지 않고 화면에 남긴다. */
+  function changeStatus(next: 'open' | 'closed') {
+    void send(
+      'status',
+      { status: next },
+      () => (next === 'closed' ? '응답 받기를 껐어요.' : '다시 열었어요.'),
+      '상태를 바꾸지 못했어요.',
+    );
+  }
+
+  async function copyShareUrl() {
+    try {
+      await navigator.clipboard.writeText(shareUrl ?? '');
+      setCopyNote('복사했어요.');
+    } catch {
+      setCopyNote('복사하지 못했어요. 주소를 직접 복사해 주세요.');
+    }
+  }
+
+  if (previewing) {
+    const consent =
+      templates?.find((t) => t.consent_template_id === definition.consent_template_id) ?? null;
+    return (
+      <ResponsePage
+        preview
+        form={toPreviewForm(definition, consent)}
+        onBack={() => setPreviewing(false)}
+        onSubmit={() => Promise.resolve()}
+        saving={false}
+      />
+    );
+  }
+
+  const questionsBefore = (sectionIndex: number) =>
+    definition.sections.slice(0, sectionIndex).reduce((sum, s) => sum + s.questions.length, 0);
+
   return (
     <div className="page-shell builder-page">
       <Heading
@@ -49,107 +178,174 @@ export function BuilderPage({
         desc="질문을 구성하고, 확인한 뒤 배포할 수 있어요."
         action={
           <div className="button-row">
-            <Button variant="secondary" onClick={onPreview} disabled={isNew}>
+            <Button variant="secondary" onClick={() => setPreviewing(true)} disabled={busy}>
               미리보기
             </Button>
-            <Button
-              onClick={() =>
-                setSaved('데모 화면에서 편집 내용을 보관했습니다. 실제 배포 API 연동 전입니다.')
-              }
-            >
-              초안 저장
+            <Button variant="secondary" onClick={save} disabled={busy}>
+              {status === 'draft' ? '초안 저장' : '변경 저장'}
             </Button>
+            {status === 'draft' && (
+              <Button onClick={publish} disabled={busy}>
+                배포
+              </Button>
+            )}
+            {status === 'open' && (
+              <Button variant="secondary" onClick={() => changeStatus('closed')} disabled={busy}>
+                응답 받기 끄기
+              </Button>
+            )}
+            {status === 'closed' && (
+              <Button onClick={() => changeStatus('open')} disabled={busy}>
+                다시 열기
+              </Button>
+            )}
           </div>
         }
       />
       <div className="builder-tools">
-        <div className="segmented">
-          <button className={mode === 'default' ? 'active' : ''} onClick={() => setMode('default')}>
-            기본 모드
-          </button>
-          <button className={mode === 'quick' ? 'active' : ''} onClick={() => setMode('quick')}>
-            빠른 모드
-          </button>
-        </div>
-        {isNew ? (
-          <Badge>초안</Badge>
-        ) : (
-          <div className="button-row">
-            <Badge tone="green">{demoBuilder.statusBadge}</Badge>
-            <Button variant="secondary" onClick={onExplore}>
-              {demoBuilder.responsesButton}
-            </Button>
-          </div>
-        )}
-      </div>
-      <Panel className="builder-intro">
-        <input
-          className="builder-title"
-          value={title}
-          aria-label="폼 제목"
-          onChange={(e) => setTitle(e.target.value)}
-        />
-        <textarea
-          aria-label="폼 설명"
-          value={note}
-          rows={2}
-          onChange={(e) => setNote(e.target.value)}
-        />
-        <p className="muted small">
-          변경 사항은 실제 API의 저장·배포를 연결한 후에 서버에 반영됩니다.
-        </p>
-      </Panel>
-      <Panel className="builder-section">
-        <div className="section-title">
-          {!isNew && <h3>{demoBuilder.sectionTitle}</h3>}
-          <Badge tone="neutral">{mode === 'quick' ? '빠른 모드 미리보기' : '기본 모드'}</Badge>
-        </div>
-        {questions.map((q, i) => (
-          <div className="builder-question" key={q.question_id}>
-            <div className="question-top">
-              <span className="overline">질문 {String(i + 1).padStart(2, '0')}</span>
-              <Badge>
-                {
-                  (
-                    {
-                      short_answer: '단답형',
-                      long_answer: '장문형',
-                      multiple_choice: '단일 선택',
-                      checkbox: '복수 선택',
-                      dropdown: '드롭다운',
-                    } as const
-                  )[q.question_type]
-                }
-              </Badge>
-            </div>
-            <input
-              value={q.question_note}
-              aria-label={`질문 ${i + 1} 문구`}
-              onChange={(e) => updateQuestion(q.question_id, e.target.value)}
-            />
-            <div className="muted small">
-              {q.options.length ? q.options.join(' / ') : '응답자의 답변이 들어갈 자리'} ·{' '}
-              {q.required ? '필수' : '선택'}
-            </div>
-          </div>
-        ))}
         <div className="button-row">
-          <Button variant="secondary" onClick={add}>
-            <Icon name="plus" size={15} /> 문항 추가
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => setSaved('섹션 추가는 실제 폼 정의 구조와 연결할 예정입니다.')}
-          >
-            섹션 추가
-          </Button>
+          <Badge tone={STATUS_TONE[status]}>
+            {statusLabel(status, definition.deadline, Date.now())}
+            {version !== null && ` · 폼 버전 ${version}`}
+          </Badge>
+          <span className="small muted" role="status">
+            {busy ? PENDING_TEXT[pending as Exclude<Pending, ''>] : outcome}
+            {!busy && dirty && !failure && (outcome ? ' · ' : '') + '저장하지 않은 변경이 있어요.'}
+          </span>
         </div>
-      </Panel>
-      {saved && (
-        <p className="info" role="status">
-          {saved}
+      </div>
+      {failure && (
+        <p className="error" role="alert">
+          {failure}
         </p>
       )}
+      {problems.length > 0 && (
+        <div className="error" role="alert">
+          {problems.map((problem) => (
+            <p key={problem}>{problem}</p>
+          ))}
+        </div>
+      )}
+      {status !== 'draft' && (
+        <p className="small muted">
+          변경은 저장해야 반영돼요. 응답자가 보는 내용이 바뀌면 새 폼 버전이 되고, 공유 링크는
+          그대로예요.
+        </p>
+      )}
+      {shareUrl && (
+        <Panel className="builder-section builder-share">
+          <label className="builder-field">
+            <span>공유 링크</span>
+            <input readOnly value={shareUrl} />
+          </label>
+          <Button variant="secondary" onClick={copyShareUrl}>
+            링크 복사
+          </Button>
+          {copyNote && <small className="muted">{copyNote}</small>}
+        </Panel>
+      )}
+      <fieldset className="builder-fieldset" disabled={busy}>
+        <Panel className="builder-intro">
+          <input
+            className="builder-title"
+            value={definition.title}
+            aria-label="폼 제목"
+            placeholder="폼 제목을 입력해 주세요"
+            onChange={(e) => {
+              const title = e.target.value;
+              edit((d) => ({ ...d, title }));
+            }}
+          />
+          <textarea
+            aria-label="폼 설명"
+            value={definition.note}
+            rows={5}
+            placeholder="폼 설명을 입력해 주세요"
+            onChange={(e) => {
+              const note = e.target.value;
+              edit((d) => ({ ...d, note }));
+            }}
+          />
+        </Panel>
+        {definition.sections.map((section, sectionIndex) => {
+          const sectionId = section.section_id;
+          const sectionName = `섹션 ${sectionIndex + 1}`;
+          return (
+            <Panel className="builder-section" key={sectionId}>
+              <div className="section-title">
+                <input
+                  className="builder-section-title"
+                  value={section.title}
+                  aria-label={`${sectionName} 제목`}
+                  placeholder={`${sectionName} 제목`}
+                  onChange={(e) => {
+                    const title = e.target.value;
+                    edit((d) => updateSectionTitle(d, sectionId, title));
+                  }}
+                />
+                <div className="button-row builder-actions">
+                  <RowButton
+                    label={`${sectionName} 위로`}
+                    text="위로"
+                    disabled={sectionIndex === 0}
+                    onClick={() => edit((d) => moveSection(d, sectionId, -1))}
+                  />
+                  <RowButton
+                    label={`${sectionName} 아래로`}
+                    text="아래로"
+                    disabled={sectionIndex === definition.sections.length - 1}
+                    onClick={() => edit((d) => moveSection(d, sectionId, 1))}
+                  />
+                  <RowButton
+                    label={`${sectionName} 복제`}
+                    text="복제"
+                    onClick={() => edit((d) => duplicateSection(d, sectionId))}
+                  />
+                  <RowButton
+                    label={`${sectionName} 삭제`}
+                    text="삭제"
+                    onClick={() => edit((d) => removeSection(d, sectionId))}
+                  />
+                </div>
+              </div>
+              {section.questions.map((question, questionIndex) => {
+                const questionId = question.question_id;
+                return (
+                  <QuestionEditor
+                    key={questionId}
+                    question={question}
+                    number={questionsBefore(sectionIndex) + questionIndex + 1}
+                    canMoveUp={questionIndex > 0}
+                    canMoveDown={questionIndex < section.questions.length - 1}
+                    onChange={(next) => edit((d) => replaceQuestion(d, sectionId, next))}
+                    onMove={(delta) => edit((d) => moveQuestion(d, sectionId, questionId, delta))}
+                    onDuplicate={() => edit((d) => duplicateQuestion(d, sectionId, questionId))}
+                    onRemove={() => edit((d) => removeQuestion(d, sectionId, questionId))}
+                  />
+                );
+              })}
+              <div className="button-row">
+                <RowButton
+                  label={`${sectionName}에 문항 추가`}
+                  text="문항 추가"
+                  onClick={() => edit((d) => addQuestion(d, sectionId))}
+                />
+              </div>
+            </Panel>
+          );
+        })}
+        <div className="button-row builder-add-section">
+          <Button variant="secondary" onClick={() => edit(addSection)}>
+            <Icon name="plus" size={15} /> 섹션 추가
+          </Button>
+        </div>
+        <FormSettingsPanel
+          definition={definition}
+          firstPublished={version !== null}
+          templates={templates}
+          onChange={edit}
+        />
+      </fieldset>
     </div>
   );
 }

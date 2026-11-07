@@ -1,7 +1,13 @@
 import type {
   AnalyzeRequest,
   AnalyzeResponse,
+  ConsentTemplate,
+  CreatedForm,
+  CreatorFormDefinition,
   CreatorFormSummary,
+  FormDefinition,
+  FormStateView,
+  FormStatus,
   MeResponse,
   PublicForm,
   ResponseHistoryItem,
@@ -65,6 +71,12 @@ export const api = {
   me: () => request<MeResponse>('/me'),
   savedForms: () => request<SavedFormSummary[]>('/me/forms'),
   createdForms: () => request<CreatorFormSummary[]>('/me/created-forms'),
+  consentTemplates: () => request<ConsentTemplate[]>('/consent-templates'),
+  createForm: (definition: FormDefinition) => request<CreatedForm>('/forms', json(definition)),
+  formDefinition: (formId: string) =>
+    request<CreatorFormDefinition>(`/forms/${segment(formId)}/definition`),
+  updateForm: (formId: string, body: Partial<FormDefinition> & { status?: FormStatus }) =>
+    request<FormStateView>(`/forms/${segment(formId)}`, { ...json(body), method: 'PATCH' }),
   formBySlug: (slug: string) => request<PublicForm>(`/f/${segment(slug)}`),
   formById: (formId: string) => request<PublicForm>(`/forms/${segment(formId)}`),
   submit: (formId: string, body: SubmitResponseInput) =>

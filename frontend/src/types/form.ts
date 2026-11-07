@@ -72,6 +72,23 @@ export interface CreatorFormDefinition extends FormDefinition {
   definition_version: number | null;
 }
 
+/** `PATCH /forms/{form_id}`의 응답(SPEC 117행). */
+export type FormStateView = Pick<
+  CreatorFormDefinition,
+  'status' | 'share_url' | 'definition_version'
+>;
+/** `POST /forms`의 응답(SPEC 115행). */
+export interface CreatedForm {
+  form_id: string;
+  status: FormStatus;
+}
+/** `GET /consent-templates`(SPEC 114행). */
+export interface ConsentTemplate {
+  consent_template_id: string;
+  purpose: string;
+  retention: string;
+}
+
 /** AI 요약을 켠 폼의 외부 전송 고지(SPEC 187행, 211행). */
 export interface AiSummaryNotice {
   provider: string;

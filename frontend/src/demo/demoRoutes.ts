@@ -13,8 +13,6 @@ const routesWithDemoValues: string[] = [
   routePatterns.publicForm,
   routePatterns.form,
   routePatterns.creator,
-  routePatterns.newForm,
-  routePatterns.editForm,
   routePatterns.formExplore,
 ];
 

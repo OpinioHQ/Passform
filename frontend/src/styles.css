@@ -966,6 +966,34 @@ h3 {
   margin: 0;
   min-width: 0;
 }
+.builder-main {
+  min-width: 0;
+}
+/* 넓은 화면: 본문 왼쪽, 폼 설정 오른쪽 고정. DOM 순서는 본문 → 폼 설정 그대로 */
+@media (min-width: 1131px) {
+  .builder-fieldset {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 24px;
+    align-items: start;
+  }
+  /* 오른쪽 열(폼 설정 + 하단 버튼) 전체를 고정하고, 길면 폼 설정만 안에서 스크롤한다 */
+  .builder-side {
+    position: sticky;
+    top: 20px;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 40px);
+  }
+  .builder-side > .builder-settings {
+    margin-top: 0;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .builder-side > .builder-add-section {
+    flex-shrink: 0;
+  }
+}
 .builder-actions {
   margin-left: auto;
 }

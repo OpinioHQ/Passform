@@ -122,6 +122,13 @@ T6(#54): GET /forms/{form_id}/results, GET /forms/{form_id}/responses/{response_
 | 폼 상태 | 삭제된 폼은 소유자 검사 전에 404, 배포 전 초안 폼은 200 빈 결과 |
 | 응답 상세 화면 경로 | `/creator/forms/:formId/responses/:responseId` |
 
+### PR #80 이후 사람이 정한 것 (2026-11-07)
+
+| 내용 | 결정 |
+|---|---|
+| checkbox 중복 값을 한 번만 세는 것, UUID 형식이 아닌 ID의 404, 응답 ID가 틀려도 403 먼저, 가짜 데이터 모드 안내, 화면 문구 | 구현 전에 묻지 않고 에이전트가 정했다(AGENTS 4절 4에 어긋남). 사람이 확인하고 그대로 두기로 함 |
+| AC19·AC62 골든 | A안: X2 #67 계획대로 사람이 나중에 쓴다. PR #80은 골든 없이 리뷰한다. 잠시 draft로 merge를 막았다가, PR 본문에 아래 구분을 적고 다시 리뷰 대기로 돌림 |
+
 ### 실제 화면 확인
 
 T2(PR #76)가 main에 있어 사람에게 확인을 요청한다. 결과는 확인 뒤 여기에 적는다.
@@ -154,6 +161,10 @@ T2(PR #76)가 main에 있어 사람에게 확인을 요청한다. 결과는 확�
 ### 기타
 
 - 테스트 기대값(form_b 결과 JSON, AC19 합성 케이스, 상세 JSON)은 에이전트가 fixture를 손으로 세어 쓴 것이다. AC19(`results_option_counts_combined_and_by_version`, `results_changed_question_separate`)와 AC62(`creator_list_response_detail`, `creator_response_other_form_404`)의 골든은 아직 `tests/harness/golden_cases.yaml`에 없다.
+- **판정과 구현 근거의 구분:** SPEC 6절 표(578행 "골든 케이스 id 또는 판정 위치")는 AC19·AC62의 판정 위치를 골든으로 정했다. 이 PR의 `ResultStatisticsTest`·`ResultApiTest`는 판정이 아니라 구현 근거다. 위임 프롬프트의 완료 기준(테스트 근거, 결함 주입)과 AC36 커버리지 때문에 썼다. 보고와 PR 첫 본문에서 "AC19 테스트 줄 4항목 통과"처럼 판정이 끝난 듯 쓴 것은 정확하지 않았다.
+- **골든이 이슈의 1순위가 아닌 이유(문서 근거):** `docs/ARCHITECTURE.md:185`(2026-11-05 사용자 결정)는 1순위 42건만 구현 전에 쓰고 2·3순위는 X2 #67로 미뤘다. 후보 문서(`feat/demo`의 `docs/demo/golden_candidates.md`)에서 AC19 `results_option_counts_combined_and_by_version`은 2순위, `results_changed_question_separate`와 AC62 두 건은 목록에 없다. 골든 형식 표(`ARCHITECTURE.md:197~203`)에도 결과용 최상위 키가 없다. 같은 결정은 "에이전트는 기대값을 쓰지 않는다. 문서 근거와 예시를 제시할 수 있다"고 정한다.
+- **골든이 생기면:** 이 테스트와 다르면 구현을 골든에 맞춘다. 이 테스트는 머지 뒤 기존 테스트가 되므로, 고칠 때는 사람 승인을 받는다.
+- 이 세션은 위임 프롬프트의 "작업이 2시간을 넘으면 멈추고 보고한다"를 넘겨 진행했다(약 2시간 40분 시점에 보고). 그 뒤의 작업(골든 검토, PR 본문 수정, 이 기록)은 사람의 지시로 했다.
 - 결과·상세가 응답을 읽는 곳은 `ResultService`의 `findSubmittedNotDeletedByFormId` 두 곳뿐이다(`git grep --untracked -n 'ResponseRepository\|responses\.find' -- src/main`).
 - `PlaceholderPage.tsx`는 이제 쓰는 곳이 없지만 지우지 않았다.
 - 다른 세션(T3, `_local/wt-t3`)이 같은 Postgres를 쓴다. DB 테스트는 시작할 때 `passform_test`를 비우므로 동시에 돌리지 않았다. rebase 뒤 검증 전에 DB 연결이 0인지 확인했다.

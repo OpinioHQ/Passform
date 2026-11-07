@@ -120,7 +120,7 @@ const type = (label: string, value: string) =>
 const click = (name: string | RegExp) => fireEvent.click(screen.getByRole('button', { name }));
 const agree = () =>
   fireEvent.click(screen.getByRole('checkbox', { name: /개인정보 수집·이용에 동의합니다/ }));
-const submitButton = () => screen.getByRole('button', { name: /^제출/ }) as HTMLButtonElement;
+const submitButton = () => screen.getByRole('button', { name: /^답변 제출/ }) as HTMLButtonElement;
 const alerts = () => screen.queryAllByRole('alert').map((el) => el.textContent);
 const lastBody = () => onSubmit.mock.calls[onSubmit.mock.calls.length - 1][0];
 const rejectWith = (status: number, detail: unknown) =>
@@ -447,11 +447,17 @@ describe('AC80 응답 화면의 다섯 문항 유형', () => {
 });
 
 describe('AC13·AC14 동의', () => {
-  it('consent_lists_input_formats의 화면: 수집 항목·목적·보유 기간·동의 거부 안내를 보인다', () => {
-    open(form());
+  it('consent_lists_input_formats의 화면: 수집 항목·목적·보유 기간·동의 거부 안내를 "내용 보기"로 보인다', () => {
+    open(form({ consent: { ...consent, retention: '행사 종료 후 1개월\n이후 파기' } }));
+    const toggle = screen.getByRole('button', { name: '내용 보기' });
+    // 평소에는 접혀 있다(이슈 #41 결정).
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByText('행사 참가 확인')).toBeNull();
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText(/행사 종료 후 1개월/).className).toContain('keep-lines');
     expect(screen.getByText('이름, 문항별 응답 내용')).toBeTruthy();
     expect(screen.getByText('행사 참가 확인')).toBeTruthy();
-    expect(screen.getByText('행사 종료 후 1개월')).toBeTruthy();
     expect(screen.getByText('동의하지 않으면 제출할 수 없습니다.')).toBeTruthy();
   });
 
@@ -606,5 +612,40 @@ describe('제출 뒤', () => {
     fireEvent.click(submitButton());
     expect((await screen.findByRole('alert')).textContent).toContain('제출하지 못했어요');
     expect(input('이름').value).toBe('김하나');
+  });
+});
+
+describe('빌더 미리보기 (AC81, 사람 결정: 응답자 화면과 같게)', () => {
+  function openPreview(value: PublicForm) {
+    return render(
+      <ResponsePage preview form={value} onSubmit={onSubmit} onBack={vi.fn()} saving={false} />,
+    );
+  }
+
+  it('시작 방식·검사를 응답 화면과 같게 거치고, 제출은 부르지 않고 안내만 한다', () => {
+    openPreview(
+      form({
+        display: { default_mode: 'one_question', allowed_modes: ['one_question', 'all_questions'] },
+      }),
+    );
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('미리보기');
+    expect(screen.getByRole('button', { name: /편집으로 돌아가기/ })).toBeTruthy();
+    expect(screen.queryByLabelText('이름')).toBeNull();
+    click(/시작하기/);
+    click(/다음/);
+    expect(alerts()).toEqual(['필수 문항이에요. 답을 입력해 주세요.']);
+    type('이름', '김하나');
+    for (let i = 0; i < 4; i++) click(/다음/);
+    agree();
+    fireEvent.click(submitButton());
+    expect(screen.getByRole('status').textContent).toBe('미리보기라 제출되지 않아요.');
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.queryByText('응답을 제출했어요')).toBeNull();
+  });
+
+  it('응답 화면에는 미리보기 안내가 없다', () => {
+    open(form());
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('응답 작성');
+    expect(screen.queryByText('미리보기라 제출되지 않아요.')).toBeNull();
   });
 });

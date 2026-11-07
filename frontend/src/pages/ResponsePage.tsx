@@ -31,6 +31,8 @@ interface Props {
   onBack?: () => void;
   /** 최신 폼을 다시 받는다(AC76). 없으면 같은 정의로 처음부터 다시 쓴다. */
   onReload?: () => void;
+  /** 빌더 미리보기(AC81, E3 #81). 응답자 화면과 같게 동작하되 제출을 부르지 않는다(사람 결정). */
+  preview?: boolean;
 }
 
 type Outcome = 'submitted' | 'closed' | 'version_changed';
@@ -96,7 +98,7 @@ export function ClosedNotice({ title }: { title?: string }) {
   return (
     <Panel className="response-notice">
       <Badge tone="neutral">마감</Badge>
-      <h2>{title ? `「${title}」은(는) 마감되었어요` : '마감된 폼이에요'}</h2>
+      <h2>{title ? `「${title}」은(는) 마감되었어요` : '응답이 마감된 폼이에요.'}</h2>
       <p className="muted">
         응답을 더 받지 않는 폼이에요. 궁금한 점은 폼을 보낸 사람에게 문의해 주세요.
       </p>
@@ -115,6 +117,7 @@ function ResponseForm({
   saving,
   onReload,
   onRestart,
+  preview,
 }: Props & { onRestart: () => void }) {
   const defaultMode = form.display.default_mode;
   const switchable = form.display.allowed_modes.length > 1;
@@ -130,6 +133,10 @@ function ResponseForm({
   const [formError, setFormError] = React.useState('');
   const [outcome, setOutcome] = React.useState<Outcome | null>(null);
   const [busy, setBusy] = React.useState(false);
+  const [previewNotice, setPreviewNotice] = React.useState(false);
+  // 개인정보 동의 내용은 평소에 접어 두고 버튼으로 펼친다(이슈 #41 결정). AI 요약 고지는 늘 펼친다(사람 결정).
+  const [consentOpen, setConsentOpen] = React.useState(false);
+  const consentDetailId = React.useId();
   const [focusId, setFocusId] = React.useState<string | null>(null);
   const [scrollTarget, setScrollTarget] = React.useState<string | null>(null);
 
@@ -227,6 +234,11 @@ function ResponseForm({
           ),
         );
       else if (first) setScrollTarget(first.question_id);
+      return;
+    }
+    // 미리보기는 같은 검사를 거친 뒤 제출만 하지 않는다. 응답·결과 집계를 만들지 않는다(SPEC 5절 181행).
+    if (preview) {
+      setPreviewNotice(true);
       return;
     }
     // 경로는 보내지 않는다. 건너뛴 문항의 답은 서버가 다시 계산해 뺀다(AGENTS.md 5절).
@@ -476,16 +488,27 @@ function ResponseForm({
       <div id="question-consent">
         <Panel className="consent">
           <h3>개인정보 수집·이용 동의</h3>
-          <dl className="consent-terms">
-            <dt>수집 항목</dt>
-            <dd>{form.consent.items.join(', ')}</dd>
-            <dt>목적</dt>
-            <dd>{form.consent.purpose}</dd>
-            <dt>보유 기간</dt>
-            <dd>{form.consent.retention}</dd>
-            <dt>동의 거부</dt>
-            <dd>{form.consent.refusal_notice}</dd>
-          </dl>
+          <button
+            type="button"
+            className="btn btn-ghost consent-toggle"
+            aria-expanded={consentOpen}
+            aria-controls={consentDetailId}
+            onClick={() => setConsentOpen((open) => !open)}
+          >
+            {consentOpen ? '내용 접기' : '내용 보기'}
+          </button>
+          {consentOpen && (
+            <dl className="consent-terms" id={consentDetailId}>
+              <dt>수집 항목</dt>
+              <dd>{form.consent.items.join(', ')}</dd>
+              <dt>목적</dt>
+              <dd>{form.consent.purpose}</dd>
+              <dt>보유 기간</dt>
+              <dd className="keep-lines">{form.consent.retention}</dd>
+              <dt>동의 거부</dt>
+              <dd>{form.consent.refusal_notice}</dd>
+            </dl>
+          )}
           <label>
             <input
               type="checkbox"
@@ -551,8 +574,13 @@ function ResponseForm({
           : '필수 동의에 체크하면 제출할 수 있어요.'}
       </span>
       <Button onClick={submit} disabled={!consent || submitting}>
-        {submitting ? '제출 중…' : '제출'} <Icon name="arrow" size={16} />
+        {submitting ? '제출 중…' : '답변 제출'} <Icon name="arrow" size={16} />
       </Button>
+      {previewNotice && (
+        <p className="info" role="status">
+          미리보기라 제출되지 않아요.
+        </p>
+      )}
     </div>
   );
 
@@ -594,7 +622,7 @@ function ResponseForm({
     <>
       <Panel className="response-hero">
         <div className="response-hero-text">
-          <Badge tone="blue">응답 받는 중</Badge>
+          <Badge tone={preview ? 'amber' : 'blue'}>{preview ? '미리보기' : '응답 받는 중'}</Badge>
           <h2>{form.title}</h2>
           {form.note.trim() && <p className="form-note">{form.note}</p>}
           <p className="muted">{deadlineText(form.deadline)}</p>
@@ -698,13 +726,17 @@ export function ResponsePage(props: Props) {
   return (
     <div className="page-shell response-page">
       <Heading
-        eyebrow="응답 작성"
-        title="응답 작성"
-        desc="질문을 확인하고, 편한 속도로 답변해 주세요."
+        eyebrow={props.preview ? '제작자 워크스페이스 / 폼 편집 / 미리보기' : '응답 작성'}
+        title={props.preview ? '미리보기' : '응답 작성'}
+        desc={
+          props.preview
+            ? '응답자에게 보이는 모습이에요. 저장 전 내용이고, 답을 입력해도 응답이 만들어지지 않아요.'
+            : '질문을 확인하고, 편한 속도로 답변해 주세요.'
+        }
         action={
           props.onBack && (
             <Button variant="secondary" onClick={props.onBack}>
-              <Icon name="back" size={16} /> 내 폼함으로
+              <Icon name="back" size={16} /> {props.preview ? '편집으로 돌아가기' : '내 폼함으로'}
             </Button>
           )
         }

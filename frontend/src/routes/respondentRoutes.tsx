@@ -83,11 +83,14 @@ export function FormResponseRoute() {
           <Panel>
             <p className="muted">
               {failure === 'not_found'
-                ? '폼을 찾을 수 없어요. 주소를 확인하거나 폼을 보낸 사람에게 문의해 주세요.'
+                ? '폼을 찾을 수 없어요.'
                 : failure === 'failed'
                   ? '폼을 열 수 없어요. 잠시 후 다시 시도해 주세요.'
                   : '폼을 불러오는 중이에요.'}
             </p>
+            {failure === 'not_found' && (
+              <p className="small muted">주소를 확인하거나 폼을 보낸 사람에게 문의해 주세요.</p>
+            )}
           </Panel>
         )}
       </div>

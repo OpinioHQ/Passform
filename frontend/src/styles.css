@@ -1482,6 +1482,21 @@ h3 {
 .ai-consent {
   margin-top: 12px;
 }
+/* 보유 기간처럼 제작자가 줄을 나눈 문구는 줄바꿈을 살린다(E3 #81과 같은 이름). */
+.keep-lines {
+  white-space: pre-line;
+}
+.consent-toggle {
+  margin-bottom: 10px;
+  padding: 0 8px;
+}
+.response-page .info {
+  width: 100%;
+  margin: 0;
+  color: #3158d5;
+  font-size: 12px;
+  font-weight: 700;
+}
 @media (max-width: 760px) {
   .question-desc,
   .field-hint,

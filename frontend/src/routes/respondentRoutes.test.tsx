@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+﻿// @vitest-environment jsdom
 /**
  * `VITE_USE_API=true`의 응답 라우트(T4 #52). 서버는 fetch 모의로 대신한다.
  * 비로그인 제출도 `client.ts`의 CSRF 헤더를 쓰는지, 공개 조회의 409·404를 어떻게 안내하는지 본다.
@@ -97,7 +97,7 @@ async function answerAndSubmit() {
     target: { value: '잘 부탁해요' },
   });
   fireEvent.click(screen.getByRole('checkbox', { name: /개인정보 수집·이용에 동의합니다/ }));
-  fireEvent.click(screen.getByRole('button', { name: /^제출/ }));
+  fireEvent.click(screen.getByRole('button', { name: /^답변 제출/ }));
 }
 
 describe('공유 링크 응답 (VITE_USE_API=true)', () => {
@@ -111,14 +111,14 @@ describe('공유 링크 응답 (VITE_USE_API=true)', () => {
   it('share_url_closed_form의 화면: 공개 조회가 409 form_closed면 마감 안내를 보인다', async () => {
     serve('/f/abc', { status: 409, body: { error: 'form_closed' } });
     await openLive('/f/abc');
-    expect(await screen.findByText('마감된 폼이에요')).toBeTruthy();
+    expect(await screen.findByText('응답이 마감된 폼이에요.')).toBeTruthy();
     expect(screen.queryByLabelText('하고 싶은 말')).toBeNull();
   });
 
   it('초안·삭제된 폼(404)은 찾을 수 없다고 안내한다', async () => {
     serve('/f/abc', { status: 404, body: { error: 'not_found' } });
     await openLive('/f/abc');
-    expect(await screen.findByText(/폼을 찾을 수 없어요/)).toBeTruthy();
+    expect(await screen.findByText('폼을 찾을 수 없어요.')).toBeTruthy();
   });
 
   it('비로그인 제출도 XSRF-TOKEN 쿠키를 X-XSRF-TOKEN 헤더로 보내고 완료 화면을 보인다', async () => {

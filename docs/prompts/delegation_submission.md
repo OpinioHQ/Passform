@@ -176,10 +176,52 @@
 | 회차 | 제출 골든 통과·실패·skip | 실패한 케이스 | 원인 분류 | 고친 것 | 경과 시간 |
 |---|---|---|---|---|---|
 | 1 | 6 · 0 · 0 (조건 평가 18 통과, 로더 3 통과, 동시 제출 1 통과, 그 밖 146 통과) | 없음 | 해당 없음 | 첫 구현 | 약 17분 (승인 A 대기는 뺐고, 값 모양·중복 답 질문의 대기는 포함) |
+| 2 | 6 · 0 · 0 (main #76·#78 합친 뒤. 접근 골든 2건은 라우트 미구현으로 skip, 그 밖 324 통과) | 첫 컴파일 실패(`ApiExceptionHandler`의 `FORM_CLOSED` 중복 case, switch 패턴이 Java 17에서 안 됨) | 구현 오류 | 충돌 해결, 머지 전 조건, 리뷰 2건 | 측정 안 함 |
 
 - 2회차 이후 없음. 구현과 실행기를 고치지 않았으므로 RUNNER(`4a3186d`) 이후 실행기 diff는 없다.
 - 시작 전 확인: 첫 시도(2026-11-05 21:56)는 PR #74가 머지되지 않아 구현 없이 멈췄다. 머지 뒤 다시 확인해 진행했다. `golden_cases.yaml` 끝에 빈 줄을 더하는 Edit는 권한 설정으로 거부됐다(통과).
 - 구현 중 사람에게 물은 것: 값 모양이 문항 유형과 다른 답, 같은 문항의 중복 답과 checkbox 안의 중복 값. 둘 다 `invalid_request`로 정했다.
+
+### 머지 전 조건과 리뷰 반영 (2026-11-07)
+
+T2(#76)와 E2(#78)가 main에 들어온 뒤 main을 합쳤다. 이 PC의 원래 폴더는 다른 작업(`feat/results-dashboard`) 중이라 건드리지 않고 별도 작업 폴더(git worktree)에서 했다.
+
+**충돌 5곳 (#78 본문의 안내대로)**
+
+| 파일 | 처리 |
+|---|---|
+| `ErrorCode` | 양쪽 코드를 모두 두고 `FORM_CLOSED`는 한 번만 |
+| `ApiExceptionHandler` | 자동 병합 결과 `FORM_CLOSED`가 두 case에 있어 컴파일 오류. T3 줄에서 뺐다 |
+| `ApiExceptionHandlerTest` | main 표에 T3 코드 6개를 더했다 |
+| `FormRepository`, `ResponseRepository` | main 쪽. `findByIdForUpdate`, `countSubmittedNotDeleted`는 같은 선언이라 한 번만 |
+| `SecurityConfig` | main과 같다 |
+
+- `Form`: #78의 `isHiddenFromPublic`·`isClosedAt`과 뜻이 같은 T3의 `isPublished`·`acceptsSubmissionAt`을 지우고 제출도 #78 메서드를 쓴다. 초안이 아닌 폼에서 결과는 정확히 반대다.
+
+**머지 전 조건**
+
+| 조건 | 결과 |
+|---|---|
+| T2 머지 | main에 있음(#76) |
+| `userIdOf` 교체 | `CurrentUserService.findUserId()`를 쓴다. 세션만 있고 User가 없으면 401 |
+| 실제 브라우저 비로그인 제출 | 아래 표 |
+
+| 확인 (사람, 브라우저 콘솔, 2026-11-07) | 결과 |
+|---|---|
+| 로그인 창: 폼 생성 → 배포 → 로그인 제출 | 201, 200(`open`, 버전 1), 201 |
+| 시크릿 창: 공개 조회 → 토큰 없이 제출 → 토큰과 함께 제출(건너뛰는 `q2` 답 포함) | 200, 403, 201, 저장된 문항 `q1,q4` |
+| 개발 DB(에이전트, 사용자 ID 유무만 셈) | 로그인 제출은 사용자 ID 있음, 비로그인 제출은 없음. 둘 다 `SUBMITTED`, 버전 1, `q1,q4` |
+
+**리뷰(`CHANGES_REQUESTED`) 2건**
+
+| 리뷰 | 처리 |
+|---|---|
+| JSON 타입 변환 | 사람이 공통 설정을 골랐다. `config/JacksonConfig`가 요청 DTO에서 문자열·숫자→boolean, 문자열·소수·boolean→정수 변환을 막는다. `consent_agreed: "true"`·`2`·`1`, `ai_summary_agreed: 1`·`"true"`, `form_version: 2.9`·`2.0`·`"2"`·`true`는 `invalid_request`. 동의 생략과 false는 `consent_required` 그대로 |
+| 공백 값이 선택지 검사 전에 사라짐 | `Answer.values()`는 그대로 두고 제출 검증에서 원본 값을 검사한다. `["가", " "]`, `" "`, `[" "]`, `["가", ""]`는 `invalid_option`. `null`, `""`, `[]`는 비운 답(테스트로 고정) |
+
+- 해석: 배열 안의 빈 문자열(`["가", ""]`)은 `invalid_option`으로 했다. 리뷰가 유지하라고 한 것은 값 전체가 `""`나 `null`인 경우로 봤다.
+- `@WebMvcTest`는 `JacksonConfig`를 자동으로 읽지 않는다. 엄격한 변환을 시험하려면 `@Import`한다.
+- 결과: `cleanTest build` 성공(XML 29개, 실패 0). 제출 골든 6건 통과, skip 0.
 
 ## 수용 판단
 

@@ -56,6 +56,12 @@ class ApiExceptionHandlerTest {
 			Map.entry(ErrorCode.INVALID_TRANSITION, HttpStatus.CONFLICT),
 			Map.entry(ErrorCode.RESPONSE_LIMIT_REACHED, HttpStatus.CONFLICT),
 			Map.entry(ErrorCode.FORM_CLOSED, HttpStatus.CONFLICT),
+			Map.entry(ErrorCode.CONSENT_REQUIRED, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.REQUIRED_MISSING, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.INVALID_INPUT_FORMAT_VALUE, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.INVALID_OPTION, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.CHARACTER_LIMIT_EXCEEDED, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.FORM_VERSION_CHANGED, HttpStatus.CONFLICT),
 			Map.entry(ErrorCode.INVALID_CONTEXT, HttpStatus.BAD_REQUEST),
 			Map.entry(ErrorCode.LLM_UNAVAILABLE, HttpStatus.SERVICE_UNAVAILABLE));
 

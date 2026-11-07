@@ -13,6 +13,7 @@ export const routePatterns = {
   editForm: '/creator/forms/:formId/edit',
   formResults: '/creator/forms/:formId/results',
   formExplore: '/creator/forms/:formId/explore',
+  formResponse: '/creator/forms/:formId/responses/:responseId',
 } as const;
 
 const segment = encodeURIComponent;
@@ -31,4 +32,6 @@ export const paths = {
   editForm: (formId: string) => `/creator/forms/${segment(formId)}/edit`,
   formResults: (formId: string) => `/creator/forms/${segment(formId)}/results`,
   formExplore: (formId: string) => `/creator/forms/${segment(formId)}/explore`,
+  formResponse: (formId: string, responseId: string) =>
+    `/creator/forms/${segment(formId)}/responses/${segment(responseId)}`,
 };

@@ -87,6 +87,13 @@ public class Response {
 		this.submittedAt = submittedAt;
 	}
 
+	// 제출 응답. saved_at은 작성 중 임시 저장 시각이라 초안 없이 제출하면 null이다.
+	public static Response submitted(UUID formId, UUID userId, int formVersion, List<Answer> content,
+			boolean aiSummaryAgreed, Instant submittedAt) {
+		return new Response(formId, userId, formVersion, ResponseStatus.SUBMITTED, content, aiSummaryAgreed, null,
+				submittedAt);
+	}
+
 	// 분석 입력으로 변환한다. 단일 값도 1개짜리 목록이고 비운 문항은 키를 두지 않는다(ResponseRecord 주석).
 	public ResponseRecord toResponseRecord() {
 		Map<String, List<String>> answers = new LinkedHashMap<>();

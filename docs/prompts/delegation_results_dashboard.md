@@ -105,6 +105,7 @@ T6(#54): GET /forms/{form_id}/results, GET /forms/{form_id}/responses/{response_
 | 9 | `.\gradlew.bat cleanTest build` (최종) | 통과. 160건 중 실패 0, skip 2, 줄 커버리지 99.6% | 없음. skip 2건은 T2부터 있던 `AccessGoldenTest`의 `other_users_response_404`(E5 경로), `non_owner_analyze_403`(E6 경로) | 해당 없음 | — |
 | 10 | rebase 뒤 `.\gradlew.bat cleanTest build`, 프런트 lint·typecheck·test·build | 백엔드 통과(273건 중 실패 0, skip 2, 줄 커버리지 99.1%), 프런트 통과(74) | 없음 | 해당 없음 | E2가 `Form`에 같은 `isOwnedBy()`·`isDeleted()`를 넣어 제 추가분을 빼고 E2 것을 씀. `DefinitionQuestion`이 E2의 `FormJson`으로 정의를 읽게 바꿈 |
 | 11 | rebase 뒤 결함 주입 7건 | 7건 모두 잡음. 실패한 테스트는 §1 표와 같음 | §1 | 해당 없음 | — |
+| 12 | PR #80 GitHub Actions | `build` 통과, `frontend` 실패 | `ResultsPage.test.tsx` 상세 화면 테스트: CI의 Node가 `toLocaleString('ko-KR')`에서 "오전" 대신 "AM"을 냄(`2026. 10. 8. AM 11:30:00`) | 구현 오류(실행 환경의 로캘 데이터에 의존) | `seoulTime`이 숫자만 받아 "오전/오후"를 직접 붙이게 바꿈. 로컬에서 자정·정오 경계 5건이 기존 `ko-KR` 결과와 같음을 확인 |
 
 같은 실패가 3회차를 넘은 것은 없다.
 

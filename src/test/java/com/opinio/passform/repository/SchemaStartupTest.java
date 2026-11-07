@@ -53,7 +53,7 @@ class SchemaStartupTest extends DatabaseTest {
 				"saved_forms", "notifications", "consent_templates", "question_templates", "attachments");
 		assertThat(jdbc.queryForObject("select version from flyway_schema_history where success order by installed_rank desc limit 1",
 				String.class))
-			.isEqualTo("1");
+			.isEqualTo("2");
 	}
 
 	@ParameterizedTest

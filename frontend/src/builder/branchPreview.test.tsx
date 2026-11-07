@@ -106,6 +106,7 @@ describe('빌더 미리보기', () => {
     expect(
       screen.getByRole('checkbox', { name: /AI 요약을 위한 외부 전송에 동의합니다 \(선택\)/ }),
     ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'AI 요약을 위한 외부 전송 안내 보기' }));
     expect(screen.getByText(AI_SUMMARY_NOTICE.provider)).toBeTruthy();
     expect(screen.getByText(AI_SUMMARY_NOTICE.refusal_effect)).toBeTruthy();
   });

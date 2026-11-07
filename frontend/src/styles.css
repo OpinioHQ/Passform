@@ -1532,7 +1532,7 @@ h3 {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   gap: 6px 14px;
-  margin: 0 0 14px;
+  margin: 10px 0 14px;
   font-size: 12px;
 }
 .consent-terms dt {
@@ -1547,7 +1547,6 @@ h3 {
   margin-top: 12px;
 }
 .consent-toggle {
-  margin-bottom: 10px;
   padding: 0 8px;
 }
 .response-page .info {

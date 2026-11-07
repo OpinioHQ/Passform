@@ -134,9 +134,11 @@ function ResponseForm({
   const [outcome, setOutcome] = React.useState<Outcome | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [previewNotice, setPreviewNotice] = React.useState(false);
-  // 개인정보 동의 내용은 평소에 접어 두고 버튼으로 펼친다(이슈 #41 결정). AI 요약 고지는 늘 펼친다(사람 결정).
+  // 개인정보 동의 내용은 평소에 접어 두고 버튼으로 펼친다(이슈 #41 결정). AI 요약 고지도 같은 박스에서 접어 둔다(사람 결정, #42).
   const [consentOpen, setConsentOpen] = React.useState(false);
   const consentDetailId = React.useId();
+  const [aiNoticeOpen, setAiNoticeOpen] = React.useState(false);
+  const aiNoticeId = React.useId();
   const [focusId, setFocusId] = React.useState<string | null>(null);
   const [scrollTarget, setScrollTarget] = React.useState<string | null>(null);
 
@@ -488,17 +490,28 @@ function ResponseForm({
     const notice = form.consent.ai_summary;
     return (
       <div id="question-consent">
+        {/* 필수·선택 동의를 한 박스에 두고 체크박스는 따로 둔다. 상세는 각 문구 옆 "내용 보기"로 편다(사람 결정, #42). */}
         <Panel className="consent">
           <h3>개인정보 수집·이용 동의</h3>
-          <button
-            type="button"
-            className="btn btn-ghost consent-toggle"
-            aria-expanded={consentOpen}
-            aria-controls={consentDetailId}
-            onClick={() => setConsentOpen((open) => !open)}
-          >
-            {consentOpen ? '내용 접기' : '내용 보기'}
-          </button>
+          <div className="button-row">
+            <label>
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+              />
+              개인정보 수집·이용에 동의합니다 (필수)
+            </label>
+            <button
+              type="button"
+              className="btn btn-ghost consent-toggle"
+              aria-expanded={consentOpen}
+              aria-controls={consentDetailId}
+              onClick={() => setConsentOpen((open) => !open)}
+            >
+              {consentOpen ? '내용 접기' : '내용 보기'}
+            </button>
+          </div>
           {consentOpen && (
             <dl className="consent-terms" id={consentDetailId}>
               <dt>수집 항목</dt>
@@ -511,49 +524,54 @@ function ResponseForm({
               <dd>{form.consent.refusal_notice}</dd>
             </dl>
           )}
-          <label>
-            <input
-              type="checkbox"
-              checked={consent}
-              onChange={(e) => setConsent(e.target.checked)}
-            />
-            개인정보 수집·이용에 동의합니다 (필수)
-          </label>
           {consentError && (
             <p className="field-error" role="alert">
               {consentError}
             </p>
           )}
+          {notice && (
+            <>
+              <div className="button-row ai-consent">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={aiConsent}
+                    onChange={(e) => setAiConsent(e.target.checked)}
+                  />
+                  AI 요약을 위한 외부 전송에 동의합니다 (선택)
+                </label>
+                <button
+                  type="button"
+                  className="btn btn-ghost consent-toggle"
+                  aria-label={`AI 요약을 위한 외부 전송 안내 ${aiNoticeOpen ? '접기' : '보기'}`}
+                  aria-expanded={aiNoticeOpen}
+                  aria-controls={aiNoticeId}
+                  onClick={() => setAiNoticeOpen((open) => !open)}
+                >
+                  {aiNoticeOpen ? '내용 접기' : '내용 보기'}
+                </button>
+              </div>
+              {aiNoticeOpen && (
+                <dl className="consent-terms" id={aiNoticeId}>
+                  <dt>제공받는 곳</dt>
+                  <dd>{notice.provider}</dd>
+                  <dt>처리 국가</dt>
+                  <dd>{notice.processing_country}</dd>
+                  <dt>항목</dt>
+                  <dd>{notice.items.join(', ')}</dd>
+                  <dt>목적</dt>
+                  <dd>{notice.purpose}</dd>
+                  <dt>보유 기간</dt>
+                  <dd>{notice.retention}</dd>
+                  <dt>거부하면</dt>
+                  <dd>{notice.refusal_effect}</dd>
+                  <dt>확인일</dt>
+                  <dd>{notice.checked_on}</dd>
+                </dl>
+              )}
+            </>
+          )}
         </Panel>
-        {notice && (
-          <Panel className="consent ai-consent">
-            <h3>AI 요약을 위한 외부 전송 안내 (선택)</h3>
-            <dl className="consent-terms">
-              <dt>제공받는 곳</dt>
-              <dd>{notice.provider}</dd>
-              <dt>처리 국가</dt>
-              <dd>{notice.processing_country}</dd>
-              <dt>항목</dt>
-              <dd>{notice.items.join(', ')}</dd>
-              <dt>목적</dt>
-              <dd>{notice.purpose}</dd>
-              <dt>보유 기간</dt>
-              <dd>{notice.retention}</dd>
-              <dt>거부하면</dt>
-              <dd>{notice.refusal_effect}</dd>
-              <dt>확인일</dt>
-              <dd>{notice.checked_on}</dd>
-            </dl>
-            <label>
-              <input
-                type="checkbox"
-                checked={aiConsent}
-                onChange={(e) => setAiConsent(e.target.checked)}
-              />
-              AI 요약을 위한 외부 전송에 동의합니다 (선택)
-            </label>
-          </Panel>
-        )}
       </div>
     );
   }

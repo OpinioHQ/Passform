@@ -237,6 +237,7 @@ describe('미리보기 (AC81)', () => {
     fireEvent.click(button('미리보기'));
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('미리보기');
     expect(screen.getByText('저장 전 문구')).toBeTruthy();
+    fireEvent.click(button('내용 보기'));
     expect(screen.getByText(/기본 보유/).className).toContain('keep-lines');
 
     fireEvent.click(screen.getByRole('button', { name: /답변 제출/ }));

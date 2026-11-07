@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { api, useLiveApi } from '../api/client';
+import { api, ApiError, useLiveApi } from '../api/client';
 import { isFormClosedError } from '../builder/messages';
 import { useNotice } from '../components/AppLayout';
 import { Heading, Panel } from '../components/UI';
@@ -67,8 +67,10 @@ export function FormResponseRoute() {
         if (!active) return;
         setFailure(
           isFormClosedError(error)
-            ? '마감된 폼이에요. 더 이상 응답을 받지 않아요.'
-            : '폼을 열 수 없어요.',
+            ? '응답이 마감된 폼이에요.'
+            : error instanceof ApiError && error.status === 404
+              ? '폼을 찾을 수 없어요.'
+              : '폼을 열 수 없어요.',
         );
       });
     return () => {

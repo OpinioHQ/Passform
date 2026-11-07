@@ -23,8 +23,6 @@ export const demoInbox = {
 };
 
 export const demoResponseScreen = {
-  owner: '아틀리에 · 피플팀',
-  sectionHeading: '함께 일하는 경험',
   longAnswerPlaceholder: '작은 제안도 좋아요. 다음 달에 함께 바꿔갈 점을 알려주세요.',
   autofillAnswers: { q1: demoUser.name, q2: demoUser.email },
   autofillRows: [

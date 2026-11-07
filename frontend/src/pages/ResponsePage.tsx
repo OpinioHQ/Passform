@@ -20,6 +20,9 @@ export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange, pr
   const [error, setError] = React.useState('');
   const [saved, setSaved] = React.useState(false);
   const [previewNotice, setPreviewNotice] = React.useState(false);
+  // 동의 내용은 평소에 접어 두고 버튼으로 펼친다(사람 결정, 이슈 #41).
+  const [consentOpen, setConsentOpen] = React.useState(false);
+  const consentDetailId = React.useId();
   const questions = form.sections.flatMap((x) => x.questions);
   const filled = questions.filter((x) => Boolean(answers[x.question_id])).length;
   const percent = questions.length ? Math.round((filled / questions.length) * 100) : 0;
@@ -150,7 +153,6 @@ export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange, pr
           <h2>{form.title}</h2>
           {form.note.trim() && <p className="form-note">{form.note}</p>}
           <p className="muted">
-            {!preview && `${demoResponseScreen.owner} · `}
             {form.deadline ? `${formatKst(form.deadline)} 마감` : '마감 없음'}
           </p>
           {form.payment_link?.startsWith('https://') && (
@@ -181,10 +183,8 @@ export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange, pr
         <Panel className="questions" key={section.section_id}>
           <div className="section-title">
             <div>
-              <span className="overline">
-                {String(sectionIndex + 1).padStart(2, '0')} · {section.title}
-              </span>
-              {!preview && <h3>{demoResponseScreen.sectionHeading}</h3>}
+              <span className="overline">{String(sectionIndex + 1).padStart(2, '0')}</span>
+              {section.title.trim() && <h3>{section.title}</h3>}
             </div>
             {!preview && (
               <Button variant="secondary" onClick={() => setAutofill(true)}>
@@ -212,12 +212,24 @@ export function ResponsePage({ form, onBack, onSubmit, saving, onDraftChange, pr
         <label>
           <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />{' '}
           개인정보 수집 및 이용에 동의합니다. (필수)
-        </label>
-        <p className="small muted">
-          수집 항목: {form.consent.items.join(', ')} · 목적: {form.consent.purpose}
-        </p>
-        <p className="small muted keep-lines">보유 기간: {form.consent.retention}</p>
-        <p className="small muted">{form.consent.refusal_notice}</p>
+        </label>{' '}
+        <button
+          type="button"
+          className="btn btn-ghost"
+          aria-expanded={consentOpen}
+          aria-controls={consentDetailId}
+          onClick={() => setConsentOpen((open) => !open)}
+        >
+          {consentOpen ? '내용 접기' : '내용 보기'}
+        </button>
+        {consentOpen && (
+          <div id={consentDetailId}>
+            <p className="small muted">수집 항목: {form.consent.items.join(', ')}</p>
+            <p className="small muted">목적: {form.consent.purpose}</p>
+            <p className="small muted keep-lines">보유 기간: {form.consent.retention}</p>
+            <p className="small muted">{form.consent.refusal_notice}</p>
+          </div>
+        )}
       </Panel>
       {error && (
         <p className="error" role="alert">

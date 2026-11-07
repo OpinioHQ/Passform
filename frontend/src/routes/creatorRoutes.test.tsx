@@ -236,10 +236,15 @@ describe('미리보기 (AC81)', () => {
 
     fireEvent.click(button('미리보기'));
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('미리보기');
+    // 한 질문씩 폼이라 응답 화면과 같이 시작 버튼을 먼저 보인다(T4 #52, 사람 결정 A안).
+    expect(screen.queryByText('저장 전 문구')).toBeNull();
+    fireEvent.click(button('시작하기'));
     expect(screen.getByText('저장 전 문구')).toBeTruthy();
+    fireEvent.click(button('다음'));
     fireEvent.click(button('내용 보기'));
     expect(screen.getByText(/기본 보유/).className).toContain('keep-lines');
 
+    fireEvent.click(screen.getByRole('checkbox', { name: /개인정보 수집·이용에 동의합니다/ }));
     fireEvent.click(screen.getByRole('button', { name: /답변 제출/ }));
     expect(screen.getByText('미리보기라 제출되지 않아요.')).toBeTruthy();
     expect(fetchMock.mock.calls.length).toBe(before);

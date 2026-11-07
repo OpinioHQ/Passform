@@ -72,8 +72,12 @@ public class AnalysisService {
 		// 본문을 읽기 전에 소유를 확인한다. 형식 오류 때문에 403과 400이 뒤바뀌지 않는다.
 		Form form = ownedForm(command);
 		JsonNode request = readRequest(command.body());
+		// 통계 표현이 문항 문구·선택지인지 보려면 표 3행 전에 버전 정의가 필요하다. 판정은 하지 않고 읽기만 한다.
+		List<Response> submitted = responses.findSubmittedNotDeletedByFormId(form.getId());
+		List<VersionQuestions> versions = respondedVersions(form.getId(), submitted);
 
 		String query = null;
+		boolean statistics = false;
 		RequestContext context;
 		if (request.hasNonNull("query")) {
 			query = request.get("query").asString();
@@ -84,21 +88,19 @@ public class AnalysisService {
 			if (parsed.isEmpty()) {
 				return AnalyzeView.clarify(null, ClarifyRules.parseFailed());
 			}
-			context = QueryText.asksStatistics(query) ? parsed.get()
-					: QueryText.reviveDroppedConditions(query, parsed.get());
+			statistics = QueryText.asksStatistics(query, versions);
+			context = statistics ? parsed.get() : QueryText.reviveDroppedConditions(query, parsed.get());
 		}
 		else {
 			context = RequestContextSchema.toContext(request.get("context"));
 		}
 		context = context.withoutUnusedKeys();
 
-		Optional<ClarifyView> clarify = ClarifyRules.beforeMatching(query, context, aiSummaryEnabled(form));
+		Optional<ClarifyView> clarify = ClarifyRules.beforeMatching(query, context, aiSummaryEnabled(form), statistics);
 		if (clarify.isPresent()) {
 			return AnalyzeView.clarify(context, clarify.get());
 		}
 
-		List<Response> submitted = responses.findSubmittedNotDeletedByFormId(form.getId());
-		List<VersionQuestions> versions = respondedVersions(form.getId(), submitted);
 		Set<Integer> versionNumbers = versions.stream().map(VersionQuestions::formVersion).collect(Collectors.toSet());
 		List<ConditionMatch> matches = matcher.match(context.conditions(), versions)
 			.stream()

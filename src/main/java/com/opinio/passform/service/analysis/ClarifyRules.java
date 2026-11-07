@@ -34,11 +34,12 @@ final class ClarifyRules {
 		return new ClarifyView("parse_failed", "요청을 이해하지 못했어요. 다른 말로 다시 입력해 주세요.", List.of());
 	}
 
-	// 표 3~5행: 매칭 전에 판정한다. query는 {context}면 null이다.
-	static Optional<ClarifyView> beforeMatching(String query, RequestContext context, boolean aiSummaryEnabled) {
+	// 표 3~5행: 매칭 전에 판정한다. query는 {context}면 null이고, statistics는 {query}의 원문 판정 결과다.
+	static Optional<ClarifyView> beforeMatching(String query, RequestContext context, boolean aiSummaryEnabled,
+			boolean statistics) {
 		List<String> operations = aiSummaryEnabled ? List.of(RequestContext.COUNT, RequestContext.LIST, RequestContext.SUMMARIZE)
 				: List.of(RequestContext.COUNT, RequestContext.LIST);
-		if (query != null && QueryText.asksStatistics(query)) {
+		if (statistics) {
 			return Optional.of(new ClarifyView("missing_operation",
 					"평균·비율·그룹별 집계·문항별 통계는 AI 분석에서 지원하지 않아요. 통계는 결과 대시보드에서 볼 수 있어요. 인원 수, 응답 목록"
 							+ (aiSummaryEnabled ? ", 요약" : "") + " 중 무엇을 볼까요?",

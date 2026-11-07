@@ -5,8 +5,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import com.opinio.passform.domain.form.VersionQuestions;
 
 // 제작자의 원문을 코드로 판정한다(SPEC 334·338·340·342행). {query}에만 쓴다. {context}에는 원문이 없다.
 // 낱말 목록 기반이라 명시적 표현만 잡는다(시험 데모 3-4절). 애매하면 되묻는 쪽으로 기운다. 틀린 숫자보다 낫다.
@@ -46,9 +50,21 @@ final class QueryText {
 		return VERSION_SCOPE.matcher(query).find();
 	}
 
-	static boolean asksStatistics(String query) {
-		return STATISTICS.matcher(query).find() || tokens(query).stream()
-			.anyMatch(token -> GROUP_BY.matcher(token).matches() && !NOT_GROUP_BY.contains(token));
+	// 응답이 남은 버전의 문항 문구나 선택지 안에 있는 표현("평균 이상")은 통계 요청으로 세지 않는다.
+	static boolean asksStatistics(String query, List<VersionQuestions> versions) {
+		List<String> formTexts = versions.stream()
+			.flatMap(version -> version.questions().stream())
+			.flatMap(question -> Stream.concat(Stream.of(question.questionNote()), question.options().stream()))
+			.toList();
+		Predicate<String> outsideForm = expression -> formTexts.stream().noneMatch(text -> text.contains(expression));
+		Matcher statistics = STATISTICS.matcher(query);
+		while (statistics.find()) {
+			if (outsideForm.test(statistics.group())) {
+				return true;
+			}
+		}
+		return tokens(query).stream()
+			.anyMatch(token -> GROUP_BY.matcher(token).matches() && !NOT_GROUP_BY.contains(token) && outsideForm.test(token));
 	}
 
 	// 표 5행 혼합 부정: 부정 표현이 있는데 부정된 낱말 말고 다른 조건 표현도 남아 있다.

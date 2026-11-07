@@ -316,6 +316,40 @@ class AnalysisServiceTest {
 		assertThatThrownBy(() -> service.analyze(command(body))).isInstanceOf(AnalysisStepPendingException.class);
 	}
 
+	private AnalysisService gradeForm(ConditionMatcher matcher) {
+		return service(false, matcher, List.of(List.of(question("q1", "성적", "multiple_choice", "평균 이상", "보통", "평균 이하"))));
+	}
+
+	@Test
+	void 선택지_안의_통계_낱말은_통계_요청으로_세지_않는다() {
+		parserReturns("{\"conditions\":[\"평균 이상\"],\"operation\":\"count\"}");
+
+		AnalyzeView view = gradeForm(matcherReturning(option("평균 이상", 1, "q1", "평균 이상")))
+			.analyze(command(queryBody("평균 이상 고른 사람 몇 명")));
+
+		assertThat(view.status()).isEqualTo("ok");
+	}
+
+	@Test
+	void 선택지_밖의_통계_표현이_남으면_missing_operation이다() {
+		parserReturns("{\"conditions\":[\"평균 이상\"],\"operation\":\"count\"}");
+
+		AnalyzeView view = gradeForm(matcherReturning()).analyze(command(queryBody("평균 이상 비율 알려줘")));
+
+		assertThat(view.clarify().reason()).isEqualTo("missing_operation");
+	}
+
+	// 기대 사유(unknown_condition 또는 missing_match)는 사람 결정 대기다. 지금은 전체 건수를 내지 않는 것만 고정한다.
+	@Test
+	void 선택지의_통계_낱말을_뺀_요청도_전체_건수를_내지_않는다() {
+		parserReturns("{\"conditions\":[],\"operation\":\"count\"}");
+
+		AnalyzeView view = gradeForm(matcherReturning()).analyze(command(queryBody("평균 점수 알려줘")));
+
+		assertThat(view.result()).isNull();
+		assertThat(view.clarify().reason()).isNotEqualTo("missing_operation");
+	}
+
 	@Test
 	void AC92_target이_선택형_문항이면_요약_가능_문항만_안내한다() {
 		AnalyzeView view = askContext(true, "{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"학과\"}");

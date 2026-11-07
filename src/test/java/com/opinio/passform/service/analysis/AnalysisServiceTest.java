@@ -339,7 +339,7 @@ class AnalysisServiceTest {
 		assertThat(view.clarify().reason()).isEqualTo("missing_operation");
 	}
 
-	// 기대 사유(unknown_condition 또는 missing_match)는 사람 결정 대기다. 지금은 전체 건수를 내지 않는 것만 고정한다.
+	// 되살린 낱말이 둘이면 match를 지우므로 표 5행이 6행보다 앞선다(사람 결정).
 	@Test
 	void 선택지의_통계_낱말을_뺀_요청도_전체_건수를_내지_않는다() {
 		parserReturns("{\"conditions\":[],\"operation\":\"count\"}");
@@ -347,7 +347,7 @@ class AnalysisServiceTest {
 		AnalyzeView view = gradeForm(matcherReturning()).analyze(command(queryBody("평균 점수 알려줘")));
 
 		assertThat(view.result()).isNull();
-		assertThat(view.clarify().reason()).isNotEqualTo("missing_operation");
+		assertThat(view.clarify().reason()).isEqualTo("missing_match");
 	}
 
 	@Test

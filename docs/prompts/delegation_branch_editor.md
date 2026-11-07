@@ -108,6 +108,7 @@ AGENTS.md, gh issue view 42, docs/SPEC.md 177~178행, 211행, AC8·AC44·AC46·A
 |---|---|---|---|
 | 1 | 시작 시 typecheck 1건·테스트 파일 1개 | main에 더해진 `yaml` 의존성이 로컬 `node_modules`에 없음 | `npm ci`가 5173에서 돌던 Vite가 잡은 파일 때문에 중간에 실패해 `node_modules`가 비었다. Vite 종료는 권한에서 거부돼 Vite를 둔 채 `npm install --no-save`로 lock 파일 그대로 복구. package.json·lock 변경 없음. 시작 기준선 16파일 192건 통과 |
 | 2 | 새 미리보기 테스트 2건 | 새 파일에 jsdom 환경 지정이 없음 | 파일 첫 줄에 `// @vitest-environment jsdom`(기존 화면 테스트와 같음). 1회 |
+| 3 | 코덱스 읽기 전용 검토 1건 | 화면 시험의 `unbranched()`를 서버와 같은 입력이라고 잘못 설명 | 시험 설명 바로잡음. 입력·단언·기대값은 그대로 |
 
 ## §3 사람 결정
 
@@ -129,7 +130,7 @@ AGENTS.md, gh issue view 42, docs/SPEC.md 177~178행, 211행, AC8·AC44·AC46·A
 
 ## §5 서버 검증과의 대응표
 
-`frontend/src/builder/branchRules.test.ts`가 서버 `FormPublishValidatorTest`와 같은 정의(SampleForms.branched/unbranched)를 쓴다. 서버는 오류 코드 하나, 화면은 규칙별 문구를 낸다.
+`frontend/src/builder/branchRules.test.ts`의 AC8과 section_page 검사는 서버 `SampleForms.branched()`와 같은 정의를 쓴다. 화면 시험의 `unbranched()`는 서버 것이 아니라 `branched()`에서 규칙을 뺀 것이고, 서버의 "분기 없는 폼" 검사와는 규칙 유무·시작 방식만 같다. 서버는 오류 코드 하나, 화면은 규칙별 문구를 낸다.
 
 | 서버 테스트(입력) | 서버 결과 | 화면 테스트의 문구 |
 |---|---|---|

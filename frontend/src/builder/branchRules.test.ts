@@ -1,6 +1,7 @@
 /**
  * 분기 편집 함수와 배포 전 분기·시작 방식 검사(AC8, AC46).
- * 배포 전 검사의 입력은 서버 `FormPublishValidatorTest`(SampleForms.branched/unbranched)와 같다. 대응표는
+ * AC8과 section_page 검사의 입력은 서버 `SampleForms.branched()`와 같다. `unbranched()`는 서버 것이 아니라
+ * `branched()`에서 규칙을 뺀 것이고, 서버의 "분기 없는 폼" 검사와는 규칙 유무·시작 방식만 같다. 대응표는
  * `docs/prompts/delegation_branch_editor.md`에 있다. 판정의 정본은 서버다.
  */
 import { describe, expect, it } from 'vitest';
@@ -75,7 +76,7 @@ function branched(): FormDefinition {
   };
 }
 
-/** 서버 `SampleForms.unbranched()`의 분기와 시작 방식에 관계된 부분. */
+/** `branched()`에서 규칙을 빼고 one_question으로 바꾼 것. 서버 `SampleForms.unbranched()`와는 규칙 유무·시작 방식만 같다. */
 function unbranched(): FormDefinition {
   const def = branched();
   def.settings.display.default_mode = 'one_question';

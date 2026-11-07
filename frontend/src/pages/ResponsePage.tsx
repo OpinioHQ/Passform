@@ -8,6 +8,7 @@ import {
   isAnswered,
   problemMessage,
 } from '../response/answerCheck';
+import { type AutosaveStatus, type DraftSink, useAutosave } from '../response/draftSync';
 import {
   type AnswerMap,
   calculateResponsePath,
@@ -33,6 +34,10 @@ interface Props {
   onReload?: () => void;
   /** 빌더 미리보기(AC81, E3 #81). 응답자 화면과 같게 동작하되 제출을 부르지 않는다(사람 결정). */
   preview?: boolean;
+  /** 자동 저장(T5 #53). 없으면 저장하지 않는다(가짜 데이터 모드, 미리보기). */
+  draft?: { sink: DraftSink; initialAnswers?: AnswerMap };
+  /** 초안을 불러오지 못했을 때처럼 화면 위에 늘 보일 안내. */
+  draftNotice?: string;
 }
 
 type Outcome = 'submitted' | 'closed' | 'version_changed';
@@ -106,6 +111,50 @@ export function ClosedNotice({ title }: { title?: string }) {
   );
 }
 
+const seoulClock = new Intl.DateTimeFormat('ko-KR', {
+  timeZone: 'Asia/Seoul',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
+/** 자동 저장 상태(SPEC 5절 205행). 실패는 성공한 척하지 않는다(AC82). */
+function AutosaveStatusLine({
+  kind,
+  status,
+  savedAt,
+  restored,
+}: {
+  kind: DraftSink['kind'];
+  status: AutosaveStatus;
+  savedAt: Date | null;
+  restored: boolean;
+}) {
+  const place = kind === 'account' ? '계정에' : '이 브라우저에';
+  if (status === 'failed') {
+    return (
+      <small className="autosave-status failed" role="alert" data-testid="autosave-status">
+        저장하지 못했어요. 마지막으로 저장된 내용은 그대로 있어요.
+      </small>
+    );
+  }
+  const text =
+    status === 'pending' || status === 'saving'
+      ? '저장 중…'
+      : status === 'saved' && savedAt
+        ? `${place} 저장됨 · ${seoulClock.format(savedAt)}`
+        : restored
+          ? `${place} 저장한 답을 불러왔어요.`
+          : kind === 'account'
+            ? '답을 입력하면 계정에 자동으로 저장돼요.'
+            : '답은 이 브라우저에만 저장돼요. 저장 내용을 지우거나 다른 브라우저에서 열면 이어 쓸 수 없어요.';
+  return (
+    <small className="autosave-status" role="status" data-testid="autosave-status">
+      {text}
+    </small>
+  );
+}
+
 function emptyValue(question: Question): AnswerValue {
   return question.question_type === 'checkbox' ? [] : '';
 }
@@ -118,11 +167,16 @@ function ResponseForm({
   onReload,
   onRestart,
   preview,
+  draft,
+  draftNotice,
 }: Props & { onRestart: () => void }) {
   const defaultMode = form.display.default_mode;
   const switchable = form.display.allowed_modes.length > 1;
   const allQuestions = React.useMemo(() => form.sections.flatMap((s) => s.questions), [form]);
-  const [answers, setAnswers] = React.useState<AnswerMap>({});
+  const [answers, setAnswers] = React.useState<AnswerMap>(() => draft?.initialAnswers ?? {});
+  const sink = draft?.sink ?? null;
+  const autosave = useAutosave(sink);
+  const restored = Boolean(draft?.initialAnswers && Object.keys(draft.initialAnswers).length > 0);
   const [view, setView] = React.useState<DisplayMode>(defaultMode);
   const [started, setStarted] = React.useState(defaultMode !== 'one_question');
   const [pageIndex, setPageIndex] = React.useState(0);
@@ -152,7 +206,10 @@ function ResponseForm({
   }, [scrollTarget]);
 
   function update(question: Question, value: AnswerValue) {
-    setAnswers((prev) => ({ ...prev, [question.question_id]: value }));
+    const next = { ...answers, [question.question_id]: value };
+    setAnswers(next);
+    // 답이 바뀌면 자동 저장한다. 초안 저장은 동의나 제출이 아니다(SPEC 5절 205·207행).
+    autosave.schedule(next);
     // 고친 문항의 지난 오류만 지운다. 새 오류는 "다음"이나 "제출"을 누를 때만 알린다.
     setErrors((prev) => {
       if (!(question.question_id in prev)) return prev;
@@ -160,6 +217,26 @@ function ResponseForm({
       delete next[question.question_id];
       return next;
     });
+  }
+
+  // 버전이 바뀐 뒤 "최신 폼 다시 열기"는 옛 답을 지우고 새로 시작하는 선택이다(T4 사람 결정, SPEC 5절 208행).
+  // 지우지 못해도 다시 연다. 그때는 옛 초안 안내가 다시 지울 기회를 준다.
+  async function reopenLatest() {
+    autosave.cancel();
+    if (sink) await sink.clear().catch(() => undefined);
+    (onReload ?? onRestart)();
+  }
+
+  // 응답자가 작성 중 초안을 직접 지운다(SPEC 5절 208행). 지우지 못하면 답은 그대로 둔다.
+  async function discardDraft() {
+    if (!sink) return;
+    autosave.cancel();
+    try {
+      await sink.clear();
+      onRestart();
+    } catch {
+      setFormError('작성한 답을 지우지 못했어요. 잠시 후 다시 시도해 주세요.');
+    }
   }
 
   function problemsOf(questions: Question[]): Record<string, string> {
@@ -243,6 +320,10 @@ function ResponseForm({
       setPreviewNotice(true);
       return;
     }
+    setBusy(true);
+    // 기다리던 자동 저장을 먼저 끝낸다. 그래야 계정 초안이 하나뿐이고 그 ID로 제출한다(SPEC 5절 216행).
+    await autosave.flush();
+    const draftResponseId = sink?.draftResponseId() ?? null;
     // 경로는 보내지 않는다. 건너뛴 문항의 답은 서버가 다시 계산해 뺀다(AGENTS.md 5절).
     const body: SubmitResponseInput = {
       form_version: form.definition_version,
@@ -254,10 +335,13 @@ function ResponseForm({
         })),
       consent_agreed: true,
       ...(form.consent.ai_summary ? { ai_summary_agreed: aiConsent } : {}),
+      ...(draftResponseId ? { draft_response_id: draftResponseId } : {}),
     };
-    setBusy(true);
     try {
       await onSubmit(body);
+      // 성공한 뒤에만 초안을 정리한다. 실패하면 서버 초안과 브라우저 초안을 그대로 둔다.
+      autosave.cancel();
+      sink?.submitted();
       setOutcome('submitted');
     } catch (e) {
       const detail =
@@ -290,7 +374,7 @@ function ResponseForm({
         <p className="muted">
           열어 둔 폼이 최신이 아니라 제출하지 않았어요. 최신 폼을 다시 열어 처음부터 응답해 주세요.
         </p>
-        <Button onClick={onReload ?? onRestart}>최신 폼 다시 열기</Button>
+        <Button onClick={() => void reopenLatest()}>최신 폼 다시 열기</Button>
       </Panel>
     );
   }
@@ -647,8 +731,28 @@ function ResponseForm({
           <small className="muted" data-testid="progress-detail">
             {shown.detail}
           </small>
+          {sink && (
+            <AutosaveStatusLine
+              kind={sink.kind}
+              status={autosave.status}
+              savedAt={autosave.savedAt}
+              restored={restored}
+            />
+          )}
         </div>
       </Panel>
+      {draftNotice && (
+        <p className="info" role="status">
+          {draftNotice}
+        </p>
+      )}
+      {sink && (restored || autosave.status !== 'idle') && (
+        <div className="form-footer draft-actions">
+          <Button variant="ghost" onClick={() => void discardDraft()}>
+            작성한 답 지우기
+          </Button>
+        </div>
+      )}
       <PaymentLink link={form.payment_link} />
       {switchable && (
         <div className="view-switch" role="group" aria-label="보기 방식">
@@ -743,7 +847,13 @@ export function ResponsePage(props: Props) {
           )
         }
       />
-      <ResponseForm key={attempt} {...props} onRestart={() => setAttempt((n) => n + 1)} />
+      <ResponseForm
+        key={attempt}
+        {...props}
+        // 복원은 처음 한 번만 한다. 지우거나 새로 쓰면 빈 답으로 시작하고 같은 저장소에 이어 저장한다.
+        draft={attempt === 0 || !props.draft ? props.draft : { sink: props.draft.sink }}
+        onRestart={() => setAttempt((n) => n + 1)}
+      />
     </div>
   );
 }

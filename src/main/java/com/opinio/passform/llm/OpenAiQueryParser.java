@@ -9,6 +9,8 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,9 +40,8 @@ public class OpenAiQueryParser implements QueryParser {
 
 	private static final String SCHEMA_PATH = "response_analysis/schemas/request_context.schema.json";
 
-	private static final String PROMPT_START = "<!-- prompt:start -->";
-
-	private static final String PROMPT_END = "<!-- prompt:end -->";
+	private static final Pattern PROMPT_BLOCK = Pattern
+		.compile("(?ms)^<!-- prompt:start -->\\s*$(.*?)^<!-- prompt:end -->\\s*$");
 
 	private final RestClient rest;
 
@@ -124,13 +125,13 @@ public class OpenAiQueryParser implements QueryParser {
 		return text.toString();
 	}
 
+	// 표의 설명문에도 마커 글자가 나오므로 마커만 있는 줄을 찾는다.
 	private static String promptBetweenMarkers(String file) {
-		int start = file.indexOf(PROMPT_START);
-		int end = file.indexOf(PROMPT_END);
-		if (start < 0 || end < start) {
+		Matcher matcher = PROMPT_BLOCK.matcher(file);
+		if (!matcher.find()) {
 			throw new IllegalStateException("프롬프트 마커가 없다: " + PROMPT_PATH);
 		}
-		return file.substring(start + PROMPT_START.length(), end).strip();
+		return matcher.group(1).strip();
 	}
 
 	// OpenAI 구조화 출력은 $schema 키를 쓰지 않는다. 서버 재검증은 원본 스키마로 한다.

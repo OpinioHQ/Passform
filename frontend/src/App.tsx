@@ -5,12 +5,13 @@ import { demoForm } from './demo/data';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-import { PlaceholderPage } from './pages/PlaceholderPage';
 import { ProfilePage } from './pages/ProfilePage';
 import {
   CreatedFormsRoute,
   EditFormRoute,
   FormExploreRoute,
+  FormResponseDetailRoute,
+  FormResultsRoute,
   NewFormRoute,
 } from './routes/creatorRoutes';
 import { paths, routePatterns } from './routes/paths';
@@ -43,10 +44,8 @@ export function App() {
           <Route path={routePatterns.creator} element={<CreatedFormsRoute />} />
           <Route path={routePatterns.newForm} element={<NewFormRoute />} />
           <Route path={routePatterns.editForm} element={<EditFormRoute />} />
-          <Route
-            path={routePatterns.formResults}
-            element={<PlaceholderPage eyebrow="제작자 워크스페이스" title="결과" issue="T6" />}
-          />
+          <Route path={routePatterns.formResults} element={<FormResultsRoute />} />
+          <Route path={routePatterns.formResponse} element={<FormResponseDetailRoute />} />
           <Route path={routePatterns.formExplore} element={<FormExploreRoute />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

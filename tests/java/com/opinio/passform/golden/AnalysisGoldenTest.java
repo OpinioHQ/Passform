@@ -3,6 +3,7 @@ package com.opinio.passform.golden;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,6 +37,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.function.Executable;
+import org.opentest4j.AssertionFailedError;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -139,6 +141,13 @@ class AnalysisGoldenTest {
 		assertTrue(names.containsAll(SKIPPED_FOR_E7), "skip 목록의 케이스가 파일에 없다");
 	}
 
+	@Test
+	void must_not_include는_response_ids_배열이_없으면_실패한다() {
+		JsonNode countResult = JSON.readTree("{\"result\":{\"response_ids\":null}}");
+		assertThrows(AssertionFailedError.class,
+				() -> assertNoForbiddenIds(Map.of("must_not_include", List.of("rb01")), countResult, null));
+	}
+
 	@TestFactory
 	Stream<DynamicTest> 골든_케이스() throws IOException {
 		return loadCases(Files.readString(CASES)).stream()
@@ -191,11 +200,7 @@ class AnalysisGoldenTest {
 			checks.add(() -> assertEquals(c.get("expect_response_ids"), scenario.seedIdsOf(actual), "expect_response_ids"));
 		}
 		if (c.containsKey("must_not_include")) {
-			checks.add(() -> {
-				List<String> ids = scenario.seedIdsOf(actual);
-				strings(c.get("must_not_include"), "must_not_include")
-					.forEach(id -> assertFalse(ids.contains(id), () -> "must_not_include: " + id));
-			});
+			checks.add(() -> assertNoForbiddenIds(c, actual, scenario));
 		}
 		if (c.containsKey("expect_not_evaluable_count")) {
 			checks.add(() -> assertEquals(c.get("expect_not_evaluable_count"),
@@ -206,6 +211,13 @@ class AnalysisGoldenTest {
 					actual.path("coverage").path("not_evaluable_by_version"), "expect_not_evaluable_by_version"));
 		}
 		assertAll(checks);
+	}
+
+	private static void assertNoForbiddenIds(Map<String, Object> c, JsonNode actual, Scenario scenario) {
+		assertTrue(actual.path("result").path("response_ids").isArray(), "must_not_include: response_ids 배열이 없다");
+		List<String> ids = scenario.seedIdsOf(actual);
+		strings(c.get("must_not_include"), "must_not_include")
+			.forEach(id -> assertFalse(ids.contains(id), () -> "must_not_include: " + id));
 	}
 
 	private static void assertParserCalls(Map<String, Object> c, Scenario scenario) {

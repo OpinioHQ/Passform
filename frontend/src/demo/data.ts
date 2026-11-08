@@ -1,6 +1,8 @@
 import type {
   FormDefinition,
   PublicForm,
+  ResponseHistoryDetail,
+  ResponseHistoryItem,
   SavedFormSummary,
   SubmitResponseInput,
   SubmittedResponse,
@@ -93,6 +95,9 @@ export const demoSavedForms: SavedFormSummary[] = [
     deadline: demoForm.deadline,
     state: 'saved',
     has_draft: true,
+    saved_at: '2026-10-30T09:00:00+09:00',
+    submitted_at: null,
+    closed: false,
   },
   {
     form_id: 'demo-workshop',
@@ -100,13 +105,19 @@ export const demoSavedForms: SavedFormSummary[] = [
     deadline: '2026-11-12T18:00:00+09:00',
     state: 'saved',
     has_draft: false,
+    saved_at: '2026-10-29T09:00:00+09:00',
+    submitted_at: null,
+    closed: false,
   },
   {
     form_id: 'demo-tools',
     title: '업무 도구 사용 현황',
     deadline: '2026-11-15T18:00:00+09:00',
-    state: 'saved',
+    state: 'submitted',
     has_draft: false,
+    saved_at: '2026-10-28T09:00:00+09:00',
+    submitted_at: '2026-10-28T10:00:00+09:00',
+    closed: false,
   },
   {
     form_id: 'demo-book',
@@ -114,6 +125,9 @@ export const demoSavedForms: SavedFormSummary[] = [
     deadline: '2026-10-25T18:00:00+09:00',
     state: 'saved',
     has_draft: false,
+    saved_at: '2026-10-20T09:00:00+09:00',
+    submitted_at: null,
+    closed: true,
   },
 ];
 const names = ['김지윤', '박서연', '이도현', '최유진', '정하늘', '윤서진'];
@@ -164,6 +178,35 @@ export function demoSubmission(form: PublicForm, payload: SubmitResponseInput): 
     })),
   };
 }
+/** 가짜 데이터 모드의 제출 이력 항목. 실제 API 모드는 `GET /me/responses`를 쓴다. */
+export function demoHistoryItem(r: SubmittedResponse): ResponseHistoryItem {
+  return {
+    response_id: r.response_id,
+    form_id: demoForm.form_id,
+    form_title: demoForm.title,
+    form_version: r.form_version,
+    submitted_at: r.submitted_at,
+    updated_at: r.updated_at,
+    editable: false,
+    cancellable: false,
+  };
+}
+
+/** 가짜 데이터 모드의 제출 이력 상세. 실제 API 모드는 `GET /me/responses/{response_id}`를 쓴다. */
+export function demoHistoryDetail(r: SubmittedResponse): ResponseHistoryDetail {
+  return {
+    form_title: demoForm.title,
+    form_version: r.form_version,
+    form_definition: demoForm,
+    content: r.content,
+    attachments: r.attachments,
+    submitted_at: r.submitted_at,
+    updated_at: r.updated_at,
+    editable: false,
+    cancellable: false,
+  };
+}
+
 export function answerOf(r: SubmittedResponse, id: string): string {
   const x = r.content.find((v) => v.question_id === id)?.value;
   return Array.isArray(x) ? x.join(', ') : x || '—';

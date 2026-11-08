@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -18,11 +19,14 @@ import com.opinio.passform.domain.form.FormDefinition;
 import com.opinio.passform.domain.form.FormDefinition.Question;
 import com.opinio.passform.domain.form.FormVersionId;
 import com.opinio.passform.domain.form.ResponsePathCalculator;
+import com.opinio.passform.domain.inbox.SavedForm;
+import com.opinio.passform.domain.inbox.SavedFormId;
 import com.opinio.passform.domain.response.Answer;
 import com.opinio.passform.domain.response.Response;
 import com.opinio.passform.repository.FormRepository;
 import com.opinio.passform.repository.FormVersionRepository;
 import com.opinio.passform.repository.ResponseRepository;
+import com.opinio.passform.repository.SavedFormRepository;
 import com.opinio.passform.service.SubmissionResult.SubmittedAnswer;
 
 // 응답 제출. 문항·분기·형식은 제출 버전의 정의에서, status·deadline·response_limit은 forms의 현재 값에서 읽는다(SPEC 5절 156행).
@@ -36,13 +40,16 @@ public class SubmissionService {
 
 	private final ResponseRepository responses;
 
+	private final SavedFormRepository savedForms;
+
 	private final Clock clock;
 
 	public SubmissionService(FormRepository forms, FormVersionRepository versions, ResponseRepository responses,
-			Clock clock) {
+			SavedFormRepository savedForms, Clock clock) {
 		this.forms = forms;
 		this.versions = versions;
 		this.responses = responses;
+		this.savedForms = savedForms;
 		this.clock = clock;
 	}
 
@@ -95,7 +102,18 @@ public class SubmissionService {
 		if (form.isResponseLimitReached(submittedCount + 1)) {
 			form.closeByResponseLimit(now);
 		}
+		recordInInbox(command.userId(), command.formId(), now);
 		return new SubmissionResult(saved.getId(), saved.getFormVersion(), submittedAnswers(content, onPath), now);
+	}
+
+	// 로그인 사용자의 제출은 같은 트랜잭션에서 내 폼함 항목을 submitted로 만든다. 저장하지 않았던 폼이면 지금 넣는다(AC17).
+	// 항목은 폼당 하나이고, 이미 있으면 saved_at을 바꾸지 않는다.
+	private void recordInInbox(UUID userId, UUID formId, Instant now) {
+		if (userId == null) {
+			return;
+		}
+		savedForms.findById(new SavedFormId(userId, formId))
+			.ifPresentOrElse(SavedForm::markSubmitted, () -> savedForms.save(SavedForm.submitted(userId, formId, now)));
 	}
 
 	// 경로 계산용이다. 같은 문항의 답이 여럿이면 첫 답을 쓰고, 그 문항이 경로 위면 검증에서 거부된다.

@@ -55,6 +55,7 @@ import com.opinio.passform.domain.response.Response;
 import com.opinio.passform.repository.FormRepository;
 import com.opinio.passform.repository.FormVersionRepository;
 import com.opinio.passform.repository.ResponseRepository;
+import com.opinio.passform.repository.SavedFormRepository;
 import com.opinio.passform.service.SubmissionResult;
 import com.opinio.passform.service.SubmissionService;
 import com.opinio.passform.service.SubmitCommand;
@@ -433,7 +434,7 @@ class SubmissionGoldenTest {
 			when(responses.save(any(Response.class))).thenAnswer(call -> store(call.getArgument(0)));
 			when(responses.saveAndFlush(any(Response.class))).thenAnswer(call -> store(call.getArgument(0)));
 
-			return new SubmissionService(forms, versions, responses, clock);
+			return new SubmissionService(forms, versions, responses, mock(SavedFormRepository.class), clock);
 		}
 
 		private Response store(Response response) {

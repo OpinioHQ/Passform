@@ -37,6 +37,8 @@ interface Props {
   saving: boolean;
   onBack?: () => void;
   onReload?: () => void;
+  onSaveToInbox?: () => Promise<void>;
+  savedInInbox?: boolean;
 }
 
 function isDraftShape(value: unknown): value is { response_id: string; form_version: number } {

@@ -1,66 +1,65 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
-import { demoInbox } from '../demo/screens';
+import {
+  inTab,
+  inboxOrders,
+  inboxTabs,
+  sortInbox,
+  tabOf,
+  type InboxOrder,
+  type InboxTab,
+} from '../inbox/inboxView';
+import { paths } from '../routes/paths';
 import type { SavedFormSummary } from '../types/api';
+import { deadlineText } from './ResponsePage';
+
+export type InboxProblem = 'login' | 'failed';
 
 interface Props {
-  forms: SavedFormSummary[];
-  onOpen: (id: string) => void;
-  onCreated: () => void;
+  /** `null`이면 불러오는 중이다. */
+  forms: SavedFormSummary[] | null;
+  problem: InboxProblem | null;
+  onOpen: (formId: string) => void;
 }
-export function InboxPage({ forms, onOpen, onCreated }: Props) {
-  const [tab, setTab] = React.useState<'all' | 'pending' | 'draft'>('all');
+
+const badges: Record<
+  NonNullable<ReturnType<typeof tabOf>> | 'submitted',
+  [string, 'blue' | 'amber' | 'neutral' | 'green']
+> = {
+  draft: ['작성 중', 'blue'],
+  pending: ['미제출', 'amber'],
+  closed: ['마감됨', 'neutral'],
+  submitted: ['제출함', 'green'],
+};
+
+/** 내 폼함(E5 #43). 목록은 `GET /me/forms`, 탭과 정렬은 화면이 계산한다(SPEC 39행, AGENTS.md 5절). */
+export function InboxPage({ forms, problem, onOpen }: Props) {
+  const [tab, setTab] = React.useState<InboxTab>('all');
+  const [order, setOrder] = React.useState<InboxOrder>('recent');
   const [filter, setFilter] = React.useState('');
-  const shown = forms.filter(
-    (x) =>
-      (tab === 'all' || (tab === 'draft' ? x.has_draft : x.state === 'saved' && !x.has_draft)) &&
-      x.title.toLowerCase().includes(filter.toLowerCase()),
+  const all = forms ?? [];
+  const shown = sortInbox(
+    all.filter((f) => inTab(f, tab) && f.title.toLowerCase().includes(filter.toLowerCase())),
+    order,
   );
   return (
     <div className="page-shell">
       <Heading
         eyebrow="내 워크스페이스  /  내 폼함"
         title="내 폼함"
-        desc="받은 질문을 모아두고, 내 속도로 답하세요."
-        action={
-          <Button onClick={onCreated}>
-            <Icon name="plus" size={16} /> 받은 폼 저장
-          </Button>
-        }
+        desc="저장한 폼과 제출한 폼을 한곳에서 확인하세요."
       />
-      <div className="metric-grid">
-        {[
-          ['저장한 폼', String(forms.length), '내게 도착한 질문'],
-          ['작성 중', String(forms.filter((f) => f.has_draft).length), '이어서 작성할 수 있어요'],
-          ['마감 임박', demoInbox.closingSoonCount, '이번 주에 마감돼요'],
-          ['제출 완료', demoInbox.submittedCount, '답변을 다시 볼 수 있어요'],
-        ].map(([t, v, d]) => (
-          <Panel key={t} className="metric">
-            <div className="metric-top">
-              <span>{t}</span>
-              <strong>{v}</strong>
-            </div>
-            <small>{d}</small>
-          </Panel>
-        ))}
-      </div>
-      <div className="tab-bar">
-        {(
-          [
-            ['all', '전체'],
-            ['pending', '미제출'],
-            ['draft', '작성 중'],
-          ] as const
-        ).map(([k, t]) => (
-          <button key={k} onClick={() => setTab(k)} className={tab === k ? 'selected' : ''}>
-            {t}{' '}
-            <span>
-              {k === 'all'
-                ? forms.length
-                : k === 'draft'
-                  ? forms.filter((f) => f.has_draft).length
-                  : forms.filter((f) => !f.has_draft).length}
-            </span>
+      <div className="tab-bar" role="tablist" aria-label="내 폼함 탭">
+        {inboxTabs.map(([key, label]) => (
+          <button
+            key={key}
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={tab === key ? 'selected' : ''}
+          >
+            {label} <span>{all.filter((f) => inTab(f, key)).length}</span>
           </button>
         ))}
       </div>
@@ -69,66 +68,75 @@ export function InboxPage({ forms, onOpen, onCreated }: Props) {
           <Icon name="search" size={16} />
           <input
             aria-label="폼 검색"
-            placeholder="폼 이름 또는 보낸 사람 검색"
+            placeholder="폼 이름 검색"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           />
         </label>
-        <span>작성 중 우선 · 마감순 ↓</span>
+        <select
+          aria-label="정렬"
+          value={order}
+          onChange={(e) => setOrder(e.target.value as InboxOrder)}
+        >
+          {inboxOrders.map(([key, label]) => (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="form-list">
-        {shown.map((f, i) => (
-          <Panel className={`saved-form ${f.has_draft ? 'resume' : ''}`} key={f.form_id}>
-            {f.has_draft && (
-              <div className="card-status">
-                <Badge tone="blue">작성 중</Badge>
-                <Badge tone="amber">{demoInbox.draftDeadlineBadge}</Badge>
-                <span className="corner-bookmark">
-                  <Icon name="bookmark" size={17} />
-                </span>
-              </div>
-            )}
-            <div className="form-line">
-              <div>
-                <h3>{f.title}</h3>
-                <div className="muted small">
-                  {demoInbox.owners[forms.indexOf(f)] || demoInbox.fallbackOwner} ·{' '}
-                  {f.deadline ? new Date(f.deadline).toLocaleDateString('ko-KR') : '마감 없음'} 마감
-                </div>
-                {!f.has_draft && (
-                  <div className="small muted" style={{ marginTop: 10 }}>
-                    {i === 2 ? demoInbox.estimatedEffort : '아직 작성하지 않았어요'}
-                  </div>
-                )}
-              </div>
-              <Button
-                variant={f.has_draft ? 'primary' : 'secondary'}
-                onClick={() => onOpen(f.form_id)}
-              >
-                {f.has_draft ? '이어서 작성' : '작성 시작'}{' '}
-                {f.has_draft && <Icon name="arrow" size={15} />}
-              </Button>
-            </div>
-            {f.has_draft && (
-              <div className="progress-wrap">
-                <div className="progress-label">
-                  <span>{demoInbox.draftProgress.label}</span>
-                  <b>{demoInbox.draftProgress.percent}</b>
-                </div>
-                <div className="track">
-                  <div style={{ width: demoInbox.draftProgress.percent }} />
-                </div>
-                <small className="muted">
-                  {demoInbox.draftProgress.savedAt} · 작성한 내용부터 이어집니다
-                </small>
-              </div>
-            )}
-          </Panel>
-        ))}
-        {shown.length === 0 && (
+        {problem === 'login' ? (
           <Panel>
-            <p className="muted">검색 결과가 없어요.</p>
+            <p className="muted">로그인하면 내 폼함을 볼 수 있어요.</p>
+            <Link to={paths.login}>로그인</Link>
           </Panel>
+        ) : problem === 'failed' ? (
+          <Panel>
+            <p className="muted">내 폼함을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>
+          </Panel>
+        ) : forms === null ? (
+          <Panel>
+            <p className="muted">내 폼함을 불러오는 중이에요.</p>
+          </Panel>
+        ) : all.length === 0 ? (
+          <Panel>
+            <p className="muted">
+              아직 저장한 폼이 없어요. 받은 폼에서 &quot;내 폼함에 저장&quot;을 누르거나 답을 쓰면
+              여기에 모여요.
+            </p>
+          </Panel>
+        ) : shown.length === 0 ? (
+          <Panel>
+            <p className="muted">여기에 해당하는 폼이 없어요.</p>
+          </Panel>
+        ) : (
+          shown.map((f) => {
+            const [label, tone] = badges[tabOf(f) ?? 'submitted'];
+            const resume = f.has_draft && !f.closed;
+            return (
+              <Panel className={`saved-form ${resume ? 'resume' : ''}`} key={f.form_id}>
+                <div className="form-line">
+                  <div>
+                    <div className="card-status">
+                      <Badge tone={tone}>{label}</Badge>
+                      {f.state === 'submitted' && tabOf(f) !== null && (
+                        <Badge tone="green">제출함</Badge>
+                      )}
+                    </div>
+                    <h3>{f.title}</h3>
+                    <div className="muted small">{deadlineText(f.deadline)}</div>
+                  </div>
+                  <Button
+                    variant={resume ? 'primary' : 'secondary'}
+                    onClick={() => onOpen(f.form_id)}
+                  >
+                    {resume ? '이어서 작성' : '폼 열기'} <Icon name="arrow" size={15} />
+                  </Button>
+                </div>
+              </Panel>
+            );
+          })
         )}
       </div>
     </div>

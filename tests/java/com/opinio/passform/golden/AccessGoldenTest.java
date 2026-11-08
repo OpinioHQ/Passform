@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -61,7 +62,10 @@ import tools.jackson.databind.json.JsonMapper;
 
 import com.opinio.passform.config.ClockConfig;
 import com.opinio.passform.config.SecurityConfig;
+import com.opinio.passform.domain.analysis.ResponseStatus;
 import com.opinio.passform.domain.form.Form;
+import com.opinio.passform.domain.response.Answer;
+import com.opinio.passform.domain.response.Response;
 import com.opinio.passform.domain.user.User;
 import com.opinio.passform.llm.ConditionMatcher;
 import com.opinio.passform.llm.QueryParser;
@@ -236,6 +240,8 @@ class AccessGoldenTest {
 		when(forms.findById(formId)).thenReturn(Optional.of(form));
 		String path = string(input.get("path"), "input.path").replace("/forms/" + seedFormId + "/",
 				"/forms/" + formId + "/");
+		path = placeSeedResponses(Path.of(string(input.get("fixture"), "input.fixture")), formId,
+				string(input.get("actor"), "input.actor"), path);
 
 		MockHttpServletResponse response = perform(with(input, "path", path));
 		assertAll(checks.stream().map(check -> (Executable) () -> check.accept(response)));
@@ -427,6 +433,37 @@ class AccessGoldenTest {
 	private static String readFixture(Path fixture) throws IOException {
 		return string(map(JSON.readValue(Files.readString(fixture), Object.class), fixture.toString()).get("form_id"),
 				fixture + " form_id");
+	}
+
+	// 경로에 fixture 응답 ID(예: rb01)가 있으면 UUID로 바꾸고, 그 응답을 fixture 내용 그대로 actor가 아닌 사용자 소유로
+	// 모의 저장소에 둔다. 남의 응답 케이스의 must_not_contain이 실제로 그 응답 원문을 대상으로 검사된다.
+	private String placeSeedResponses(Path fixture, UUID formId, String actor, String path) throws IOException {
+		Map<String, Object> seed = map(JSON.readValue(Files.readString(fixture), Object.class), fixture.toString());
+		String owner = "respondent".equals(actor) ? "other_user" : "respondent";
+		for (Object item : list(seed.getOrDefault("responses", List.of()), fixture + " responses")) {
+			Map<String, Object> fixtureResponse = map(item, fixture + " responses[]");
+			String seedId = string(fixtureResponse.get("response_id"), fixture + " response_id");
+			java.util.regex.Pattern segment = java.util.regex.Pattern
+				.compile("/" + java.util.regex.Pattern.quote(seedId) + "(?=/|$)");
+			if (!segment.matcher(path).find()) {
+				continue;
+			}
+			List<Answer> answers = new ArrayList<>();
+			for (Object answer : list(fixtureResponse.get("answers"), seedId + " answers")) {
+				Map<String, Object> value = map(answer, seedId + " answers[]");
+				answers.add(new Answer(string(value.get("question_id"), seedId + " question_id"), value.get("value")));
+			}
+			Object submittedAt = fixtureResponse.get("submitted_at");
+			Response stored = new Response(formId, uuidOf(owner), integer(fixtureResponse.get("form_version"), seedId),
+					ResponseStatus.valueOf(string(fixtureResponse.get("status"), seedId).toUpperCase(Locale.ROOT)),
+					answers, Boolean.TRUE.equals(fixtureResponse.get("ai_summary_agreed")), null,
+					submittedAt == null ? null : Instant.parse(string(submittedAt, seedId + " submitted_at")));
+			UUID responseId = uuidOf("response:" + seedId);
+			ReflectionTestUtils.setField(stored, "id", responseId);
+			when(responses.findById(responseId)).thenReturn(Optional.of(stored));
+			path = segment.matcher(path).replaceAll("/" + responseId);
+		}
+		return path;
 	}
 
 	// actor 이름을 사용자 ID로 대응시킨다. 같은 이름은 항상 같은 UUID다.

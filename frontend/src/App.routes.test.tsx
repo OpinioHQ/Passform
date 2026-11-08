@@ -299,14 +299,15 @@ describe('VITE_USE_API=true', () => {
     vi.resetModules();
   });
 
-  it('/f/:slug 는 공개 조회만 부르고 내 폼함을 부르지 않는다', async () => {
+  it('/f/:slug 는 공개 조회와 로그인 사용자의 초안·내 폼함 저장 여부만 부른다', async () => {
     const urls = await openLiveAt('/f/test');
     expect(await screen.findByText('서버에서 받은 폼')).toBeTruthy();
-    // 로그인이면 계정 초안을 조회한다(T5 #53, 사람 승인). 공개 조회 밖의 로그인 API는 이것뿐이다.
+    // 로그인이면 계정 초안(T5 #53)과 내 폼함 저장 여부(E5 #43)를 조회한다(사람 승인). 공개 조회 밖의 로그인 API는 이 둘뿐이다.
     await waitFor(() =>
       expect(urls()).toEqual([
         'http://api.test/me',
         'http://api.test/f/test',
+        'http://api.test/me/forms',
         'http://api.test/me/forms/live-form/response-draft',
       ]),
     );
@@ -316,11 +317,12 @@ describe('VITE_USE_API=true', () => {
   it('/forms/:formId 는 formById 를 부른다', async () => {
     const urls = await openLiveAt('/forms/abc');
     expect(await screen.findByText('서버에서 받은 폼')).toBeTruthy();
-    // 로그인이면 계정 초안을 조회한다(T5 #53, 사람 승인). 공개 조회 밖의 로그인 API는 이것뿐이다.
+    // 로그인이면 계정 초안(T5 #53)과 내 폼함 저장 여부(E5 #43)를 조회한다(사람 승인). 공개 조회 밖의 로그인 API는 이 둘뿐이다.
     await waitFor(() =>
       expect(urls()).toEqual([
         'http://api.test/me',
         'http://api.test/forms/abc',
+        'http://api.test/me/forms',
         'http://api.test/me/forms/live-form/response-draft',
       ]),
     );
@@ -332,13 +334,13 @@ describe('VITE_USE_API=true', () => {
   });
 
   it('연결한 세 호출 밖의 화면은 API를 부르지 않는다', async () => {
-    const urls = await openLiveAt('/me/responses');
+    const urls = await openLiveAt('/me/profile');
     await waitFor(() => expect(screen.getByRole('banner')).toBeTruthy());
     expect(urls()).toEqual(['http://api.test/me']);
   });
 
   it('가짜 값이 남은 화면에는 띠를 보이고, 없는 화면에는 보이지 않는다', async () => {
-    await openLiveAt('/me/forms');
+    await openLiveAt('/me/profile');
     expect(screen.getByText(/가상 값이 남아 있습니다/)).toBeTruthy();
     cleanup();
     await openLiveAt('/login');

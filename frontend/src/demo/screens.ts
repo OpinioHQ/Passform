@@ -12,21 +12,6 @@ export const demoUser = {
   profileLabel: '업무용 프로필',
 };
 
-export const demoInbox = {
-  owners: ['아틀리에 · 피플팀', '아틀리에 · 피플팀', '아틀리에 · 운영팀', '아틀리에 · 컬처팀'],
-  fallbackOwner: 'Passform 데모팀',
-  closingSoonCount: '2',
-  submittedCount: '8',
-  draftDeadlineBadge: '마감 임박 · D-2',
-  estimatedEffort: '약 3분 · 6문항',
-  draftProgress: { label: '3 / 5문항 작성', percent: '60%', savedAt: '오늘 10:32 저장됨' },
-};
-
-export const demoHistory = {
-  latestTitle: demoForm.title,
-  otherTitle: '팀 경험 설문 · 데모 응답',
-};
-
 export const demoCreated = {
   title: demoForm.title,
   description: '함께 일하는 경험에 대한 설문',

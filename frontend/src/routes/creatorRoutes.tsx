@@ -7,12 +7,14 @@ import { Button, Heading, Panel } from '../components/UI';
 import { useDemoData } from '../demo/DemoDataContext';
 import { DemoBuilderPage } from '../demo/DemoBuilderPage';
 import { DemoCreatedPage } from '../demo/DemoCreatedPage';
+import { DemoExplorePage } from '../demo/DemoExplorePage';
 import { demoBlankForm, demoForm } from '../demo/data';
 import { BuilderPage } from '../pages/BuilderPage';
 import { CreatedPage, type CreatedFormsLoad } from '../pages/CreatedPage';
 import { ExplorePage } from '../pages/ExplorePage';
 import { ResponseDetailPage } from '../pages/ResponseDetailPage';
 import { ResultsPage } from '../pages/ResultsPage';
+import type { AnalyzeRequest } from '../types/analyze';
 import type { ConsentTemplate, CreatorFormDefinition, CreatorFormSummary } from '../types/api';
 import { paths } from './paths';
 
@@ -275,9 +277,43 @@ export function EditFormRoute() {
   );
 }
 
+function LiveExplore({ formId }: { formId: string }) {
+  const navigate = useNavigate();
+  const load = React.useCallback(() => api.formDefinition(formId), [formId]);
+  const definition = useServerData(load, '폼을 찾을 수 없어요.');
+  const analyze = React.useCallback((body: AnalyzeRequest) => api.analyze(formId, body), [formId]);
+  const loadResponse = React.useCallback(
+    (responseId: string) => api.responseDetail(formId, responseId),
+    [formId],
+  );
+  if (definition.state !== 'ready') {
+    return (
+      <Waiting
+        eyebrow="제작자 워크스페이스 / 응답 탐색"
+        title="모인 답변을 살펴보세요"
+        message={definition.state === 'failed' ? definition.message : '폼을 불러오는 중이에요.'}
+      />
+    );
+  }
+  return (
+    <ExplorePage
+      key={formId}
+      definition={definition.data}
+      analyze={analyze}
+      loadResponse={loadResponse}
+      onBuilder={() => navigate(paths.editForm(formId))}
+      onResults={() => navigate(paths.formResults(formId))}
+    />
+  );
+}
+
+/** 실제 모드는 분석 API로 동작한다(E8 #46). 가짜 데이터 모드는 시험 데모 화면을 그대로 쓴다. */
 export function FormExploreRoute() {
   const { formId = '' } = useParams();
   const navigate = useNavigate();
   const { responses } = useDemoData();
-  return <ExplorePage responses={responses} onBuilder={() => navigate(paths.editForm(formId))} />;
+  if (useLiveApi) return <LiveExplore formId={formId} />;
+  return (
+    <DemoExplorePage responses={responses} onBuilder={() => navigate(paths.editForm(formId))} />
+  );
 }

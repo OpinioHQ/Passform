@@ -1641,3 +1641,117 @@ h3 {
 .autofill-suggested {
   color: #3158d5;
 }
+
+/* 탐색 화면(E8 #46). 360px에서도 가로로 넘치지 않게 줄바꿈하고 최소 폭을 둔다(AC68). */
+.explore-page .heading-row {
+  flex-wrap: wrap;
+}
+.explore-page .heading-row h1,
+.explore-page .page-desc {
+  overflow-wrap: anywhere;
+}
+.explore-page .panel {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.explore-ask,
+.explore-answer {
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.explore-ask .composer {
+  margin: 0;
+}
+.explore-presets {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.explore-preset-group .button-row {
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.explore-preset-group .filter-chip {
+  cursor: pointer;
+  text-align: left;
+}
+.explore-answer .chat-bubble.user {
+  margin: 0 0 12px auto;
+  width: fit-content;
+}
+.explore-count strong {
+  font-size: 22px;
+  margin: 0 2px;
+}
+.explore-coverage {
+  background: #fff8e8;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+.explore-why {
+  border: 1px solid #c9a03b;
+  background: #fff;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  margin-top: 6px;
+  cursor: pointer;
+}
+.explore-reasons,
+.explore-matched ul,
+.explore-hints,
+.explore-evidence {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+.explore-matched {
+  margin: 10px 0;
+}
+.explore-choices {
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.explore-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.explore-response {
+  border: 1px solid #e3e5dd;
+  border-radius: 8px;
+  padding: 12px;
+}
+.explore-response-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.explore-response dl {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.explore-response dt {
+  color: #73776f;
+}
+.explore-response dd {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.explore-themes {
+  padding-left: 18px;
+  display: grid;
+  gap: 14px;
+}
+.explore-result .result-card-head h3 {
+  font-size: 15px;
+  margin: 0;
+}

@@ -2,6 +2,7 @@ package com.opinio.passform.service.analysis;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -52,6 +53,10 @@ class AnalysisServiceTest {
 
 	private final QueryParser parser = mock(QueryParser.class);
 
+	private final SummaryService summaries = mock(SummaryService.class);
+
+	private static final SummaryView SUMMARY = new SummaryView("ok", 0, List.of(), null);
+
 	private AnalysisService service(boolean aiSummary) {
 		return service(aiSummary, new PendingConditionMatcher());
 	}
@@ -84,7 +89,7 @@ class AnalysisServiceTest {
 		when(forms.findById(FORM_ID)).thenReturn(Optional.of(form));
 		ResponseRepository responses = mock(ResponseRepository.class);
 		when(responses.findSubmittedNotDeletedByFormId(FORM_ID)).thenReturn(submitted);
-		return new AnalysisService(forms, versions, responses, parser, matcher, new RequestContextSchema());
+		return new AnalysisService(forms, versions, responses, parser, matcher, new RequestContextSchema(), summaries);
 	}
 
 	private static Map<String, Object> question(String id, String note, String type, String... options) {
@@ -312,8 +317,12 @@ class AnalysisServiceTest {
 		AnalysisService service = service(true, matcherReturning(),
 				List.of(List.of(question("q2", "지원 동기", "long_answer")), List.of(question("q8", "지원 동기", "long_answer"))));
 		String body = "{\"context\":{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"지원 동기\"}}";
+		when(summaries.summarize(any(), anyList(), anyList())).thenReturn(new SummaryService.Outcome(SUMMARY, List.of()));
 
-		assertThatThrownBy(() -> service.analyze(command(body))).isInstanceOf(AnalysisStepPendingException.class);
+		AnalyzeView view = service.analyze(command(body));
+
+		assertThat(view.status()).isEqualTo("ok");
+		assertThat(view.clarify()).isNull();
 	}
 
 	private AnalysisService gradeForm(ConditionMatcher matcher) {
@@ -375,11 +384,14 @@ class AnalysisServiceTest {
 	}
 
 	@Test
-	void 되묻기를_통과한_요약은_빈_요약을_내지_않고_실패한다() {
+	void 되묻기를_통과한_요약은_요약_서비스가_낸_summary를_돌려준다() {
 		String context = "{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"지원 동기\"}";
+		when(summaries.summarize(any(), anyList(), anyList())).thenReturn(new SummaryService.Outcome(SUMMARY, List.of()));
 
-		assertThatThrownBy(() -> askContext(true, context)).isInstanceOf(AnalysisStepPendingException.class)
-			.hasMessageContaining("T7");
+		AnalyzeView view = askContext(true, context);
+
+		assertThat(view.result().summary()).isEqualTo(SUMMARY);
+		assertThat(view.result().responseIds()).hasSize(view.result().count());
 	}
 
 	@Test

@@ -49,6 +49,7 @@ tasks.named('processResources') {
 	from('src/response_analysis/schemas') { into 'response_analysis/schemas' }
 	from('src/response_analysis/prompts') { into 'response_analysis/prompts' }
 	from('src/passform/schemas') { into 'passform/schemas' }
+	from('config') { include 'rag.yaml'; into 'config' }
 }
 
 tasks.named('test') {

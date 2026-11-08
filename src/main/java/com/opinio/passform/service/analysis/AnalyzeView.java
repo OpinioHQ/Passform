@@ -22,8 +22,8 @@ public record AnalyzeView(String status, RequestContext context, List<MatchedVie
 			String option) {
 	}
 
-	// summary는 T7이 채운다. 지금은 count·list뿐이라 항상 null이다.
-	public record ResultView(String operation, int count, List<String> responseIds, Object summary) {
+	// summary는 summarize에서만 객체이고 count·list에서는 null이다.
+	public record ResultView(String operation, int count, List<String> responseIds, SummaryView summary) {
 	}
 
 	// options는 사유에 따라 문자열이거나 QuestionOption이다(SPEC 336~347행).

@@ -7,7 +7,7 @@ import com.opinio.passform.domain.error.DomainException;
 import com.opinio.passform.domain.error.ErrorCode;
 import com.opinio.passform.domain.form.VersionQuestions;
 
-// LLM 매처가 들어올 때까지 RuleFirstConditionMatcher가 못 푼 조건을 보내는 곳이다. LLM 매처로 바꾸면 지운다.
+// 운영 bean이 아니다(운영은 RuleFirstConditionMatcher + LlmConditionMatcher). LLM 없이 service를 시험할 때 쓰는 매처다.
 // 조건이 있는데 "매칭 없음"을 돌려주면 unknown_condition으로 잘못 되묻게 되므로 503으로 멈춘다.
 public class PendingConditionMatcher implements ConditionMatcher {
 

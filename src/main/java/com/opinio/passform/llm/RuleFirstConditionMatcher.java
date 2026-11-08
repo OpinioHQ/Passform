@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.opinio.passform.domain.analysis.ConditionMatch;
@@ -20,9 +21,10 @@ public class RuleFirstConditionMatcher implements ConditionMatcher {
 
 	private final ConditionMatcher next;
 
-	// LLM 매처가 들어올 때까지 다음 매처는 PendingConditionMatcher다(못 푼 조건이 있으면 503).
-	public RuleFirstConditionMatcher() {
-		this(new PendingConditionMatcher());
+	// 운영: 못 푼 조건은 LLM 매처로 간다. 키가 없거나 호출이 실패하면 LlmClient가 503(LLM_UNAVAILABLE)을 낸다.
+	@Autowired
+	public RuleFirstConditionMatcher(LlmConditionMatcher llm) {
+		this(llm::match);
 	}
 
 	RuleFirstConditionMatcher(ConditionMatcher next) {

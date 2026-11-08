@@ -123,6 +123,15 @@ public class Response {
 		this.submittedAt = now;
 	}
 
+	// 제출 후 수정. 같은 응답의 답을 통째로 바꾸고 수정 시각만 기록한다. response_id·form_version·submitted_at·동의는 그대로다(AC74).
+	public void replaceSubmittedAnswers(List<Answer> answers, Instant now) {
+		if (status != ResponseStatus.SUBMITTED) {
+			throw new IllegalStateException("제출된 응답이 아니다");
+		}
+		this.content = answers;
+		this.updatedAt = now;
+	}
+
 	private void requireInProgress() {
 		if (status != ResponseStatus.IN_PROGRESS) {
 			throw new IllegalStateException("작성 중 응답이 아니다");

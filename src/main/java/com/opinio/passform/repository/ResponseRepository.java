@@ -89,6 +89,24 @@ public interface ResponseRepository extends JpaRepository<Response, UUID> {
 			""")
 	List<Response> findSubmittedByUserId(@Param("userId") UUID userId);
 
+	// 수정·취소할 본인 제출 응답의 폼. 폼 행을 먼저 잠그려고 응답 엔티티를 읽지 않고 ID만 구한다.
+	@Query("""
+			select r.formId from Response r
+			where r.id = :responseId
+			  and r.userId = :userId
+			  and r.status = com.opinio.passform.domain.analysis.ResponseStatus.SUBMITTED
+			""")
+	Optional<UUID> findFormIdOfSubmitted(@Param("responseId") UUID responseId, @Param("userId") UUID userId);
+
+	// 취소 뒤 남은 본인 제출 기록이 있는지(AC17). 제작자가 지운 조회 전용 이력도 센다.
+	@Query("""
+			select count(r) > 0 from Response r
+			where r.userId = :userId
+			  and r.formId = :formId
+			  and r.status = com.opinio.passform.domain.analysis.ResponseStatus.SUBMITTED
+			""")
+	boolean existsSubmittedByUser(@Param("userId") UUID userId, @Param("formId") UUID formId);
+
 	// 내 폼함 has_draft를 한 번에 구한다(SPEC 5절 200행).
 	@Query("""
 			select distinct r.formId from Response r

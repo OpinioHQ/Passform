@@ -62,9 +62,13 @@ public class SavedForm implements Persistable<SavedFormId> {
 	}
 
 	// 제출하면 항목은 그대로 두고 상태만 바꾼다. saved_at은 처음 들어온 시각이라 바꾸지 않는다.
-	// 취소로 saved에 돌아가는 규칙은 T10이 이 엔티티에 더한다(AC17).
 	public void markSubmitted() {
 		this.state = SavedFormState.SUBMITTED;
+	}
+
+	// 취소되지 않은 제출 기록이 하나도 남지 않으면 saved로 돌아간다(AC17). saved_at은 바꾸지 않는다.
+	public void markSaved() {
+		this.state = SavedFormState.SAVED;
 	}
 
 	@Override

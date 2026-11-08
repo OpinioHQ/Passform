@@ -81,11 +81,9 @@ class AnalysisGoldenTest {
 	private static final Path RESPONSE_SCHEMA = Path.of("src/response_analysis/schemas/analyze_response.schema.json");
 
 	// 사람이 승인한 skip이다. 분기 건너뜀과 응답 경로 계산은 E7(#45) 몫이고, E7이 이 목록을 지운다.
-	private static final Set<String> SKIPPED_FOR_E7 = Set.of("branch_skipped_condition_not_evaluable",
-			"branch_visited_blank_is_false", "parser_partially_dropped_condition_clarify");
+	private static final Set<String> SKIPPED_FOR_E7 = Set.of("parser_partially_dropped_condition_clarify");
 
-	private static final Set<String> APPROVED_SKIPS = Set.of("branch_skipped_condition_not_evaluable",
-			"branch_visited_blank_is_false", "parser_partially_dropped_condition_clarify");
+	private static final Set<String> APPROVED_SKIPS = Set.of("parser_partially_dropped_condition_clarify");
 
 	private static final Set<String> JUDGE_KEYS = Set.of("expect_error", "expect_reason", "expect_options",
 			"expect_parser_calls", "expect_count", "expect_response_ids", "expect_not_evaluable_count",

@@ -68,8 +68,11 @@ final class QueryText {
 	}
 
 	// 표 5행 혼합 부정: 부정 표현이 있는데 부정된 낱말 말고 다른 조건 표현도 남아 있다.
-	static boolean mixesNegation(String query, RequestContext context) {
-		List<String> words = wordsWithoutAction(query);
+	// 문항 문구 낱말("맡은 역할이")은 조건이 아니므로 긍정 조건으로 세지 않는다(골든 question_wording_not_dropped_condition과 같은 규칙).
+	static boolean mixesNegation(String query, RequestContext context, List<VersionQuestions> versions) {
+		List<String> words = wordsWithoutAction(query).stream()
+			.filter(word -> !isQuestionWording(word, versions))
+			.toList();
 		List<String> positive = new ArrayList<>();
 		boolean negated = false;
 		for (int index = 0; index < words.size(); index++) {
@@ -141,6 +144,17 @@ final class QueryText {
 			.filter(Objects::nonNull)
 			.flatMap(phrase -> tokens(phrase).stream())
 			.anyMatch(word -> token.contains(word) || word.contains(token));
+	}
+
+	// 조사를 뗀 낱말이 응답이 남은 버전의 문항 문구 안에 있고 선택지는 아니다.
+	private static boolean isQuestionWording(String token, List<VersionQuestions> versions) {
+		String stem = TRAILING_PARTICLE.matcher(token).replaceFirst("");
+		if (stem.isEmpty()) {
+			return false;
+		}
+		List<VersionQuestions.Question> questions = versions.stream().flatMap(version -> version.questions().stream()).toList();
+		return questions.stream().noneMatch(question -> question.options().contains(stem))
+				&& questions.stream().anyMatch(question -> question.questionNote().contains(stem));
 	}
 
 	private static boolean isNegation(String token) {

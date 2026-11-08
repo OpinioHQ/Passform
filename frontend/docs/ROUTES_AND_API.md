@@ -32,6 +32,8 @@
 
 주 6: 프로필 화면(T9 #60)은 `VITE_USE_API=true`일 때 서버 값만 보이고, `false`이면 데모 프로필을 화면 상태로만 바꾼다. 응답 화면의 [내 정보로 채우기]는 로그인 사용자에게만 보이고, 버튼을 누를 때 `GET /me/profiles`와 `POST /forms/{form_id}/autofill`을 부른다. 채우기만으로는 초안을 저장하지 않으며, 응답자가 답을 직접 고칠 때 채운 값까지 함께 저장한다.
 
+주 7: 제출 후 수정·취소(T10 #61)는 `/me/responses/:responseId`의 [답변 수정]·[응답 취소]에서 시작한다. 버튼은 서버가 준 `editable`·`cancellable`일 때만 보인다. 수정 화면 `/me/responses/:responseId/edit`는 `GET /me/responses/{response_id}`의 제출 버전 정의로 응답 화면을 쓰고, `PATCH /me/responses/{response_id}`로만 저장하며 초안을 저장하지 않는다. 취소는 `DELETE /me/responses/{response_id}`다.
+
 ## 공통 파일 규칙
 
 - 공통 파일(`src/routes/paths.ts`, `src/App.tsx`, `src/components/`, `src/api/client.ts`, `src/types/`)을 바꿀 때는 작은 PR로 먼저 올린다(`AGENTS.md` 5절).

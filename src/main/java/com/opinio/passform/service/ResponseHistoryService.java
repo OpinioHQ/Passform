@@ -1,5 +1,6 @@
 package com.opinio.passform.service;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +22,8 @@ import com.opinio.passform.domain.form.FormDefinition.Question;
 import com.opinio.passform.domain.form.FormVersion;
 import com.opinio.passform.domain.form.FormVersionId;
 import com.opinio.passform.domain.response.Response;
+import com.opinio.passform.domain.response.ResponseChangePolicy;
+import com.opinio.passform.domain.response.ResponseChangePolicy.Change;
 import com.opinio.passform.repository.AttachmentRepository;
 import com.opinio.passform.repository.FormRepository;
 import com.opinio.passform.repository.FormVersionRepository;
@@ -28,7 +31,7 @@ import com.opinio.passform.repository.ResponseRepository;
 import com.opinio.passform.service.PublicFormService.PublicFormView;
 
 // 제출 이력(SPEC 5절 192~193행, AC15). 본인의 submitted 응답만 보인다. 남의 것·없는 것·작성 중인 것은 같은 404다(AC2).
-// 제목·문항 문구는 그 응답의 form_version 정의에서 읽는다. editable·cancellable은 폼 설정 값을 그대로 준다(동작은 T10).
+// 제목·문항 문구는 그 응답의 form_version 정의에서 읽는다. editable·cancellable은 수정·취소 API와 같은 판정으로 낸다(SPEC 5절 226행).
 @Service
 public class ResponseHistoryService {
 
@@ -42,13 +45,16 @@ public class ResponseHistoryService {
 
 	private final PublicFormService publicForms;
 
+	private final Clock clock;
+
 	public ResponseHistoryService(FormRepository forms, FormVersionRepository versions, ResponseRepository responses,
-			AttachmentRepository attachments, PublicFormService publicForms) {
+			AttachmentRepository attachments, PublicFormService publicForms, Clock clock) {
 		this.forms = forms;
 		this.versions = versions;
 		this.responses = responses;
 		this.attachments = attachments;
 		this.publicForms = publicForms;
+		this.clock = clock;
 	}
 
 	@Transactional(readOnly = true)
@@ -64,12 +70,14 @@ public class ResponseHistoryService {
 			.findAllById(submitted.stream().map(ResponseHistoryService::versionIdOf).distinct().toList())
 			.stream()
 			.collect(Collectors.toMap(FormVersion::getId, FormVersion::getDefinition));
+		Instant now = clock.instant();
 		return submitted.stream().map(response -> {
 			Form form = formsById.get(response.getFormId());
 			return new HistoryItem(response.getId(), response.getFormId(),
 					titleOf(response, definitions.get(versionIdOf(response))), response.getFormVersion(),
-					response.getSubmittedAt(), response.getUpdatedAt(), form != null && form.isEditable(),
-					form != null && form.isCancellable());
+					response.getSubmittedAt(), response.getUpdatedAt(),
+					ResponseChangePolicy.allowed(Change.EDIT, form, response, now),
+					ResponseChangePolicy.allowed(Change.CANCEL, form, response, now));
 		}).toList();
 	}
 
@@ -93,8 +101,9 @@ public class ResponseHistoryService {
 			.map(AttachmentItem::of)
 			.toList();
 		return new HistoryDetail(titleOf(response, definition), response.getFormVersion(), view, content, files,
-				response.getSubmittedAt(), response.getUpdatedAt(), form != null && form.isEditable(),
-				form != null && form.isCancellable());
+				response.getSubmittedAt(), response.getUpdatedAt(),
+					ResponseChangePolicy.allowed(Change.EDIT, form, response, clock.instant()),
+					ResponseChangePolicy.allowed(Change.CANCEL, form, response, clock.instant()));
 	}
 
 	private static FormVersionId versionIdOf(Response response) {

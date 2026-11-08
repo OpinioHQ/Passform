@@ -19,6 +19,7 @@ import {
   MyFormsRoute,
   MyProfileRoute,
   MyResponsesRoute,
+  ResponseEditRoute,
 } from './routes/respondentRoutes';
 
 function LandingRoute() {
@@ -42,6 +43,7 @@ export function App() {
           <Route path={routePatterns.myForms} element={<MyFormsRoute />} />
           <Route path={routePatterns.myResponses} element={<MyResponsesRoute />} />
           <Route path={routePatterns.myResponse} element={<MyResponsesRoute />} />
+          <Route path={routePatterns.myResponseEdit} element={<ResponseEditRoute />} />
           <Route path={routePatterns.myProfile} element={<MyProfileRoute />} />
           <Route path={routePatterns.publicForm} element={<FormResponseRoute />} />
           <Route path={routePatterns.form} element={<FormResponseRoute />} />

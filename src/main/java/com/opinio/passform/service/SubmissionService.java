@@ -117,13 +117,13 @@ public class SubmissionService {
 	}
 
 	// 경로 계산용이다. 같은 문항의 답이 여럿이면 첫 답을 쓰고, 그 문항이 경로 위면 검증에서 거부된다.
-	private static Map<String, List<String>> valuesByQuestion(List<Answer> answers) {
+	static Map<String, List<String>> valuesByQuestion(List<Answer> answers) {
 		return answers.stream()
 			.filter(answer -> answer.questionId() != null)
 			.collect(Collectors.toMap(Answer::questionId, Answer::values, (first, second) -> first));
 	}
 
-	private static List<SubmittedAnswer> submittedAnswers(List<Answer> content, List<Question> onPath) {
+	static List<SubmittedAnswer> submittedAnswers(List<Answer> content, List<Question> onPath) {
 		Map<String, String> notes = onPath.stream()
 			.collect(Collectors.toMap(Question::questionId, Question::questionNote));
 		return content.stream()

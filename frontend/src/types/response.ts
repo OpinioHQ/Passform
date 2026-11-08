@@ -80,6 +80,15 @@ export interface ResponseHistoryDetail {
   editable: boolean;
   cancellable: boolean;
 }
+/** `PATCH /me/responses/{response_id}`의 200(SPEC 194행). */
+export interface EditedResponse {
+  response_id: string;
+  form_version: number;
+  content: ResponseContentItem[];
+  attachments: ResponseAttachment[];
+  submitted_at: string;
+  updated_at: string;
+}
 /** `GET /me/responses`의 항목(SPEC 192행). */
 export interface ResponseHistoryItem {
   response_id: string;

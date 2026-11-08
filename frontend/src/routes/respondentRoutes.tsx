@@ -1,7 +1,7 @@
 import React from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ApiError, api, useLiveApi } from '../api/client';
-import { Heading, Panel } from '../components/UI';
+import { Button, Heading, Panel } from '../components/UI';
 import { useDemoData } from '../demo/DemoDataContext';
 import {
   demoForm,
@@ -16,10 +16,13 @@ import { InboxPage, type InboxProblem } from '../pages/InboxPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { ClosedNotice, ResponsePage } from '../pages/ResponsePage';
 import { DraftGate } from '../response/DraftGate';
+import { changeErrorText } from '../response/changeErrors';
+import { answersToMap } from '../response/draftSync';
 import type {
   Profile,
   ProfileInput,
   PublicForm,
+  ResponseHistoryDetail,
   ResponseHistoryItem,
   SavedFormSummary,
   SubmitResponseInput,
@@ -226,6 +229,10 @@ export function FormResponseRoute() {
 export function MyResponsesRoute() {
   const { responseId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const notice = (location.state as { notice?: string } | null)?.notice;
+  const [actionError, setActionError] = React.useState('');
+  const [detailReloads, setDetailReloads] = React.useState(0);
   const { responses } = useDemoData();
   const demoItems = React.useMemo(() => responses.map(demoHistoryItem), [responses]);
   const [liveItems, setLiveItems] = React.useState<ResponseHistoryItem[] | null>(null);
@@ -251,7 +258,11 @@ export function MyResponsesRoute() {
   }, []);
 
   React.useEffect(() => {
-    if (!useLiveApi || selectedId === undefined) return;
+    if (!useLiveApi) return;
+    if (selectedId === undefined) {
+      setLiveDetail({ status: 'idle' });
+      return;
+    }
     let active = true;
     setLiveDetail({ status: 'loading' });
     api
@@ -268,7 +279,22 @@ export function MyResponsesRoute() {
     return () => {
       active = false;
     };
-  }, [selectedId]);
+  }, [selectedId, detailReloads]);
+
+  // 거절되면 허용 여부가 달라졌을 수 있어 상세를 다시 읽는다.
+  async function cancelResponse(id: string) {
+    setActionError('');
+    try {
+      await api.cancelResponse(id);
+      // 지운 응답의 내용이 다음 화면에 잠깐이라도 남지 않게 목록과 함께 비운다.
+      setLiveDetail({ status: 'idle' });
+      setLiveItems((list) => (list ?? []).filter((item) => item.response_id !== id));
+      navigate(paths.myResponses, { replace: true, state: { notice: '응답을 취소했어요.' } });
+    } catch (e) {
+      setActionError(changeErrorText(e));
+      setDetailReloads((n) => n + 1);
+    }
+  }
 
   const demoDetail = React.useMemo<HistoryDetailState>(() => {
     if (selectedId === undefined) return { status: 'idle' };
@@ -284,6 +310,78 @@ export function MyResponsesRoute() {
       detail={useLiveApi ? liveDetail : demoDetail}
       onSelect={(id) => navigate(paths.myResponse(id))}
       onNavigate={() => navigate(paths.myForms)}
+      notice={notice}
+      actionError={actionError}
+      onEdit={(id) => navigate(paths.myResponseEdit(id))}
+      onCancel={cancelResponse}
+    />
+  );
+}
+
+/** 제출 후 수정(T10 #61). 그 응답의 제출 버전 정의로 응답 화면을 그대로 쓴다. 초안 저장소를 넘기지 않아 `PATCH`로만 저장한다. */
+export function ResponseEditRoute() {
+  const { responseId = '' } = useParams();
+  const navigate = useNavigate();
+  const [detail, setDetail] = React.useState<ResponseHistoryDetail | null>(null);
+  const [failure, setFailure] = React.useState<'not_found' | 'failed' | null>(null);
+  const [busy, setBusy] = React.useState(false);
+  React.useEffect(() => {
+    if (!useLiveApi) return;
+    let active = true;
+    api
+      .myResponse(responseId)
+      .then((next) => {
+        if (active) setDetail(next);
+      })
+      .catch((e: unknown) => {
+        if (active) setFailure(e instanceof ApiError && e.status === 404 ? 'not_found' : 'failed');
+      });
+    return () => {
+      active = false;
+    };
+  }, [responseId]);
+  const back = () => navigate(paths.myResponse(responseId));
+
+  async function save(payload: SubmitResponseInput) {
+    setBusy(true);
+    try {
+      await api.editResponse(responseId, payload.answers);
+      navigate(paths.myResponse(responseId), { state: { notice: '답변을 수정했어요.' } });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const form = detail?.form_definition;
+  if (!detail || !form || !detail.editable) {
+    const message = !useLiveApi
+      ? '가상 데이터 모드에서는 답변을 수정할 수 없어요.'
+      : failure === 'not_found'
+        ? '이 제출 내역을 찾을 수 없어요.'
+        : failure === 'failed'
+          ? '제출 내역을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'
+          : detail
+            ? '이 응답은 지금 수정할 수 없어요.'
+            : '불러오는 중이에요.';
+    return (
+      <div className="page-shell response-page">
+        <Heading eyebrow="내 워크스페이스 / 제출 내역 / 수정" title="답변 수정" />
+        <Panel>
+          <p className="muted">{message}</p>
+          <Button variant="secondary" onClick={back}>
+            제출 내역으로
+          </Button>
+        </Panel>
+      </div>
+    );
+  }
+  return (
+    <ResponsePage
+      form={form}
+      onSubmit={save}
+      saving={busy}
+      onBack={back}
+      editing={{ initialAnswers: answersToMap(detail.content) }}
     />
   );
 }

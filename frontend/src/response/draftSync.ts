@@ -223,7 +223,8 @@ export function useAutosave(sink: DraftSink | null): Autosave {
   }, []);
 
   const unsaved = status === 'pending' || status === 'saving';
-  React.useEffect(() => {
+  // 화면에 "저장됨"이 보이는 시점에는 경고가 이미 풀려 있어야 하므로 화면 반영과 같은 때 해제한다.
+  React.useLayoutEffect(() => {
     if (!unsaved) return;
     const warn = (event: BeforeUnloadEvent) => {
       event.preventDefault();

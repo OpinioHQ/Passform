@@ -1,0 +1,149 @@
+# 탐색 화면 위임 기록 (#46)
+
+기록 대상: E8 탐색 화면. 실행일 2026-11-08~09. 사람이 검토해 발행한 프롬프트로 진행했다. 프롬프트는 §7에 그대로 두고, 진행 중 사람 요청으로 넓힌 범위와 프롬프트 세션의 후속 지시는 §4에 요약한다.
+
+## §1 AC 상태 (SPEC은 고치지 않고 여기에만 적는다)
+
+| AC | 이 작업 뒤 상태 | 근거 |
+|---|---|---|
+| AC23 | 화면 표시 구현. `matched`를 "조건 → 문항 문구: 선택지/답함/비움, 폼 버전 N"으로, `coverage`를 "일부만 확인" 문구와 물음표 뒤 이유로 보인다 | `ExplorePage.test.tsx` 결과·일부만 확인 |
+| AC62 | 화면 표시 구현. `list`는 `result.response_ids` 순서 그대로 상세를 읽어 "응답 N"으로 보인다 | `ExplorePage.test.tsx` list |
+| AC78 | 화면 표시 구현(판정은 서버). 판정 불가 이유를 `matched`로 분기 건너뜀/문항 없는 버전으로 나눈다 | `ExplorePage.test.tsx` 일부만 확인 |
+| AC68 | 탐색 도우미·결과 대시보드 360px 줄바꿈 처리. 사람 확인 7번에서 본다 | §3 |
+
+## §2 시험 통과 이유 (`frontend/src/pages/ExplorePage.test.tsx`, `docs/api/analyze_examples.json` 예시 사용)
+
+| 시험 | 이유 |
+|---|---|
+| count 결과와 연결 결과 | 서버 `result.count`를 그대로 보이고 `matched`를 조건·문항·값별로 묶어 버전만 모은다 |
+| list 순서 | `response_ids` 순서대로 상세를 읽고 목록 안 위치로 "응답 N"을 붙인다 |
+| summarize 주제·근거·특정 의견 | `themes`의 라벨·개수·요약문·발췌, `topic`의 요약문·발췌를 서버 값 그대로 그린다 |
+| summary.status 안내 4건 | `no_matches`·`no_consented_responses`·`insufficient_evidence`·`too_many_responses`마다 쉬운 말 안내 |
+| 일부만 확인 2건 | 사실 문구는 항상, 이유는 "이유 보기"를 눌러야 보인다. 그 버전에 `matched`가 있으면 분기, 없으면 문항 없음 |
+| 되묻기 3건 | `missing_match`(match), `ambiguous_match` 후보 문항("문항 문구 - 값"), `double_negation`(match 지움)을 고친 `{context}`로 다시 보낸다 |
+| 화면 글자 8건 | q1·v1·응답 ID·"판정 불가"·reason 원문이 화면 글자에 없다 |
+| 근거 발췌 `<script>` | 발췌를 텍스트로 그려 요소가 생기지 않는다 |
+
+## §3 회차
+
+| 회차 | 결과 | 원인 | 고친 것 |
+|---|---|---|---|
+| 기준 | frontend lint·typecheck 통과, 테스트 24파일 311건 통과 | - | - |
+| 1차 구현 | 25파일 333건 통과(새 시험 22건) | - | - |
+| 레이아웃 1 | 사람 확인: 도우미가 오른쪽에 있어야 함 | 단일 열 배치 | 도우미를 오른쪽 패널로 |
+| 레이아웃 2 | 사람 요청: 결과 대시보드에 합침 | §4 | 결과 대시보드 + 탐색 도우미 |
+| 디테일 | 사람 확인: 건수 위치, 도우미 높이, 더 보기 잘림, 버튼 크기, 머리글 정렬, "명"·"인원" 표기 | §4 | 각 커밋 |
+| 최종 | lint·typecheck 통과, 25파일 333건 통과 | - | - |
+
+## §4 사람 결정과 범위
+
+- 기존 테스트 변경(모두 사람 승인):
+  - `App.routes.test.tsx` '연결한 세 호출 밖의 화면은 API를 부르지 않는다': 경로만 `/login`으로. 탐색 화면이 폼 정의를 읽게 됐다.
+  - 같은 파일 띠 테스트: 앞 절반(탐색 경로에 띠가 있음) 삭제. `demoRoutes`의 마지막 경로를 빼 띠가 보이는 경로가 없어졌다. `/login`에 띠가 없다는 단언은 그대로.
+  - 같은 파일 라우트 표: 결과 경로 제목 기대값 `'결과'` → `'결과 대시보드'`.
+  - `ResultsPage.test.tsx`: 건수를 찾는 방식만 바꿈. 버전 2 탭에서 "전체 응답 7건"과 "폼 버전 2 응답 4건"을 둘 다 확인하고, 통합 보기로 돌아와 7을 다시 확인한다.
+- 가짜 데이터 모드의 탐색 경로는 옛 화면을 `demo/DemoExplorePage`로 옮겨 유지(기존 테스트 6건 보존). 글자만 "탐색 도우미"로.
+- 범위 확장(사람 요청): 탐색을 결과 대시보드 오른쪽 탐색 도우미로 합침, 결과 화면 개편(제목 "결과 대시보드", 탭 아래 건수 줄, 전체 응답 박스·설명 삭제), 폼 편집에 "결과 보기" 버튼, 내가 만든 폼 주석 변경, 예전 탐색 주소는 결과 대시보드로 넘김.
+- 전체 응답 수는 버전 탭에서도 보인다(프롬프트 세션 지시, 근거 SPEC 53행·AC19·AGENTS 2절).
+- 표기: 이번 PR이 만든 "명"·"인원" 문구를 "응답 수"·숫자로 바꿈(SPEC은 응답 수를 "건"으로 센다).
+
+### 미룸 (별도 PR 후보, 이슈는 만들지 않음)
+
+| # | 내용 | 원인·위치 | 비고 |
+|---|---|---|---|
+| 1-1 | "응답 받기 끄기"를 짧은 말로 | `BuilderPage.tsx` 상태 버튼 | 추천 "응답 마감"(사람 결정 대기). `creatorRoutes.test.tsx` 220행 기대값 변경 승인 필요 |
+| 2 | 문항 유형 순서를 단일 선택 → 복수 선택 → 드롭다운으로 | `builder/QuestionEditor.tsx` 18~24행 | 순서 단언 테스트 확인 필요 |
+| 3 | 결과 대시보드에 "단일 선택"이 "객관식"으로 보임 | `ResultsPage.tsx`가 빌더와 다른 이름표를 따로 가짐 | 빌더 `QUESTION_TYPE_LABELS`를 함께 쓴다 |
+| 4 | 대시보드 막대 옆 "N명"을 숫자만으로("전체 응답 N건"의 "건"은 유지) | `ResultsPage.tsx` `OptionRow` | 근거: 집계 대상은 사람이 아니라 제출 응답 수다(SPEC 176행 `Result.response_count`는 현재 남은 submitted 응답 수). 같은 사용자가 두 번 제출하면 2건이다(SPEC 480행). `ResultsPage.test.tsx`의 "3명"·"2명"·"1명" 기대값 변경 승인 필요 |
+| 5 | 문항마다 가장 많은 응답의 막대를 빨간 계열로 | `OptionRow` 막대 색 | 추천: 공동 1등은 모두 강조, 0건뿐이면 강조 없음(사람 결정 대기) |
+
+그 밖의 미룸: 내보내기(T11), 매처 정확도(T8, AC21), 분석 API·요약 서버 변경, 파서·프롬프트 수정, 채팅 기록 저장.
+
+## §5 해석과 시험하지 않은 것
+
+- 서버는 되묻기에서 어느 표현이 문제인지 따로 주지 않는다. 화면은 대상이 하나로 정해질 때만 버튼을 만든다(조건이 없을 때의 `target`·`sort.by`, 조건 1개이고 `target`·`sort`가 없을 때의 `ambiguous_match`). 그 밖에는 후보 문항을 보이고 다시 입력하게 한다.
+- "문항 문구 - 값"은 서버가 마지막 '-'에서 나누므로 값에 '-'가 있으면 만들지 않는다. 묻기 밑 버튼은 배포 전 폼, 문구가 겹치는 문항, 개인정보 문항(요약)을 뺀다.
+- 일부만 확인 문구는 서버 수만 쓴다("전체 N건 중 M건은 확인할 수 없어 빼고 찾았어요"). 화면에서 빼기 계산을 하지 않는다.
+- 폼 정의를 못 읽으면 묻기 밑 버튼만 빠진다.
+- 시험하지 않음: 묻기 밑 버튼 생성, 오류 문구(401·403·404·503), 목록 "더 보기", 첨부 표시, 도우미 켜기/끄기, 결과 대시보드와 도우미의 결합 배치, 폼 편집 "결과 보기" 버튼.
+
+## §6 사람 확인 (실제 OpenAI)
+
+대기. 결과를 받으면 항목별 결과, 실제 OpenAI 호출 횟수, 응답 시간, 오류를 적는다.
+
+## §7 프롬프트
+
+```
+이번 작업은 이슈 #46(E8 탐색 화면)뿐이다. 다른 이슈는 구현하지 않는다. 나는 ye-nni이고 리뷰어는 Psoyeon1117이다. 셸은 Windows PowerShell이다.
+
+# 목표
+제작자가 자기 폼의 탐색 화면에서 자연어로 묻고, 연결 결과(어느 조건이 어느 문항·선택지에 연결됐는지), 건수·목록, 요약, 일부만 확인했다는 사실을 근거와 함께 본다. 되묻기는 선택지를 눌러 {context}로 다시 보낸다. 가짜 값을 모두 걷어 내고 실제 분석 API로 동작하게 한다. 마지막에 실제 OpenAI로 사람 확인을 한다.
+
+# 비용 규칙 (주간 한도가 빠듯하다. 지킨다)
+- 서브에이전트를 띄우지 않는다. SPEC, ARCHITECTURE 전체를 읽지 않는다. 아래 지정한 곳만 읽는다.
+- 새 라이브러리를 더하지 않는다. 디자인을 다듬지 않는다. 기존 컴포넌트와 CSS를 쓴다.
+- 일반 테스트는 아래 목록만 쓴다. 단계마다 로컬에 커밋한다. 최종 보고는 40줄 안팎.
+
+# 시작 확인 (하나라도 어긋나면 멈추고 알린다)
+1. git worktree list에 C:\Opinio-e7이 없는지 본다(있으면 사람에게 지워 달라고 하고 기다린다). git status로 추적 파일 변경이 없는지 본다. 미추적 docs/SPEC_followups.md는 정상이다.
+2. git fetch origin, git switch main, git merge --ff-only origin/main. main에서 브랜치 feat/explore-screen을 만든다.
+3. frontend에서 npm run lint, npm run typecheck, npm test(VITE_USE_API=false; frontend/.env.local이 VITE_USE_API=true라 Vitest도 읽는다). npm ci는 돌리지 않는다. 의존성 오류가 나면 5173의 Vite를 사람이 끈 뒤에만 npm ci, 끌 수 없으면 멈춰 묻는다.
+
+# 먼저 읽을 것 (이곳만)
+AGENTS.md(2절 분석 응답 용어, 3절 3·4항, 5절 프런트엔드 규칙), gh issue view 46, docs/api/analyze_api.md 전체, docs/api/analyze_examples.json, src/response_analysis/schemas/analyze_response.schema.json(읽기만), docs/SPEC.md 300~350행(분석 흐름·clarify 표·summary)과 AC23·AC62·AC78·AC86·AC89(내용으로 찾는다), frontend/src의 pages/ExplorePage.tsx·api/client.ts·types/analyze.ts·demo/demoRoutes.ts·routes(제작자 라우트), pages/ResultsPage.tsx(형식 참고), docs/prompts/delegation_matcher.md 앞부분(기록 형식).
+
+# 절대 규칙
+- 기존 테스트(frontend/src/**/*.test.*, src/test, tests/java)의 단언과 기대값을 고치지 않는다. 판정 기준(tests/harness, data/seed, 두 스키마 폴더, src/response_analysis/prompts, config/rag.yaml, evals/evalset.jsonl)을 고치지 않는다. deny를 셸로 우회하지 않는다. 고쳐야만 통과하면 멈추고 묻는다.
+- 숫자는 서버가 준 것만 보인다. 화면에서 건수·순서·요약 개수를 다시 계산하거나 만들지 않는다(AGENTS 3절 3항). 목록 순서는 result.response_ids 순서 그대로.
+- 화면에 "판정 불가", question_id, q1, response_id, v1, 오류 코드 원문, clarify.reason 원문을 쓰지 않는다. 문항 문구, "응답 1"(목록 안 번호), "폼 버전 1"로 쓴다. 일부만 확인했다는 사실은 항상 보이고 이유는 물음표를 눌러야 보인다(analyze_api.md 5절, 이유 구분은 matched로).
+- 되묻기에서 고른 값으로 {context}를 만들어 다시 보낸다(analyze_api.md 4절). 화면이 조건을 추측해 채우지 않는다. 묻기 밑 버튼은 그 폼에서 되는 요청만 만들고 {context}로 보낸다.
+- 응답 원문(근거 발췌, 목록의 답)은 텍스트로만 그린다. HTML로 해석하지 않는다(AGENTS 3절 5항).
+- 인증 우회를 넣지 않는다. 키와 비밀값을 파일, 커밋, 출력, VITE_ 변수에 넣지 않는다. OPENAI_API_KEY 값을 묻거나 출력하지 않는다.
+- 서버 코드는 고치지 않는다. 서버가 SPEC·스키마와 달라 보이면 고치지 말고 알린다.
+- TypeScript strict, any 금지. 커밋·PR에 에이전트 이름이나 생성 문구를 넣지 않는다. PR 본문에 사람을 @로 언급하지 않는다. _local/과 docs/SPEC_followups.md는 커밋하지 않는다. git add는 경로를 명시한다.
+
+# 구현 범위
+1. 묻기와 결과: 입력 → POST /forms/{form_id}/analyze {query}. 로딩·오류(401·403·404·503 llm_unavailable을 쉬운 말로) 표시. status ok면 operation별로: count는 건수, list는 result.response_ids 순서의 응답 목록(문항 문구와 답, "응답 1"), summarize는 summary(themes의 label·count·근거 발췌, option_stats, topic의 text·근거, summary.status별 안내: no_matches·no_consented_responses·insufficient_evidence·too_many_responses). 연결 결과(matched)를 "조건 → 문항 문구: 선택지/답함/비움, 폼 버전 N"으로 보인다.
+2. 일부만 확인: coverage에서 판정 불가가 있으면 "전체 N건 중 확인할 수 있는 M건에서 찾았어요" 같은 문구를 항상, 이유(분기로 건너뜀/그 버전에 문항 없음, 정렬·요약 불가 버전)는 물음표를 눌러야 보인다.
+3. 되묻기: clarify.message와 options를 보여 주고, 고르면 analyze_api.md 4절대로 {context}를 만들어 다시 보낸다. 사유마다 고를 것이 다르면 4절 표를 따른다.
+4. 묻기 밑 버튼: 그 폼의 문항으로 "되는 요청"만 만든다(예: 선택형 문항의 선택지별 인원, 요약 가능 문항 요약). 만들 수 있는 근거는 폼 정의(기존 제작자 API로 읽는 것)이고, 보낼 때는 {context}로 보낸다.
+5. 가짜 값 걷어 내기: ExplorePage의 demo 의존을 없애고 demoRoutes에서 formExplore를 뺀다. 그 때문에 깨지는 기존 테스트가 있으면 멈추고 묻는다(띠 테스트의 경로만 바꾸는 것은 승인된 선례가 있으니 그 형태면 객관식 추천 1번으로 묻는다).
+6. 좁은 화면: 360px에서 표·패널이 가로로 넘치지 않고 제목이 줄바꿈된다(AC68, STATUS 미룸).
+
+# 이 PR에서 하지 않는다 (미룸)
+내보내기(T11), 매처 정확도 개선(T8, AC21), 분석 API·요약 서버 변경, 파서·프롬프트 수정, 채팅 기록 저장.
+
+# 일반 테스트 (이것만, VITE_USE_API=false에서 도는 화면 테스트)
+analyze_examples.json의 예시로: count 결과와 연결 결과 문구, list 순서가 response_ids 그대로, summarize 주제·근거·summary.status 안내 1건씩, 일부만 확인 문구가 항상 있고 이유는 물음표 뒤, 되묻기에서 고른 값이 {context}로 다시 보내짐(4절 표 1행 이상), 화면 글자에 q1·response_id·v1·"판정 불가"·reason 원문이 없음, 근거 발췌의 <script> 같은 글자가 텍스트로 보임.
+여기 없는 경우가 필요해 보이면 더하지 말고 PR에 "시험하지 않음"으로 적는다.
+
+# 사람 확인 (push 전에 멈춘다)
+자동 검사가 통과하면 push하지 말고 멈춰 아래를 안내한다. 백엔드는 사람이 자기 PowerShell에서 띄운다: 세션은 "OPENAI_API_KEY를 이 창에서만 넣고 DB_NAME=passform_e3로 .\gradlew.bat bootRun" 명령의 모양만 키 자리를 비워 알려 준다. 사람이 OpenAI 프로젝트의 hard limit을 켰는지 먼저 묻는다(안 켰으면 실제 호출 항목은 기다린다). 5173의 Vite가 떠 있으면 그대로 쓴다. 각 항목에 무엇을 입력·누르면 무엇이 보여야 통과인지 적는다. 실제 질문은 10회 안팎으로 끝나게 순서를 짠다. 필요한 폼과 응답(선택형·장문·분기, AI 요약 켬, 응답 5건 이상, 버전 2개)은 사람이 빌더와 시크릿 창으로 만들도록 순서를 적는다.
+1. "3학년 몇 명"처럼 선택지 조건 하나 → 건수와 연결 결과.
+2. 두 조건 결합 방식이 없는 요청 → 되묻기 → 하나 고르면 결과.
+3. 목록 요청과 정렬 → 순서.
+4. 버전 2개 폼에서 한 버전에만 있는 문항 조건 → 일부만 확인 문구, 물음표로 이유.
+5. 요약 요청(주제별, 특정 주제) → 주제·근거 발췌. AI 요약 동의 안 한 응답이 근거에 없다.
+6. 묻기 밑 버튼 하나 → 결과.
+7. 휴대폰 너비에서 가로 스크롤 없음, 화면 어디에도 q1·v1·"판정 불가"가 없음.
+8. 키 없이 띄운 백엔드(또는 키를 뺀 창)에서 묻기 → 503 안내 문구.
+실제 호출에서 OpenAI 응답 시간과 오류가 있으면 그대로 적는다. 화면 수정 의견은 이 범위 안에서만 고친다.
+
+# 완료 기준
+- frontend npm run lint, typecheck, test 통과(건수). 서버를 고치지 않았으니 gradle은 돌리지 않는다(CI가 맡는다).
+- 사람 확인 8개 결과.
+- git diff origin/main...HEAD --name-only가 frontend/src(기존 테스트는 승인한 경우만), docs/prompts의 새 기록뿐.
+- docs/prompts/delegation_explore_screen.md에 "사람이 검토해 발행", 이 프롬프트, 회차, 사람 결정, 사람 확인 결과(실제 OpenAI 호출 횟수·결과 포함), 미룸을 짧게 기록.
+- PR의 CI에서 build와 frontend job이 통과.
+
+# 중단 조건 (멈추고 보고한다)
+- 같은 실패로 3회차를 넘길 때, 작업이 4시간을 넘길 때(사람 답 기다린 시간 제외). 지금까지 한 것을 커밋하고 어디서 막혔는지 쓴다.
+- SPEC·AGENTS·analyze_api.md에 없는 판단이 필요할 때, 서버 응답이 스키마·문서와 달라 보일 때, 기존 테스트를 고쳐야 할 때. 객관식으로 묻고 추천안을 첫 번째에 둔다. 한 번에 묶어서 묻는다.
+
+# 커밋과 보고
+- 커밋 "{tag}: 한글 메시지 (#46)", 50자 이내, 파일명·디렉터리명 금지.
+- 사람 확인이 끝나면 push 전에 다시 묻지 않고 올린다. 범위를 넘으면 push하지 말고 멈춘다. amend와 force push를 하지 않는다. PR 전에 main이 바뀌었으면 merge로 합친다.
+- PR 제목 "[feat] E8 탐색 화면 (#46)", 본문 README 형식, "Closes #46", --reviewer Psoyeon1117. 다른 이슈가 알아야 할 것: T7 #55(요약 화면 표시와 실제 OpenAI 호출 결과 → 닫을 수 있는지), T8(실제 파서·매처 출력에서 본 문제), T11(내보내기 버튼 자리).
+- PR을 연 뒤 CI를 확인하고 멈춘다. 머지하지 않는다. 사람이 띄운 백엔드는 사람이 끈다.
+- 보고 순서: 실행한 명령과 결과 / 완료 기준 항목별 결과 / 사람 확인 결과 / 지시와 다르게 한 것 / 확인하지 못한 것 / 판단이 필요해 멈춘 것 / PR 링크와 CI 결과.
+```

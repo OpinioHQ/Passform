@@ -78,6 +78,21 @@ class DroppedOptionRevivalTest {
 	}
 
 	@Test
+	void 문항_값_형태_조건의_값이_나온_자리는_되살리지_않는다() {
+		RequestContext context = parsed("참석 여부 - 예");
+
+		assertThat(QueryText.reviveDroppedOptions("참석 여부가 예인 사람 몇 명", context, VERSIONS)).isSameAs(context);
+	}
+
+	@Test
+	void 문항_값_형태_조건의_값_부분만_쓰인_자리로_보고_다른_선택지는_되살린다() {
+		RequestContext revived = QueryText.reviveDroppedOptions("3번 문항이 예이고 4번 문항 아니요인 사람 수",
+				parsed("3번 문항 - 예"), VERSIONS);
+
+		assertThat(revived.conditions()).containsExactly("3번 문항 - 예", "아니요");
+	}
+
+	@Test
 	void 원문에_있는데_조건에_없는_선택지_문구를_되살리고_match는_그대로다() {
 		RequestContext revived = QueryText.reviveDroppedOptions("소프트웨어학과 3학년 학생 수 알려줘", parsed("소프트웨어학과"), VERSIONS);
 

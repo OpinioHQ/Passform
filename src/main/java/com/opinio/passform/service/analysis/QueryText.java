@@ -12,6 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import com.opinio.passform.domain.analysis.LiteralMatcher;
 import com.opinio.passform.domain.form.VersionQuestions;
 
 // 제작자의 원문을 코드로 판정한다(SPEC 334·338·340·342행). {query}에만 쓴다. {context}에는 원문이 없다.
@@ -128,8 +129,12 @@ final class QueryText {
 		if (parsed.conditions().isEmpty()) {
 			return parsed;
 		}
+		// "문항 - 값" 조건은 원문에 그 글자로 나오지 않으므로 문항 부분과 값 부분이 나온 자리도 쓰인 자리다.
 		List<int[]> used = new ArrayList<>();
 		Stream.concat(parsed.conditions().stream(), usedPhrases(parsed))
+			.flatMap(phrase -> Stream.concat(Stream.of(phrase), LiteralMatcher.split(phrase)
+				.stream()
+				.flatMap(split -> Stream.of(split.question(), split.value()))))
 			.filter(phrase -> !phrase.isBlank())
 			.forEach(phrase -> used.addAll(spans(query, phrase, false)));
 		List<int[]> wording = new ArrayList<>();

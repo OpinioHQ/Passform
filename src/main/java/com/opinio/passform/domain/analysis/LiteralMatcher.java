@@ -2,6 +2,7 @@ package com.opinio.passform.domain.analysis;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import com.opinio.passform.domain.form.VersionQuestions;
@@ -32,12 +33,12 @@ public final class LiteralMatcher {
 		if (!matches.isEmpty()) {
 			return List.copyOf(matches);
 		}
-		int dash = phrase.lastIndexOf('-');
-		if (dash <= 0) {
+		Optional<QuestionValue> split = split(phrase);
+		if (split.isEmpty()) {
 			return List.of();
 		}
-		String value = phrase.substring(dash + 1).strip();
-		for (Question question : questionsByNote(phrase.substring(0, dash), version)) {
+		String value = split.get().value();
+		for (Question question : questionsByNote(split.get().question(), version)) {
 			if (ANSWERED.contains(value)) {
 				matches.add(new ConditionMatch(condition, version.formVersion(), question.questionId(), MatchKind.ANSWERED, null));
 			}
@@ -49,6 +50,20 @@ public final class LiteralMatcher {
 			}
 		}
 		return List.copyOf(matches);
+	}
+
+	// "문항 - 값" 형태(parse_query.md)를 마지막 '-'에서 나눈다. 두 부분 모두 앞뒤 공백을 뗀다. 형태가 아니면 비어 있다.
+	// 규칙 매칭과 파서 출력 보정(QueryText)이 함께 쓴다.
+	public static Optional<QuestionValue> split(String condition) {
+		String phrase = condition.strip();
+		int dash = phrase.lastIndexOf('-');
+		if (dash <= 0) {
+			return Optional.empty();
+		}
+		return Optional.of(new QuestionValue(phrase.substring(0, dash).strip(), phrase.substring(dash + 1).strip()));
+	}
+
+	public record QuestionValue(String question, String value) {
 	}
 
 	// 문항 문구가 글자 그대로 같은 문항. 조건의 문항 부분과 list의 sort.by가 함께 쓴다.

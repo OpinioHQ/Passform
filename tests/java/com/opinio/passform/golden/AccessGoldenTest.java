@@ -75,6 +75,7 @@ import com.opinio.passform.repository.QuestionTemplateRepository;
 import com.opinio.passform.repository.ResponseRepository;
 import com.opinio.passform.repository.SavedFormRepository;
 import com.opinio.passform.repository.UserRepository;
+import com.opinio.passform.service.analysis.SummaryService;
 
 /**
  * 접근 골든 테스트. tests/harness/golden_cases.yaml의 access_cases만 읽어 케이스마다 동적 테스트를 하나 만든다.
@@ -151,6 +152,9 @@ class AccessGoldenTest {
 
 	@MockitoBean
 	private ConditionMatcher conditionMatcher;
+
+	@MockitoBean
+	private SummaryService summaryService;
 
 	private final Map<UUID, User> actorUsers = new HashMap<>();
 

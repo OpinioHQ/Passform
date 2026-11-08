@@ -64,6 +64,7 @@ import com.opinio.passform.repository.ResponseRepository;
 import com.opinio.passform.service.analysis.AnalysisService;
 import com.opinio.passform.service.analysis.AnalysisService.AnalyzeCommand;
 import com.opinio.passform.service.analysis.RequestContextSchema;
+import com.opinio.passform.service.analysis.SummaryService;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.PropertyNamingStrategies;
@@ -291,7 +292,8 @@ class AnalysisGoldenTest {
 			ConditionMatcher matcher = mock(ConditionMatcher.class);
 			when(matcher.match(anyList(), anyList())).thenReturn(matching);
 
-			service = new AnalysisService(forms, formVersions, responses, parser, matcher, new RequestContextSchema());
+			service = new AnalysisService(forms, formVersions, responses, parser, matcher, new RequestContextSchema(),
+					mock(SummaryService.class));
 		}
 
 		private static Scenario of(Map<String, Object> input) throws IOException {

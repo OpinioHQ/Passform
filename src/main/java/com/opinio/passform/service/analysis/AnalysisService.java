@@ -1,6 +1,7 @@
 package com.opinio.passform.service.analysis;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -56,16 +57,19 @@ public class AnalysisService {
 
 	private final RequestContextSchema contextSchema;
 
+	private final SummaryService summaries;
+
 	private final ConditionEvaluator evaluator = new ConditionEvaluator();
 
 	public AnalysisService(FormRepository forms, FormVersionRepository formVersions, ResponseRepository responses,
-			QueryParser parser, ConditionMatcher matcher, RequestContextSchema contextSchema) {
+			QueryParser parser, ConditionMatcher matcher, RequestContextSchema contextSchema, SummaryService summaries) {
 		this.forms = forms;
 		this.formVersions = formVersions;
 		this.responses = responses;
 		this.parser = parser;
 		this.matcher = matcher;
 		this.contextSchema = contextSchema;
+		this.summaries = summaries;
 	}
 
 	public AnalyzeView analyze(AnalyzeCommand command) {
@@ -216,9 +220,6 @@ public class AnalysisService {
 		if (RequestContext.LIST.equals(context.operation()) && context.sort() != null) {
 			throw new AnalysisStepPendingException("정렬 목록(E7 #45)");
 		}
-		if (RequestContext.SUMMARIZE.equals(context.operation())) {
-			throw new AnalysisStepPendingException("요약(T7)");
-		}
 	}
 
 	private AnalyzeView result(RequestContext context, List<ConditionMatch> matches, List<VersionQuestions> versions,
@@ -226,9 +227,26 @@ public class AnalysisService {
 		List<ResponseRecord> records = submitted.stream().map(Response::toResponseRecord).toList();
 		MatchMode mode = context.match() == null ? null : MatchMode.valueOf(context.match().toUpperCase(Locale.ROOT));
 		EvaluationResult evaluation = evaluator.evaluate(context.conditions(), mode, matches, records);
+		if (RequestContext.SUMMARIZE.equals(context.operation())) {
+			return summaryResult(context, versions, submitted, evaluation);
+		}
 		List<String> responseIds = RequestContext.LIST.equals(context.operation()) ? evaluation.responseIds() : null;
 		return AnalyzeView.ok(context, matchedViews(evaluation.matched(), versions), evaluation.coverage(),
 				new ResultView(context.operation(), evaluation.count(), responseIds, null));
+	}
+
+	// 요약 대상은 조건 평가가 정한 일치 응답이고, 위에서 한 번 읽은 응답에서 고른다(AC20, AC88).
+	private AnalyzeView summaryResult(RequestContext context, List<VersionQuestions> versions, List<Response> submitted,
+			EvaluationResult evaluation) {
+		Set<String> matchedIds = Set.copyOf(evaluation.responseIds());
+		List<Response> matched = submitted.stream()
+			.filter(response -> matchedIds.contains(response.getId().toString()))
+			.sorted(Comparator.comparing(response -> response.getId().toString()))
+			.toList();
+		SummaryService.Outcome outcome = summaries.summarize(context, versions, matched);
+		return AnalyzeView.ok(context, matchedViews(evaluation.matched(), versions),
+				evaluation.coverage().withSummaryUnavailable(outcome.unavailableVersions()),
+				new ResultView(context.operation(), evaluation.count(), evaluation.responseIds(), outcome.summary()));
 	}
 
 	private static List<MatchedView> matchedViews(List<ConditionMatch> matched, List<VersionQuestions> versions) {

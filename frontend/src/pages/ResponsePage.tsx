@@ -8,6 +8,7 @@ import {
   isAnswered,
   problemMessage,
 } from '../response/answerCheck';
+import { changeErrorText } from '../response/changeErrors';
 import { type AutosaveStatus, type DraftSink, useAutosave } from '../response/draftSync';
 import {
   type AnswerMap,
@@ -38,6 +39,8 @@ interface Props {
   draft?: { sink: DraftSink; initialAnswers?: AnswerMap };
   /** 초안을 불러오지 못했을 때처럼 화면 위에 늘 보일 안내. */
   draftNotice?: string;
+  /** 제출 후 수정(T10 #61). 기존 답으로 시작하고 동의를 다시 묻지 않으며 초안을 저장하지 않는다. */
+  editing?: { initialAnswers: AnswerMap };
   /** 내 폼함에 저장(E5 #43, AC17). 로그인 사용자에게만 넘긴다. 없으면 버튼을 보이지 않는다. */
   onSaveToInbox?: () => Promise<void>;
   /** 이미 내 폼함에 있으면 버튼 대신 "저장된 폼"을 보인다. */
@@ -173,16 +176,19 @@ function ResponseForm({
   preview,
   draft,
   draftNotice,
+  editing,
 }: Props & { onRestart: () => void }) {
   const defaultMode = form.display.default_mode;
   const switchable = form.display.allowed_modes.length > 1;
   const allQuestions = React.useMemo(() => form.sections.flatMap((s) => s.questions), [form]);
-  const [answers, setAnswers] = React.useState<AnswerMap>(() => draft?.initialAnswers ?? {});
+  const [answers, setAnswers] = React.useState<AnswerMap>(
+    () => draft?.initialAnswers ?? editing?.initialAnswers ?? {},
+  );
   const sink = draft?.sink ?? null;
   const autosave = useAutosave(sink);
   const restored = Boolean(draft?.initialAnswers && Object.keys(draft.initialAnswers).length > 0);
   const [view, setView] = React.useState<DisplayMode>(defaultMode);
-  const [started, setStarted] = React.useState(defaultMode !== 'one_question');
+  const [started, setStarted] = React.useState(defaultMode !== 'one_question' || Boolean(editing));
   const [pageIndex, setPageIndex] = React.useState(0);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [consent, setConsent] = React.useState(false);
@@ -350,6 +356,8 @@ function ResponseForm({
     };
     try {
       await onSubmit(body);
+      // 수정은 이력 화면으로 돌아간다. 제출 완료 화면을 보이지 않는다.
+      if (editing) return;
       // 성공한 뒤에만 초안을 정리한다. 실패하면 서버 초안과 브라우저 초안을 그대로 둔다.
       void autosave.cancel();
       sink?.submitted();
@@ -363,7 +371,8 @@ function ResponseForm({
       const ids = Array.isArray(detail.question_ids)
         ? detail.question_ids.filter((id): id is string => typeof id === 'string')
         : [];
-      if (code === 'form_closed') setOutcome('closed');
+      if (editing && !answerProblems.includes(code)) setFormError(changeErrorText(e));
+      else if (code === 'form_closed') setOutcome('closed');
       else if (code === 'form_version_changed') setOutcome('version_changed');
       else if (code === 'consent_required')
         setConsentError('필수 동의가 필요해요. 동의해야 제출할 수 있어요.');
@@ -682,12 +691,15 @@ function ResponseForm({
         </Button>
       )}
       <span className="small muted">
-        {consent
-          ? '제출하면 제작자에게 응답이 전달돼요.'
-          : '필수 동의에 체크하면 제출할 수 있어요.'}
+        {editing
+          ? '저장하면 제출한 답이 새 답으로 바뀌어요.'
+          : consent
+            ? '제출하면 제작자에게 응답이 전달돼요.'
+            : '필수 동의에 체크하면 제출할 수 있어요.'}
       </span>
-      <Button onClick={submit} disabled={!consent || submitting}>
-        {submitting ? '제출 중…' : '답변 제출'} <Icon name="arrow" size={16} />
+      <Button onClick={submit} disabled={(!editing && !consent) || submitting}>
+        {submitting ? '저장 중…' : editing ? '수정 저장' : '답변 제출'}{' '}
+        <Icon name="arrow" size={16} />
       </Button>
       {previewNotice && (
         <p className="info" role="status">
@@ -709,7 +721,11 @@ function ResponseForm({
     if (!started)
       return { label: '시작 전', detail: '시작하면 지금 위치를 보여 드려요.', ratio: null };
     if (onConsentPage)
-      return { label: '마지막 단계', detail: '동의를 확인하고 제출해 주세요.', ratio: 1 };
+      return {
+        label: '마지막 단계',
+        detail: editing ? '수정한 답을 저장해 주세요.' : '동의를 확인하고 제출해 주세요.',
+        ratio: 1,
+      };
     const sectionsOnPath = pages
       .map((p) => p.section)
       .filter((s, i, list) => list.indexOf(s) === i);
@@ -735,7 +751,9 @@ function ResponseForm({
     <>
       <Panel className="response-hero">
         <div className="response-hero-text">
-          <Badge tone={preview ? 'amber' : 'blue'}>{preview ? '미리보기' : '응답 받는 중'}</Badge>
+          <Badge tone={preview || editing ? 'amber' : 'blue'}>
+            {preview ? '미리보기' : editing ? '제출한 답 수정' : '응답 받는 중'}
+          </Badge>
           <h2>{form.title}</h2>
           {form.note.trim() && <p className="form-note">{form.note}</p>}
           <p className="muted">{deadlineText(form.deadline)}</p>
@@ -780,7 +798,7 @@ function ResponseForm({
           </Button>
         </div>
       )}
-      <PaymentLink link={form.payment_link} />
+      {!editing && <PaymentLink link={form.payment_link} />}
       {switchable && (
         <div className="view-switch" role="group" aria-label="보기 방식">
           {form.display.allowed_modes.map((mode) => (
@@ -810,7 +828,7 @@ function ResponseForm({
             {section.questions.map((q) => renderQuestion(q, numberOf.get(q.question_id) ?? 0))}
           </Panel>
         ))}
-      {!paged && consentBlock()}
+      {!paged && !editing && consentBlock()}
       {!paged && submitRow}
       {paged && !started && (
         <div className="form-footer">
@@ -845,7 +863,7 @@ function ResponseForm({
       )}
       {paged && started && onConsentPage && (
         <>
-          {consentBlock()}
+          {!editing && consentBlock()}
           {submitRow}
         </>
       )}
@@ -893,12 +911,20 @@ export function ResponsePage(props: Props) {
   return (
     <div className="page-shell response-page">
       <Heading
-        eyebrow={props.preview ? '제작자 워크스페이스 / 폼 편집 / 미리보기' : '응답 작성'}
-        title={props.preview ? '미리보기' : '응답 작성'}
+        eyebrow={
+          props.preview
+            ? '제작자 워크스페이스 / 폼 편집 / 미리보기'
+            : props.editing
+              ? '내 워크스페이스 / 제출 내역 / 수정'
+              : '응답 작성'
+        }
+        title={props.preview ? '미리보기' : props.editing ? '답변 수정' : '응답 작성'}
         desc={
           props.preview
             ? '응답자에게 보이는 모습이에요. 저장 전 내용이고, 답을 입력해도 응답이 만들어지지 않아요.'
-            : '질문을 확인하고, 편한 속도로 답변해 주세요.'
+            : props.editing
+              ? '제출 당시 문항으로 답을 고칠 수 있어요.'
+              : '질문을 확인하고, 편한 속도로 답변해 주세요.'
         }
         action={
           (props.onBack || props.onSaveToInbox) && (
@@ -909,7 +935,11 @@ export function ResponsePage(props: Props) {
               {props.onBack && (
                 <Button variant="secondary" onClick={props.onBack}>
                   <Icon name="back" size={16} />{' '}
-                  {props.preview ? '편집으로 돌아가기' : '내 폼함으로'}
+                  {props.preview
+                    ? '편집으로 돌아가기'
+                    : props.editing
+                      ? '제출 내역으로'
+                      : '내 폼함으로'}
                 </Button>
               )}
             </div>

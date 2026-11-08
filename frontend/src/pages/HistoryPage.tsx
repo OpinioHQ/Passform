@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Badge, Button, Heading, Panel } from '../components/UI';
 import { paths } from '../routes/paths';
@@ -22,6 +23,12 @@ interface Props {
   detail: HistoryDetailState;
   onSelect: (responseId: string) => void;
   onNavigate: () => void;
+  /** 수정·취소를 마친 뒤의 안내. */
+  notice?: string;
+  /** 수정·취소가 거절된 이유. */
+  actionError?: string;
+  onEdit: (responseId: string) => void;
+  onCancel: (responseId: string) => Promise<void>;
 }
 
 function valueText(value: AnswerValue | null): string {
@@ -55,6 +62,7 @@ function Detail({ detail }: { detail: ResponseHistoryDetail }) {
           <h2>{detail.form_title}</h2>
           <p className="muted">
             제출 당시 문항 · 폼 버전 {detail.form_version} · {seoulTime(detail.submitted_at)} 제출
+            {detail.updated_at && ` · ${seoulTime(detail.updated_at)} 수정`}
           </p>
         </div>
         <Badge tone="green">제출 완료</Badge>
@@ -77,8 +85,65 @@ function Detail({ detail }: { detail: ResponseHistoryDetail }) {
   );
 }
 
-/** 제출 이력(E5 #43). 목록은 `GET /me/responses`, 상세는 `GET /me/responses/{response_id}`다. */
-export function HistoryPage({ items, problem, selectedId, detail, onSelect, onNavigate }: Props) {
+/** 서버가 허용한 동작만 보인다. 취소는 되돌릴 수 없어 같은 자리에서 한 번 더 묻는다(사람 결정, 2026-11-08). */
+function ChangeActions({
+  detail,
+  onEdit,
+  onCancel,
+}: {
+  detail: ResponseHistoryDetail;
+  onEdit: () => void;
+  onCancel: () => Promise<void>;
+}) {
+  const [confirming, setConfirming] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+  if (confirming) {
+    return (
+      <>
+        <span className="small muted">취소하면 되돌릴 수 없어요.</span>
+        <Button
+          disabled={busy}
+          onClick={() => {
+            setBusy(true);
+            void onCancel().finally(() => {
+              setBusy(false);
+              setConfirming(false);
+            });
+          }}
+        >
+          취소 확인
+        </Button>
+        <Button variant="secondary" disabled={busy} onClick={() => setConfirming(false)}>
+          돌아가기
+        </Button>
+      </>
+    );
+  }
+  return (
+    <>
+      {detail.editable && <Button onClick={onEdit}>답변 수정</Button>}
+      {detail.cancellable && (
+        <Button variant="ghost" onClick={() => setConfirming(true)}>
+          응답 취소
+        </Button>
+      )}
+    </>
+  );
+}
+
+/** 제출 이력(E5 #43). 목록은 `GET /me/responses`, 상세는 `GET /me/responses/{response_id}`다. 수정·취소는 T10 #61. */
+export function HistoryPage({
+  items,
+  problem,
+  selectedId,
+  detail,
+  onSelect,
+  onNavigate,
+  notice,
+  actionError,
+  onEdit,
+  onCancel,
+}: Props) {
   return (
     <div className="page-shell">
       <Heading
@@ -86,6 +151,16 @@ export function HistoryPage({ items, problem, selectedId, detail, onSelect, onNa
         title="제출한 답변"
         desc="내가 보낸 답과 제출 당시의 질문을 함께 보관해요."
       />
+      {notice && (
+        <p className="info" role="status">
+          {notice}
+        </p>
+      )}
+      {actionError && (
+        <p className="error" role="alert">
+          {actionError}
+        </p>
+      )}
       {problem === 'login' ? (
         <Panel>
           <p className="muted">로그인하면 제출 내역을 볼 수 있어요.</p>
@@ -128,6 +203,14 @@ export function HistoryPage({ items, problem, selectedId, detail, onSelect, onNa
               </p>
             )}
             <div className="button-row">
+              {detail.status === 'ready' && selectedId !== undefined && (
+                <ChangeActions
+                  key={selectedId}
+                  detail={detail.detail}
+                  onEdit={() => onEdit(selectedId)}
+                  onCancel={() => onCancel(selectedId)}
+                />
+              )}
               <Button variant="secondary" onClick={onNavigate}>
                 내 폼함으로
               </Button>

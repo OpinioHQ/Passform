@@ -30,6 +30,8 @@
 
 주 5: 응답 화면(T4 #52)은 `VITE_USE_API=true`일 때 공개 조회와 제출을 실제로 부르고, 화면의 가짜 값이 없다. `false`이면 `src/demo/`의 가상 폼으로 같은 화면을 보이고 제출은 화면 상태에만 남긴다. 페이지 넘기기와 진행 표시는 `src/response/responsePath.ts` 한 곳의 경로 계산을 쓰며 서버 `ResponsePathCalculator`와 같은 규칙이다(일치 테스트: `responsePath.test.ts`, `responsePath.golden.test.ts`). 경로는 서버에 보내지 않는다. 응답 초안(T5 #53)은 로그인이면 `GET·PUT·DELETE /me/forms/{form_id}/response-draft`로 계정에, 비로그인이면 localStorage `passform:draft:{form_id}`에 저장한다. 공개 경로에서 부르는 로그인 API는 `/me`와 이 초안 조회뿐이다. 첨부 파일 열기와 업로드는 첨부 API가 생긴 뒤 연결한다.
 
+주 7: 제출 후 수정·취소(T10 #61)는 `/me/responses/:responseId`의 [답변 수정]·[응답 취소]에서 시작한다. 버튼은 서버가 준 `editable`·`cancellable`일 때만 보인다. 수정 화면 `/me/responses/:responseId/edit`는 `GET /me/responses/{response_id}`의 제출 버전 정의로 응답 화면을 쓰고, `PATCH /me/responses/{response_id}`로만 저장하며 초안을 저장하지 않는다. 취소는 `DELETE /me/responses/{response_id}`다.
+
 ## 공통 파일 규칙
 
 - 공통 파일(`src/routes/paths.ts`, `src/App.tsx`, `src/components/`, `src/api/client.ts`, `src/types/`)을 바꿀 때는 작은 PR로 먼저 올린다(`AGENTS.md` 5절).

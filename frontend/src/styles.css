@@ -1604,3 +1604,40 @@ h3 {
     min-height: 44px;
   }
 }
+
+.profile-card + .profile-card {
+  margin-top: 16px;
+}
+.profile-values {
+  margin: 12px 0 0;
+}
+.profile-values dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.profile-values dt {
+  flex: none;
+  margin-right: 16px;
+}
+.profile-actions {
+  margin-top: 18px;
+}
+.autofill-panel,
+.autofill-hint {
+  margin: 14px 0;
+}
+.autofill-select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.autofill-select select {
+  width: 100%;
+  min-height: 44px;
+}
+.autofill-suggested {
+  color: #3158d5;
+}

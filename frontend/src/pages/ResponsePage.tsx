@@ -8,6 +8,7 @@ import {
   isAnswered,
   problemMessage,
 } from '../response/answerCheck';
+import { AutofillLoginHint, AutofillPanel } from '../response/AutofillPanel';
 import { changeErrorText } from '../response/changeErrors';
 import { type AutosaveStatus, type DraftSink, useAutosave } from '../response/draftSync';
 import {
@@ -18,6 +19,7 @@ import {
 } from '../response/responsePath';
 import type {
   AnswerValue,
+  AutofillResult,
   DisplayMode,
   PublicForm,
   Question,
@@ -184,6 +186,14 @@ function ResponseForm({
   const [answers, setAnswers] = React.useState<AnswerMap>(
     () => draft?.initialAnswers ?? editing?.initialAnswers ?? {},
   );
+  // 요청이 끝날 때의 답을 본다. 기다리는 동안 쓴 답을 덮지 않기 위해서다.
+  const latestAnswers = React.useRef(answers);
+  latestAnswers.current = answers;
+  // 프로필에서 채웠고 아직 고치지 않은 값.
+  const [suggested, setSuggested] = React.useState<Record<string, AnswerValue>>({});
+  const latestSuggested = React.useRef(suggested);
+  latestSuggested.current = suggested;
+  const [autofillNotice, setAutofillNotice] = React.useState('');
   const sink = draft?.sink ?? null;
   const autosave = useAutosave(sink);
   const restored = Boolean(draft?.initialAnswers && Object.keys(draft.initialAnswers).length > 0);
@@ -222,6 +232,12 @@ function ResponseForm({
     setAnswers(next);
     // 답이 바뀌면 자동 저장한다. 초안 저장은 동의나 제출이 아니다(SPEC 5절 205·207행).
     autosave.schedule(next);
+    setSuggested((prev) => {
+      if (!(question.question_id in prev)) return prev;
+      const remaining = { ...prev };
+      delete remaining[question.question_id];
+      return remaining;
+    });
     // 고친 문항의 지난 오류만 지운다. 새 오류는 "다음"이나 "제출"을 누를 때만 알린다.
     setErrors((prev) => {
       if (!(question.question_id in prev)) return prev;
@@ -229,6 +245,39 @@ function ResponseForm({
       delete next[question.question_id];
       return next;
     });
+  }
+
+  // 사람이 정한 것(2026-11-08): 빈 문항만 채운다. 아직 고치지 않은 제안값은 빈 문항으로 보고 새 프로필 값으로 바꾼다.
+  // 채우기만으로는 저장하지 않고, 응답자가 답을 직접 고칠 때 채운 값까지 함께 저장한다.
+  // 지금 화면에 없는 문항(그 사이 새로 배포된 버전)의 값은 무시한다.
+  function applyAutofill(result: AutofillResult) {
+    const current = latestAnswers.current;
+    const byId = new Map(allQuestions.map((q) => [q.question_id, q]));
+    const next = { ...current };
+    for (const id of Object.keys(latestSuggested.current)) delete next[id];
+    const filled: Record<string, AnswerValue> = {};
+    let kept = 0;
+    for (const { question_id, value } of result.answers) {
+      const question = byId.get(question_id);
+      if (!question) continue;
+      if (isAnswered(question, next[question_id])) {
+        kept += 1;
+      } else {
+        next[question_id] = value;
+        filled[question_id] = value;
+      }
+    }
+    const count = Object.keys(filled).length;
+    setAnswers(next);
+    setSuggested(filled);
+    setErrors((prev) => Object.fromEntries(Object.entries(prev).filter(([id]) => !(id in filled))));
+    const parts = [
+      count > 0
+        ? `프로필 값 ${count}개를 채웠어요. 제출 전에 확인하고 필요하면 고쳐 주세요.`
+        : '채울 수 있는 빈 문항이 없어요.',
+    ];
+    if (kept > 0) parts.push(`이미 쓴 답 ${kept}개는 그대로 뒀어요.`);
+    setAutofillNotice(parts.join(' '));
   }
 
   // 버전이 바뀐 뒤 "최신 폼 다시 열기"는 옛 답을 지우고 새로 시작하는 선택이다(T4 사람 결정, SPEC 5절 208행).
@@ -572,6 +621,11 @@ function ResponseForm({
           </ul>
         )}
         <div className="question-input">{renderInput(question)}</div>
+        {id in suggested && (
+          <p className="field-hint autofill-suggested" data-testid={`suggested-${id}`}>
+            프로필에서 채운 값이에요. 고칠 수 있어요.
+          </p>
+        )}
         {question.input_format && (
           <p className="field-hint muted" id={`hint-${id}`}>
             {formatHint(question.input_format.kind)}
@@ -799,6 +853,23 @@ function ResponseForm({
         </div>
       )}
       {!editing && <PaymentLink link={form.payment_link} />}
+      {!preview &&
+        sink &&
+        allQuestions.some((q) => q.profile_key) &&
+        (sink.kind === 'account' ? (
+          <AutofillPanel
+            formId={form.form_id}
+            onFilled={applyAutofill}
+            onClosed={() => setOutcome('closed')}
+          />
+        ) : (
+          <AutofillLoginHint />
+        ))}
+      {autofillNotice && (
+        <p className="info" role="status">
+          {autofillNotice}
+        </p>
+      )}
       {switchable && (
         <div className="view-switch" role="group" aria-label="보기 방식">
           {form.display.allowed_modes.map((mode) => (

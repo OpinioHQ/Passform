@@ -313,6 +313,25 @@ describe('수정 화면 (AC74)', () => {
     expect(screen.queryByLabelText('옛 문항 문구')).toBeNull();
   });
 
+  it('프로필 문항이 있어도 수정 화면에는 자동채우기를 보이지 않는다', async () => {
+    const profileForm = publicForm([
+      {
+        section_id: 's1',
+        title: '신청',
+        questions: [question('q1', '옛 문항 문구', { profile_key: 'name' })],
+      },
+    ]);
+    await openLive(
+      '/me/responses/r1/edit',
+      historyRoutes(detail({ form_definition: profileForm })),
+    );
+
+    await field('옛 문항 문구');
+    expect(button('내 정보로 채우기')).toBeNull();
+    expect(screen.queryByText(/로그인하면 내 프로필로/)).toBeNull();
+    expect(calls('GET', '/me/profiles')).toEqual([]);
+  });
+
   it('없는 응답은 안내한다', async () => {
     await openLive('/me/responses/none/edit', {});
 

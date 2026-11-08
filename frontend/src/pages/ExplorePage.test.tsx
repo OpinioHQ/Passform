@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AnalyzeOkResponse, AnalyzeRequest, AnalyzeResponse } from '../types/analyze';
-import type { CreatorFormDefinition, ResponseDetail } from '../types/api';
+import type { CreatorFormDefinition, FormResults, Question, ResponseDetail } from '../types/api';
 import { ExplorePage } from './ExplorePage';
 
 // 분석 API 예시(docs/api/analyze_examples.json)를 그대로 서버 응답으로 쓴다.
@@ -32,9 +32,15 @@ const definition: CreatorFormDefinition = {
   definition_version: 2,
 };
 
+const noResults: FormResults = { response_count: 0, combined: { questions: [] }, versions: [] };
+
 afterEach(cleanup);
 
-function renderPage(responses: AnalyzeResponse[], details?: (id: string) => ResponseDetail) {
+function renderPage(
+  responses: AnalyzeResponse[],
+  details?: (id: string) => ResponseDetail,
+  page: { definition?: CreatorFormDefinition; results?: FormResults } = {},
+) {
   const analyze = vi.fn<(body: AnalyzeRequest) => Promise<AnalyzeResponse>>();
   for (const r of responses) analyze.mockResolvedValueOnce(r);
   const loadResponse = vi.fn((id: string) =>
@@ -42,7 +48,8 @@ function renderPage(responses: AnalyzeResponse[], details?: (id: string) => Resp
   );
   render(
     <ExplorePage
-      definition={definition}
+      definition={page.definition ?? definition}
+      results={page.results ?? noResults}
       analyze={analyze}
       loadResponse={loadResponse}
       onBuilder={() => {}}
@@ -61,6 +68,78 @@ function ask(text: string) {
   fireEvent.change(screen.getByLabelText('응답에 대해 묻기'), { target: { value: text } });
   fireEvent.click(screen.getByRole('button', { name: '질문 보내기' }));
 }
+
+describe('묻기 밑 버튼 (코덱스 검토 반영)', () => {
+  const choice = (id: string, note: string, options: string[]): Question => ({
+    question_id: id,
+    template_id: null,
+    question_note: note,
+    question_type: 'multiple_choice',
+    options,
+    required: false,
+    profile_key: null,
+    attachments: [],
+    branch_rules: [],
+  });
+  const openMore = () =>
+    fireEvent.click(screen.getByRole('button', { name: '선택지별 응답 수 더 보기' }));
+
+  it('서버가 답함·비움으로 먼저 읽는 선택지("응답"·"미응답")는 버튼을 만들지 않는다', () => {
+    const q = choice('q1', '참여 여부', ['응답', '미응답', '보류']);
+    renderPage([], undefined, {
+      definition: { ...definition, sections: [{ section_id: 's1', title: '', questions: [q] }] },
+      results: {
+        response_count: 2,
+        combined: { questions: [] },
+        versions: [
+          {
+            form_version: 2,
+            response_count: 2,
+            questions: [
+              {
+                question_id: 'q1',
+                question_note: '참여 여부',
+                counts: { 응답: 1, 미응답: 0, 보류: 1 },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    openMore();
+    expect(screen.getByRole('button', { name: '보류 응답 수' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: '응답 응답 수' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '미응답 응답 수' })).toBeNull();
+  });
+
+  it('제출 응답이 없는 버전에만 있는 선택형 문항은 버튼을 만들지 않는다', () => {
+    const grade = choice('q1', '학년', ['1학년', '2학년']);
+    const time = choice('q2', '희망 활동 시간', ['평일', '주말']);
+    renderPage([], undefined, {
+      definition: {
+        ...definition,
+        sections: [{ section_id: 's1', title: '', questions: [grade, time] }],
+      },
+      results: {
+        response_count: 3,
+        combined: { questions: [] },
+        versions: [
+          {
+            form_version: 1,
+            response_count: 3,
+            questions: [
+              { question_id: 'q1', question_note: '학년', counts: { '1학년': 2, '2학년': 1 } },
+            ],
+          },
+        ],
+      },
+    });
+    openMore();
+    expect(screen.getByRole('button', { name: '1학년 응답 수' })).toBeTruthy();
+    expect(screen.queryByText('희망 활동 시간 선택지별 응답 수')).toBeNull();
+    expect(screen.queryByRole('button', { name: '주말 응답 수' })).toBeNull();
+  });
+});
 
 describe('결과', () => {
   it('count: 서버가 센 건수와 "조건 → 문항 문구: 선택지, 폼 버전" 연결 결과를 보인다', async () => {

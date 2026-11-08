@@ -134,6 +134,7 @@ export function FormResultsRoute() {
         analyze={analyze}
         loadResponse={loadResponse}
         onBuilder={() => navigate(paths.editForm(formId))}
+        results={result.data}
         renderDashboard={(slots) => <ResultsDashboard results={result.data} {...slots} />}
       />
     );

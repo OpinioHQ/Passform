@@ -18,7 +18,7 @@ import type {
   AnalyzeSummary,
   SummaryEvidence,
 } from '../types/analyze';
-import type { CreatorFormDefinition, ResponseDetail } from '../types/api';
+import type { CreatorFormDefinition, FormResults, ResponseDetail } from '../types/api';
 import { versionLabel, type DashboardSlots } from './ResultsPage';
 
 /** 목록은 이만큼씩 상세를 읽는다. 순서는 result.response_ids 그대로다(AC62). */
@@ -312,8 +312,11 @@ export function ExplorePage({
   loadResponse,
   onBuilder,
   renderDashboard,
+  results,
 }: {
   definition: CreatorFormDefinition | null;
+  /** 결과 API 응답. 선택지 버튼을 제출 응답이 있는 버전의 문항으로만 만든다. */
+  results: FormResults;
   analyze: (body: AnalyzeRequest) => Promise<AnalyzeResponse>;
   loadResponse: (responseId: string) => Promise<ResponseDetail>;
   onBuilder: () => void;
@@ -330,7 +333,10 @@ export function ExplorePage({
     response: AnalyzeOkResponse;
   } | null>(null);
   const seq = React.useRef(0);
-  const presets = React.useMemo(() => (definition ? presetGroups(definition) : []), [definition]);
+  const presets = React.useMemo(
+    () => (definition ? presetGroups(definition, results) : []),
+    [definition, results],
+  );
   const optionPresets = presets.filter((g) => g.kind === 'option');
   const mainPresets = presets.filter((g) => g.kind === 'main');
   const loading = turn?.state === 'loading';

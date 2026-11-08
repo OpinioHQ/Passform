@@ -7,7 +7,7 @@ import type {
   MatchedCondition,
   RequestContext,
 } from '../types/analyze';
-import type { CreatorFormDefinition, Question } from '../types/api';
+import type { CreatorFormDefinition, FormResults, Question } from '../types/api';
 
 /**
  * 탐색 화면(E8 #46)이 서버 응답을 화면 문구로 바꾸는 순수 함수.
@@ -272,7 +272,6 @@ const personalKinds = new Set([
   'student_id',
   'email',
 ]);
-const choiceTypes = new Set(['multiple_choice', 'dropdown', 'checkbox']);
 
 /** 개인정보 문항(AGENTS 3절 1항): profile_key가 있거나 input_format이 개인정보 범주. */
 function isPersonal(q: Question): boolean {
@@ -289,10 +288,14 @@ export interface PresetGroup {
 }
 
 /**
- * 묻기 밑 버튼. 폼 정의에서 그 폼에서 되는 요청만 만든다(analyze_api.md 5절).
+ * 묻기 밑 버튼. 그 폼에서 되는 요청만 만든다(analyze_api.md 5절).
+ * 요약 버튼은 폼 정의, 선택지 버튼은 제출 응답이 있는 버전(결과 API)으로 만든다.
  * 배포 전이면 응답이 없으므로 만들지 않는다. 문구가 겹치는 문항은 서버가 되묻게 되므로 뺀다.
  */
-export function presetGroups(definition: CreatorFormDefinition): PresetGroup[] {
+export function presetGroups(
+  definition: CreatorFormDefinition,
+  results: FormResults,
+): PresetGroup[] {
   if (definition.definition_version === null) return [];
   const questions = definition.sections.flatMap((s) => s.questions);
   const noteCount = new Map<string, number>();
@@ -328,9 +331,9 @@ export function presetGroups(definition: CreatorFormDefinition): PresetGroup[] {
       })),
     });
   }
-  for (const q of unique.filter((x) => choiceTypes.has(x.question_type))) {
+  for (const q of submittedChoiceQuestions(results, noteCount)) {
     const choices = q.options.flatMap((option) => {
-      const condition = noteCondition(q.question_note, option);
+      const condition = answerWords.has(option) ? null : noteCondition(q.note, option);
       return condition
         ? [
             {
@@ -341,10 +344,46 @@ export function presetGroups(definition: CreatorFormDefinition): PresetGroup[] {
         : [];
     });
     if (choices.length > 0) {
-      groups.push({ title: `${q.question_note} 선택지별 응답 수`, kind: 'option', choices });
+      groups.push({ title: `${q.note} 선택지별 응답 수`, kind: 'option', choices });
     }
   }
   return groups;
+}
+
+/**
+ * "문항 문구 - 값"에서 서버가 선택지보다 먼저 답함·비움으로 읽는 낱말.
+ * 정본은 LiteralMatcher.java의 ANSWERED·UNANSWERED다. 바뀌면 함께 고친다.
+ */
+const answerWords = new Set(['응답', '답함', '작성함', '미응답', '안 씀', '비움']);
+
+/**
+ * 선택지 버튼의 대상: 제출 응답이 있는 버전의 선택형 문항(결과 API의 versions).
+ * 현재 정의에만 있고 아직 제출이 없는 문항은 서버가 찾지 못하므로 뺀다.
+ * 한 버전에서 문구가 겹치거나 현재 정의에서 문구가 겹치는 문항은 서버가 되묻게 되므로 뺀다.
+ */
+function submittedChoiceQuestions(
+  results: FormResults,
+  definitionNoteCount: Map<string, number>,
+): Array<{ note: string; options: string[] }> {
+  const byNote = new Map<string, string[]>();
+  const repeated = new Set<string>();
+  for (const version of results.versions) {
+    const seen = new Set<string>();
+    for (const q of version.questions) {
+      if (seen.has(q.question_note)) repeated.add(q.question_note);
+      seen.add(q.question_note);
+      const options = byNote.get(q.question_note) ?? [];
+      for (const option of Object.keys(q.counts)) {
+        if (!options.includes(option)) options.push(option);
+      }
+      byNote.set(q.question_note, options);
+    }
+  }
+  return [...byNote.entries()]
+    .filter(
+      ([note]) => note.trim() && !repeated.has(note) && (definitionNoteCount.get(note) ?? 0) <= 1,
+    )
+    .map(([note, options]) => ({ note, options }));
 }
 
 /** 묻기 실패를 쉬운 말로. 오류 코드 원문은 보이지 않는다. */

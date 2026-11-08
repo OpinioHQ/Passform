@@ -275,110 +275,135 @@ export function BuilderPage({
         </Panel>
       )}
       <fieldset className="builder-fieldset" disabled={busy}>
-        <Panel className="builder-intro">
-          <input
-            className="builder-title"
-            value={definition.title}
-            aria-label="폼 제목"
-            placeholder="폼 제목을 입력해 주세요"
-            onChange={(e) => {
-              const title = e.target.value;
-              edit((d) => ({ ...d, title }));
-            }}
-          />
-          <textarea
-            aria-label="폼 설명"
-            value={definition.note}
-            rows={5}
-            placeholder="폼 설명을 입력해 주세요"
-            onChange={(e) => {
-              const note = e.target.value;
-              edit((d) => ({ ...d, note }));
-            }}
-          />
-        </Panel>
-        {definition.sections.map((section, sectionIndex) => {
-          const sectionId = section.section_id;
-          const sectionName = `섹션 ${sectionIndex + 1}`;
-          return (
-            <Panel className="builder-section" key={sectionId}>
-              <div className="section-title">
-                <input
-                  className="builder-section-title"
-                  value={section.title}
-                  aria-label={`${sectionName} 제목`}
-                  placeholder={`${sectionName} 제목`}
-                  onChange={(e) => {
-                    const title = e.target.value;
-                    edit((d) => updateSectionTitle(d, sectionId, title));
-                  }}
-                />
-                <div className="button-row builder-actions">
-                  <RowButton
-                    label={`${sectionName} 위로`}
-                    text="위로"
-                    disabled={sectionIndex === 0}
-                    onClick={() => edit((d) => moveSection(d, sectionId, -1))}
+        <div className="builder-main">
+          <Panel className="builder-intro">
+            <input
+              className="builder-title"
+              value={definition.title}
+              aria-label="폼 제목"
+              placeholder="폼 제목을 입력해 주세요"
+              onChange={(e) => {
+                const title = e.target.value;
+                edit((d) => ({ ...d, title }));
+              }}
+            />
+            <textarea
+              aria-label="폼 설명"
+              value={definition.note}
+              rows={5}
+              placeholder="폼 설명을 입력해 주세요"
+              onChange={(e) => {
+                const note = e.target.value;
+                edit((d) => ({ ...d, note }));
+              }}
+            />
+          </Panel>
+          {definition.sections.map((section, sectionIndex) => {
+            const sectionId = section.section_id;
+            const sectionName = `섹션 ${sectionIndex + 1}`;
+            return (
+              <Panel className="builder-section" key={sectionId}>
+                <div className="section-title">
+                  <input
+                    className="builder-section-title"
+                    value={section.title}
+                    aria-label={`${sectionName} 제목`}
+                    placeholder={`${sectionName} 제목`}
+                    onChange={(e) => {
+                      const title = e.target.value;
+                      edit((d) => updateSectionTitle(d, sectionId, title));
+                    }}
                   />
+                  <div className="button-row builder-actions">
+                    <RowButton
+                      label={`${sectionName} 위로`}
+                      text="위로"
+                      disabled={sectionIndex === 0}
+                      onClick={() => edit((d) => moveSection(d, sectionId, -1))}
+                    />
+                    <RowButton
+                      label={`${sectionName} 아래로`}
+                      text="아래로"
+                      disabled={sectionIndex === definition.sections.length - 1}
+                      onClick={() => edit((d) => moveSection(d, sectionId, 1))}
+                    />
+                    <RowButton
+                      label={`${sectionName} 복제`}
+                      text="복제"
+                      onClick={() => edit((d) => duplicateSection(d, sectionId))}
+                    />
+                    <RowButton
+                      label={`${sectionName} 삭제`}
+                      text="삭제"
+                      onClick={() => edit((d) => removeSection(d, sectionId))}
+                    />
+                  </div>
+                </div>
+                {section.questions.map((question, questionIndex) => {
+                  const questionId = question.question_id;
+                  return (
+                    <QuestionEditor
+                      key={questionId}
+                      definition={definition}
+                      question={question}
+                      number={questionsBefore(sectionIndex) + questionIndex + 1}
+                      canMoveUp={questionIndex > 0}
+                      canMoveDown={questionIndex < section.questions.length - 1}
+                      onChange={(next) => edit((d) => replaceQuestion(d, sectionId, next))}
+                      onEdit={edit}
+                      onMove={(delta) => edit((d) => moveQuestion(d, sectionId, questionId, delta))}
+                      onDuplicate={() => edit((d) => duplicateQuestion(d, sectionId, questionId))}
+                      onRemove={() => edit((d) => removeQuestion(d, sectionId, questionId))}
+                    />
+                  );
+                })}
+                <div className="button-row">
                   <RowButton
-                    label={`${sectionName} 아래로`}
-                    text="아래로"
-                    disabled={sectionIndex === definition.sections.length - 1}
-                    onClick={() => edit((d) => moveSection(d, sectionId, 1))}
-                  />
-                  <RowButton
-                    label={`${sectionName} 복제`}
-                    text="복제"
-                    onClick={() => edit((d) => duplicateSection(d, sectionId))}
-                  />
-                  <RowButton
-                    label={`${sectionName} 삭제`}
-                    text="삭제"
-                    onClick={() => edit((d) => removeSection(d, sectionId))}
+                    label={`${sectionName}에 문항 추가`}
+                    text="문항 추가"
+                    onClick={() => edit((d) => addQuestion(d, sectionId))}
                   />
                 </div>
-              </div>
-              {section.questions.map((question, questionIndex) => {
-                const questionId = question.question_id;
-                return (
-                  <QuestionEditor
-                    key={questionId}
-                    definition={definition}
-                    question={question}
-                    number={questionsBefore(sectionIndex) + questionIndex + 1}
-                    canMoveUp={questionIndex > 0}
-                    canMoveDown={questionIndex < section.questions.length - 1}
-                    onChange={(next) => edit((d) => replaceQuestion(d, sectionId, next))}
-                    onEdit={edit}
-                    onMove={(delta) => edit((d) => moveQuestion(d, sectionId, questionId, delta))}
-                    onDuplicate={() => edit((d) => duplicateQuestion(d, sectionId, questionId))}
-                    onRemove={() => edit((d) => removeQuestion(d, sectionId, questionId))}
-                  />
-                );
-              })}
-              <div className="button-row">
-                <RowButton
-                  label={`${sectionName}에 문항 추가`}
-                  text="문항 추가"
-                  onClick={() => edit((d) => addQuestion(d, sectionId))}
-                />
-              </div>
-            </Panel>
-          );
-        })}
-        <div className="button-row builder-add-section">
-          <Button variant="secondary" onClick={() => edit(addSection)}>
-            <Icon name="plus" size={15} /> 섹션 추가
-          </Button>
+              </Panel>
+            );
+          })}
+          <div className="button-row builder-add-section">
+            <Button variant="secondary" onClick={() => edit(addSection)}>
+              <Icon name="plus" size={15} /> 섹션 추가
+            </Button>
+          </div>
         </div>
-        <FormSettingsPanel
-          definition={definition}
-          firstPublished={version !== null}
-          templates={templates}
-          onChange={edit}
-        />
+        <div className="builder-side">
+          <FormSettingsPanel
+            definition={definition}
+            firstPublished={version !== null}
+            templates={templates}
+            onChange={edit}
+            share={
+              shareUrl && (
+                // 위쪽 공유 링크와 같은 칸을 하나 더 둔다(사람 결정, #83). 화면 글자는 같고,
+                // 화면 읽기 프로그램이 구분하도록 접근성 이름에 "(폼 설정)"을 붙인다.
+                <div className="builder-share">
+                  <div className="builder-field">
+                    <span aria-hidden="true">공유 링크</span>
+                    <input readOnly value={shareUrl} aria-label="공유 링크 (폼 설정)" />
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={copyShareUrl}
+                    aria-label="링크 복사 (폼 설정)"
+                  >
+                    링크 복사
+                  </button>
+                  {copyNote && <small className="muted">{copyNote}</small>}
+                </div>
+              )
+            }
+          />
+          <div className="builder-add-section">{actions('bottom')}</div>
+        </div>
       </fieldset>
-      <div className="builder-add-section">{actions('bottom')}</div>
     </div>
   );
 }

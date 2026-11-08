@@ -1655,18 +1655,16 @@ h3 {
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.explore-ask,
-.explore-answer {
-  padding: 16px;
-  margin-bottom: 16px;
-}
-.explore-ask .composer {
-  margin: 0;
-}
 .explore-presets {
   display: grid;
   gap: 10px;
-  margin-top: 14px;
+  padding: 0 12px 14px;
+}
+/* 한 줄로 접히면 답변 도우미를 결과 위에 둔다. */
+@media (max-width: 1130px) {
+  .explore-page .assistant-panel {
+    order: -1;
+  }
 }
 .explore-preset-group .button-row {
   flex-wrap: wrap;
@@ -1676,10 +1674,6 @@ h3 {
 .explore-preset-group .filter-chip {
   cursor: pointer;
   text-align: left;
-}
-.explore-answer .chat-bubble.user {
-  margin: 0 0 12px auto;
-  width: fit-content;
 }
 .explore-count strong {
   font-size: 22px;

@@ -320,6 +320,12 @@ export function ExplorePage({
 }) {
   const [query, setQuery] = React.useState('');
   const [turn, setTurn] = React.useState<Turn | null>(null);
+  // 왼쪽 결과는 마지막 ok 응답을 둔다. 되묻기 중에도 직전 결과가 남는다.
+  const [shown, setShown] = React.useState<{
+    id: number;
+    asked: string;
+    response: AnalyzeOkResponse;
+  } | null>(null);
   const seq = React.useRef(0);
   const presets = React.useMemo(() => presetGroups(definition), [definition]);
   const loading = turn?.state === 'loading';
@@ -329,7 +335,9 @@ export function ExplorePage({
     setTurn({ id, state: 'loading', asked });
     analyze(body).then(
       (response) => {
-        if (id === seq.current) setTurn({ id, state: 'done', asked, response });
+        if (id !== seq.current) return;
+        setTurn({ id, state: 'done', asked, response });
+        if (response.status === 'ok') setShown({ id, asked, response });
       },
       (error: unknown) => {
         if (id !== seq.current) return;
@@ -358,66 +366,108 @@ export function ExplorePage({
           </div>
         }
       />
-      <Panel className="explore-ask">
-        <form
-          className="composer"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const text = query.trim();
-            if (!text || loading) return;
-            send({ query: text }, text);
-          }}
-        >
-          <input
-            aria-label="응답에 대해 묻기"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="예: 3학년은 몇 명이야?"
-          />
-          <button aria-label="질문 보내기" type="submit" disabled={loading}>
-            <Icon name="arrow" size={18} />
-          </button>
-        </form>
-        {presets.length > 0 && (
-          <div className="explore-presets">
-            {presets.map((group) => (
-              <div key={group.title} className="explore-preset-group">
-                <span className="muted small">{group.title}</span>
-                <div className="button-row">
-                  {group.choices.map((choice) => (
-                    <button
-                      key={choice.label}
-                      type="button"
-                      className="filter-chip"
-                      disabled={loading}
-                      onClick={() => choose(choice)}
-                    >
-                      {choice.label}
-                    </button>
-                  ))}
-                </div>
+      <div className="explore-grid with-assistant">
+        <div className="explore-left">
+          <Panel className="result-panel explore-answer">
+            <div className="section-title">
+              <h2>탐색 결과</h2>
+            </div>
+            {shown ? (
+              <div key={shown.id}>
+                <p className="muted small explore-asked">{shown.asked}</p>
+                <OkResult response={shown.response} loadResponse={loadResponse} />
               </div>
-            ))}
+            ) : (
+              <p className="muted">오른쪽 답변 도우미에 물어보면 결과가 여기에 보여요.</p>
+            )}
+          </Panel>
+        </div>
+        <Panel className="assistant-panel">
+          <div className="assistant-head">
+            <div>
+              <span className="assistant-symbol">
+                <Icon name="message" size={17} />
+              </span>
+              <b>답변 도우미</b>
+              <p className="muted small">이 폼의 응답을 말로 물어보세요.</p>
+            </div>
           </div>
-        )}
-      </Panel>
-      {turn && (
-        <Panel className="explore-answer" key={turn.id}>
-          <p className="chat-bubble user">{turn.asked}</p>
-          {turn.state === 'loading' && <p className="muted">분석하는 중이에요.</p>}
-          {turn.state === 'failed' && (
-            <p className="error" role="alert">
-              {turn.message}
-            </p>
-          )}
-          {turn.state === 'done' && turn.response.status === 'ok' && (
-            <OkResult response={turn.response} loadResponse={loadResponse} />
-          )}
-          {turn.state === 'done' && turn.response.status === 'clarify' && (
-            <ClarifyResult response={turn.response} onChoose={choose} onResults={onResults} />
+          <div className="chat-body">
+            {!turn && (
+              <div className="chat-bubble bot">
+                <p>예: "3학년은 몇 명이야?", "지원 동기 요약해줘"</p>
+              </div>
+            )}
+            {turn && (
+              <>
+                <p className="chat-bubble user">{turn.asked}</p>
+                <div className="chat-bubble bot" key={turn.id}>
+                  {turn.state === 'loading' && <p className="muted">분석하는 중이에요.</p>}
+                  {turn.state === 'failed' && (
+                    <p className="error" role="alert">
+                      {turn.message}
+                    </p>
+                  )}
+                  {turn.state === 'done' && turn.response.status === 'ok' && (
+                    <p>
+                      조건에 맞는 응답 {turn.response.result.count}건을 찾았어요. 왼쪽에서 확인해
+                      주세요.
+                    </p>
+                  )}
+                  {turn.state === 'done' && turn.response.status === 'clarify' && (
+                    <ClarifyResult
+                      response={turn.response}
+                      onChoose={choose}
+                      onResults={onResults}
+                    />
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          <form
+            className="composer"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const text = query.trim();
+              if (!text || loading) return;
+              send({ query: text }, text);
+            }}
+          >
+            <input
+              aria-label="응답에 대해 묻기"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="예: 3학년은 몇 명이야?"
+            />
+            <button aria-label="질문 보내기" type="submit" disabled={loading}>
+              <Icon name="arrow" size={18} />
+            </button>
+          </form>
+          {presets.length > 0 && (
+            <div className="explore-presets">
+              {presets.map((group) => (
+                <div key={group.title} className="explore-preset-group">
+                  <span className="muted small">{group.title}</span>
+                  <div className="button-row">
+                    {group.choices.map((choice) => (
+                      <button
+                        key={choice.label}
+                        type="button"
+                        className="filter-chip"
+                        disabled={loading}
+                        onClick={() => choose(choice)}
+                      >
+                        {choice.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </Panel>
-      )}
+      </div>
     </div>
   );
 }

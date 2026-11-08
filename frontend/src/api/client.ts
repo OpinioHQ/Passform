@@ -5,12 +5,14 @@ import type {
   CreatedForm,
   CreatorFormDefinition,
   CreatorFormSummary,
+  EditedResponse,
   FormDefinition,
   FormResults,
   FormStateView,
   FormStatus,
   MeResponse,
   PublicForm,
+  ResponseAnswer,
   ResponseDetail,
   ResponseHistoryDetail,
   ResponseHistoryItem,
@@ -116,6 +118,13 @@ export const api = {
   myResponses: () => request<ResponseHistoryItem[]>('/me/responses'),
   myResponse: (responseId: string) =>
     request<ResponseHistoryDetail>(`/me/responses/${segment(responseId)}`),
+  editResponse: (responseId: string, answers: ResponseAnswer[]) =>
+    request<EditedResponse>(`/me/responses/${segment(responseId)}`, {
+      ...json({ answers }),
+      method: 'PATCH',
+    }),
+  cancelResponse: (responseId: string) =>
+    request<void>(`/me/responses/${segment(responseId)}`, { method: 'DELETE' }),
   results: (formId: string) => request<FormResults>(`/forms/${segment(formId)}/results`),
   responseDetail: (formId: string, responseId: string) =>
     request<ResponseDetail>(`/forms/${segment(formId)}/responses/${segment(responseId)}`),

@@ -141,6 +141,37 @@ describe('묻기 밑 버튼 (코덱스 검토 반영)', () => {
   });
 });
 
+describe('묻기 밑 버튼의 문항 요약 (코덱스 검토 반영)', () => {
+  const longAnswer = (id: string, note: string): Question => ({
+    question_id: id,
+    template_id: null,
+    question_note: note,
+    question_type: 'long_answer',
+    options: [],
+    required: false,
+    profile_key: null,
+    attachments: [],
+    branch_rules: [],
+  });
+
+  it('버전 1에만 제출이 있고 최신 버전 2에 새 장문 문항이 있으면 그 문항의 요약 버튼이 없다', () => {
+    renderPage([], undefined, {
+      definition: {
+        ...definition,
+        definition_version: 2,
+        sections: [{ section_id: 's1', title: '', questions: [longAnswer('q9', '새 의견')] }],
+      },
+      results: {
+        response_count: 3,
+        combined: { questions: [] },
+        versions: [{ form_version: 1, response_count: 3, questions: [] }],
+      },
+    });
+    expect(screen.getByRole('button', { name: '전체 응답 목록' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: '새 의견 요약' })).toBeNull();
+  });
+});
+
 describe('결과', () => {
   it('count: 서버가 센 건수와 "조건 → 문항 문구: 선택지, 폼 버전" 연결 결과를 보인다', async () => {
     const { analyze } = renderPage([example('ok_count')]);

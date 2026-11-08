@@ -322,14 +322,21 @@ export function presetGroups(
       label: '전체 요약',
       context: { conditions: [], operation: 'summarize' },
     });
-    groups.push({
-      title: '문항 요약',
-      kind: 'main',
-      choices: summarizable.map((q) => ({
-        label: `${q.question_note} 요약`,
-        context: { conditions: [], operation: 'summarize', target: q.question_note },
-      })),
-    });
+    // 결과 API는 선택형 문항만 주므로, 서술형 문항이 제출 버전에 있는지는 "현재 정의 = 제출이 있는 버전"일 때만 안다.
+    // 최신 버전에 제출이 없으면 문항 요약 버튼을 만들지 않는다(사람 결정, 코덱스 검토 반영).
+    const latestSubmitted = results.versions.some(
+      (v) => v.form_version === definition.definition_version && v.response_count > 0,
+    );
+    if (latestSubmitted) {
+      groups.push({
+        title: '문항 요약',
+        kind: 'main',
+        choices: summarizable.map((q) => ({
+          label: `${q.question_note} 요약`,
+          context: { conditions: [], operation: 'summarize', target: q.question_note },
+        })),
+      });
+    }
   }
   for (const q of submittedChoiceQuestions(results, noteCount)) {
     const choices = q.options.flatMap((option) => {

@@ -1,12 +1,12 @@
 # 매처와 조건 평가 연결 위임 기록 (#45)
 
-기록 대상: E7 매처와 조건 평가 연결. 실행일 2026-11-08. 사람이 검토해 발행한 프롬프트로 진행했다. 프롬프트는 §6에 그대로 둔다.
+기록 대상: E7 매처와 조건 평가 연결. 실행일 2026-11-08. 사람이 검토해 발행한 프롬프트로 진행했다. 프롬프트는 §7에 그대로 두고, #89 머지 뒤의 후속 지시는 §6에 요약한다.
 
 ## §1 AC 상태 (SPEC은 고치지 않고 여기에만 적는다)
 
 | AC | 이 작업 뒤 상태 | 근거 |
 |---|---|---|
-| AC21 | 미충족 유지. 규칙 매처만 운영, LLM 매처는 #89(T7) 머지 대기 | 5단계 미실시(§4) |
+| AC21 | 미충족 유지. 규칙 매처 + 임시 프롬프트 LLM 매처 운영, 재도전·evals 미룸 | §6 |
 | AC22 | 일부 구현. `parser_partially_dropped_condition_clarify`, `question_wording_not_dropped_condition` 통과. `unknown_sort_field` 골든은 아직 없음 | §2 |
 
 ## §2 골든 통과 이유
@@ -33,7 +33,7 @@
 
 - 2026-11-08: `AnalysisServiceTest`의 자리표시 테스트 `정렬_목록은_다른_순서를_내지_않고_실패한다`만 지운다.
 - 2026-11-08: 정렬은 버전 사이 선택지가 글자·순서까지 같을 때만 한다(추가만 돼도 `unsortable_field`). `sort_unavailable_by_version`에는 결과 목록에 응답이 있는 버전만 넣는다.
-- 5단계(LLM 매처): 하지 않음. PR #89가 머지되지 않았다. 못 푼 (조건, 버전)은 지금 `PendingConditionMatcher`로 가서 503이다.
+- 5단계(LLM 매처): 1차 세션에서는 #89 미머지로 멈췄고, #89 머지(2026-11-08 21:01, `0200bf9`) 뒤 이어서 했다(§6).
 - 미룸: AC21 충족과 재도전, 실제 OpenAI 왕복 확인(E8), 탐색 화면(E8), summarize(T7), 매처 프롬프트 수정, evals(E11).
 
 ## §5 해석과 시험하지 않은 것
@@ -43,7 +43,33 @@
 - 선택지 되살림은 낱말 경계(앞은 글자가 아님, 뒤는 끝·공백·문장부호·조사)에서만 한다.
 - 시험하지 않음: `sort.by`의 `unknown_condition`·`ambiguous_match`, 분기와 정렬의 조합, "문항 문구 - 선택지" 형태의 규칙 매칭, 운영 빈 조합(DB 테스트의 컨텍스트 기동으로만 확인).
 
-## §6 위임 프롬프트 원본
+## §6 main 합치기와 5단계 (2026-11-08, 사람 후속 지시)
+
+후속 지시: #89 머지 뒤 `git merge origin/main`, 충돌은 양쪽 기능을 모두 살려 풀고, 5단계를 처음 프롬프트대로 한다. #89의 `LlmClient`를 쓰고 새 HTTP 클라이언트를 만들지 않는다.
+
+합치기 충돌과 푼 방식
+
+| 파일 | 푼 방식 |
+|---|---|
+| `AnalysisService` | 필드는 #89의 `SummaryService`와 이 PR의 `PathAwareEvaluation`을 함께 둠. 결과 처리는 경로 반영 평가 뒤 summarize면 #89의 `summaryResult`, 아니면 정렬. 대기 단계가 모두 구현돼 `failIfStepPending`을 지움 |
+| `AnalysisServiceTest` | #89가 바꾼 요약 테스트를 살리고, 사람이 승인한 정렬 자리표시 테스트 삭제를 유지 |
+| `AnalyzeView`(자동 병합 뒤 수정) | `CoverageView`에 #89의 `summary_unavailable_by_version`을 더해 정렬·요약 범위를 함께 냄 |
+| `AnalysisGoldenTest`(자동 병합) | 빈 skip 집합·이름·메시지와 #89의 `mock(SummaryService.class)`가 함께 남음 |
+| `ListSortTest`(이 PR의 새 파일) | 생성자에 `mock(SummaryService.class)` 추가 |
+| `AnalysisStepPendingException` | 쓰는 곳이 없어져 지움 |
+
+합친 뒤 `cleanTest build` 성공: 564건, skip 0, 실패 0(`SummaryGoldenTest` 4건 포함).
+
+5단계 결과
+
+- `LlmConditionMatcher`: `match_conditions.md` 마커 안 프롬프트(줄 전체 마커, `PromptData.promptOf`), `{numbering_rule}`은 팀 결정 (가)의 `latest` 문구. 입력은 조건 문구와 문항 번호·문구·유형·선택지뿐이고 출력은 조건·버전별 enum(strict). 허용 밖 값과 `NONE`은 버린다.
+- 운영 빈: `RuleFirstConditionMatcher(LlmConditionMatcher)`. `PendingConditionMatcher`는 운영 빈이 아니고 기존 service 테스트용으로 남겼다.
+- 키가 없을 때: 빌드·테스트는 돈다. 호출 시 `OpenAiClient`가 `LLM_UNAVAILABLE`을 던져 파서와 같은 503이다(`LlmConditionMatcherTest`로 확인).
+- 일반 테스트: 허용 밖 값 버림, 응답 값(전화번호·장문 답)이 요청 본문에 없음, 규칙으로 푼 조건은 보내지 않음.
+- 최종 `cleanTest build` 성공: 568건, skip 0, 실패 0. 실제 OpenAI 왕복은 하지 않았다(E8).
+- 한계: `latest_number`는 넘겨받은 버전 중 가장 큰 버전 기준이다. 번호 조건은 규칙으로 풀리지 않아 모든 응답 보유 버전과 함께 가므로 응답 보유 최신 버전이 기준이 되고, 응답 없는 더 새 배포 버전은 보지 않는다.
+
+## §7 위임 프롬프트 원본
 
 ````text
 이번 작업은 이슈 #45(E7 매처와 조건 평가 연결)뿐이다. 다른 이슈는 구현하지 않는다. 나는 ye-nni이고 리뷰어는 Psoyeon1117이다. 셸은 Windows PowerShell이다.

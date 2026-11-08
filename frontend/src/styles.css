@@ -1659,6 +1659,15 @@ h3 {
   gap: 10px;
   padding: 0 12px 14px;
 }
+.results-dashboard .tab-bar {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+.tab-bar .tab-count {
+  display: block;
+  margin: 4px 0 0;
+  font-size: 13px;
+}
 .explore-more {
   justify-self: start;
   border: 0;

@@ -48,10 +48,13 @@ export function BuilderPage({
   formId,
   initial,
   templates,
+  onResults,
 }: {
   formId: string;
   initial: CreatorFormDefinition;
   templates: ConsentTemplate[] | null;
+  /** 배포된 폼(응답 받는 중·마감)에서 결과 대시보드로 간다(E8 #46). */
+  onResults?: () => void;
 }) {
   const [definition, setDefinition] = React.useState<FormDefinition>(() => toDefinition(initial));
   const [formState, setFormState] = React.useState<FormStateView>({
@@ -198,6 +201,7 @@ export function BuilderPage({
         {status === 'draft' && action('배포', publish, true)}
         {status === 'open' && action('응답 받기 끄기', () => changeStatus('closed'))}
         {status === 'closed' && action('다시 열기', () => changeStatus('open'), true)}
+        {status !== 'draft' && onResults && action('결과 보기', onResults, true)}
       </div>
     );
   }

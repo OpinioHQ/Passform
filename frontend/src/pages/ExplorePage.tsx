@@ -18,7 +18,7 @@ import type {
   SummaryEvidence,
 } from '../types/analyze';
 import type { CreatorFormDefinition, ResponseDetail } from '../types/api';
-import { resultsDescription, versionLabel } from './ResultsPage';
+import { versionLabel } from './ResultsPage';
 
 /** 목록은 이만큼씩 상세를 읽는다. 순서는 result.response_ids 그대로다(AC62). */
 const LIST_PAGE = 20;
@@ -301,7 +301,7 @@ function ClarifyResult({
 }
 
 /**
- * 결과 화면 + 답변 도우미(E8 #46). 왼쪽은 결과 대시보드, 오른쪽은 자연어 묻기.
+ * 결과 화면 + 탐색 도우미(E8 #46). 왼쪽은 결과 대시보드, 오른쪽은 자연어 묻기.
  * 도우미 결과는 대시보드 위 카드로 보이고 대시보드 숫자(폼 전체 기준)는 바꾸지 않는다.
  * definition을 못 읽으면(null) 묻기 밑 버튼만 빠진다.
  */
@@ -356,16 +356,15 @@ export function ExplorePage({
   return (
     <div className="page-shell explore-page">
       <Heading
-        eyebrow="제작자 워크스페이스 / 결과"
-        title="결과"
-        desc={resultsDescription}
+        eyebrow="제작자 워크스페이스 / 결과 대시보드"
+        title="결과 대시보드"
         action={
           <div className="button-row">
             <Button variant="secondary" onClick={onBuilder}>
               폼 편집
             </Button>
             <Button variant="secondary" onClick={() => setAssistantOpen(!assistantOpen)}>
-              <Icon name="message" size={16} /> 답변 도우미 {assistantOpen ? '끄기' : '켜기'}
+              <Icon name="message" size={16} /> 탐색 도우미 {assistantOpen ? '끄기' : '켜기'}
             </Button>
           </div>
         }
@@ -395,12 +394,12 @@ export function ExplorePage({
                 <span className="assistant-symbol">
                   <Icon name="message" size={17} />
                 </span>
-                <b>답변 도우미</b>
+                <b>탐색 도우미</b>
                 <p className="muted small">이 폼의 응답을 말로 물어보세요.</p>
               </div>
               <button
                 className="icon-btn"
-                aria-label="답변 도우미 닫기"
+                aria-label="탐색 도우미 닫기"
                 onClick={() => setAssistantOpen(false)}
               >
                 <Icon name="x" />

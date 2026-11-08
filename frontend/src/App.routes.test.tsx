@@ -48,7 +48,7 @@ describe('라우트 표', () => {
     ['/creator', '내가 만든 폼'],
     ['/creator/forms/new', '폼 편집'],
     ['/creator/forms/abc/edit', '폼 편집'],
-    ['/creator/forms/abc/results', '결과'],
+    ['/creator/forms/abc/results', '결과 대시보드'],
     ['/creator/forms/abc/explore', '모인 답변을 살펴보세요'],
     ['/없는/경로', '페이지를 찾을 수 없어요'],
   ])('%s 는 공통 레이아웃과 함께 "%s" 화면을 연다', (path, heading) => {

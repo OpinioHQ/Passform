@@ -114,7 +114,7 @@ export function DemoExplorePage({
                 <p className="muted small">필요할 때만 켜서 답변을 찾아보세요.</p>
               </div>
               <Button variant="secondary" onClick={() => setAssistant(!assistant)}>
-                <Icon name="message" size={16} /> 답변 도우미 {assistant ? '끄기' : '켜기'}
+                <Icon name="message" size={16} /> 탐색 도우미 {assistant ? '끄기' : '켜기'}
               </Button>
             </div>
             <div className="filter-bar">
@@ -166,7 +166,7 @@ export function DemoExplorePage({
                 <span className="assistant-symbol">
                   <Icon name="message" size={17} />
                 </span>
-                <b>답변 도우미</b>
+                <b>탐색 도우미</b>
                 <p className="muted small">이 설문의 답변을 대화로 찾아보세요.</p>
               </div>
               <button
@@ -180,7 +180,7 @@ export function DemoExplorePage({
             <div className="chat-body">
               <div className="chat-bubble user">{demoExplore.exampleQuestion}</div>
               <div className="chat-bubble bot">
-                <b>Passform · 답변 도우미</b>
+                <b>Passform · 탐색 도우미</b>
                 <p>조건에 맞는 응답을 왼쪽 목록에서 확인할 수 있어요.</p>
                 <Badge tone="blue">데모 응답</Badge>
               </div>
@@ -188,7 +188,7 @@ export function DemoExplorePage({
                 <>
                   <div className="chat-bubble user">{query}</div>
                   <div className="chat-bubble bot">
-                    <b>Passform · 답변 도우미</b>
+                    <b>Passform · 탐색 도우미</b>
                     <p>{message}</p>
                   </div>
                 </>
@@ -202,7 +202,7 @@ export function DemoExplorePage({
               }}
             >
               <input
-                aria-label="답변 도우미 요청"
+                aria-label="탐색 도우미 요청"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="응답에 대해 질문해 보세요"

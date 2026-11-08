@@ -53,12 +53,42 @@ function OptionRow({
 
 const maxOf = (counts: number[]) => counts.reduce((a, b) => Math.max(a, b), 0);
 
-export const resultsDescription =
-  '선택형 문항의 응답 수예요. 통합 보기는 문구·유형이 같은 문항의 같은 선택지만 합쳐요.';
+/**
+ * 탭 글자 밑에 그 보기의 제출 응답 수를 둔다. 탭 이름은 글자만으로 두고 수는 설명으로 잇는다.
+ */
+function ViewTab({
+  label,
+  count,
+  selected,
+  onSelect,
+}: {
+  label: string;
+  count: number;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const countId = React.useId();
+  return (
+    <button
+      role="tab"
+      aria-label={label}
+      aria-describedby={countId}
+      aria-selected={selected}
+      className={selected ? 'selected' : ''}
+      onClick={onSelect}
+    >
+      {label}
+      <span className="tab-count" id={countId}>
+        {count}건
+      </span>
+    </button>
+  );
+}
 
 /**
  * 결과 대시보드(SPEC 234행, AC19). 숫자는 서버가 센 값을 그대로 보인다.
- * 결과 화면은 이 대시보드와 답변 도우미(E8 #46)를 나란히 놓는다(pages/ExplorePage).
+ * 통합 보기 탭에는 전체 응답 수, 버전 탭에는 그 버전의 응답 수를 둔다.
+ * 결과 화면은 이 대시보드와 탐색 도우미(E8 #46)를 나란히 놓는다(pages/ExplorePage).
  */
 export function ResultsDashboard({ results }: { results: FormResults }) {
   const [view, setView] = React.useState<'combined' | number>('combined');
@@ -66,43 +96,21 @@ export function ResultsDashboard({ results }: { results: FormResults }) {
     view === 'combined' ? undefined : results.versions.find((v) => v.form_version === view);
   return (
     <div className="results-dashboard">
-      <div className="metric-grid">
-        <Panel className="metric">
-          <div className="metric-top">
-            <span>전체 응답</span>
-            <strong>{results.response_count}</strong>
-          </div>
-          <small>모든 폼 버전의 제출 응답</small>
-        </Panel>
-        {selected && (
-          <Panel className="metric">
-            <div className="metric-top">
-              <span>{versionLabel([selected.form_version])} 응답</span>
-              <strong>{selected.response_count}</strong>
-            </div>
-            <small>이 버전으로 제출된 응답</small>
-          </Panel>
-        )}
-      </div>
       <div className="tab-bar" role="tablist" aria-label="보기">
-        <button
-          role="tab"
-          aria-selected={view === 'combined'}
-          className={view === 'combined' ? 'selected' : ''}
-          onClick={() => setView('combined')}
-        >
-          통합 보기
-        </button>
+        <ViewTab
+          label="통합 보기"
+          count={results.response_count}
+          selected={view === 'combined'}
+          onSelect={() => setView('combined')}
+        />
         {results.versions.map((v) => (
-          <button
+          <ViewTab
             key={v.form_version}
-            role="tab"
-            aria-selected={view === v.form_version}
-            className={view === v.form_version ? 'selected' : ''}
-            onClick={() => setView(v.form_version)}
-          >
-            {versionLabel([v.form_version])}
-          </button>
+            label={versionLabel([v.form_version])}
+            count={v.response_count}
+            selected={view === v.form_version}
+            onSelect={() => setView(v.form_version)}
+          />
         ))}
       </div>
       {results.versions.length === 0 && (

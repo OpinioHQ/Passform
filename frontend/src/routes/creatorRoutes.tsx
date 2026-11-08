@@ -124,8 +124,8 @@ export function FormResultsRoute() {
     (responseId: string) => api.responseDetail(formId, responseId),
     [formId],
   );
-  const eyebrow = '제작자 워크스페이스 / 결과';
-  if (!useLiveApi) return <Waiting eyebrow={eyebrow} title="결과" message={demoOnly} />;
+  const eyebrow = '제작자 워크스페이스 / 결과 대시보드';
+  if (!useLiveApi) return <Waiting eyebrow={eyebrow} title="결과 대시보드" message={demoOnly} />;
   if (result.state === 'ready') {
     return (
       <ExplorePage
@@ -141,7 +141,7 @@ export function FormResultsRoute() {
   return (
     <Waiting
       eyebrow={eyebrow}
-      title="결과"
+      title="결과 대시보드"
       message={result.state === 'failed' ? result.message : '결과를 불러오는 중이에요.'}
     />
   );
@@ -280,6 +280,7 @@ function LiveEditForm({ formId }: { formId: string }) {
       formId={formId}
       initial={load.definition}
       templates={load.templates}
+      onResults={() => navigate(paths.formResults(formId))}
     />
   );
 }

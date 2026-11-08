@@ -1695,6 +1695,21 @@ h3 {
   min-height: 0;
   overflow-y: auto;
 }
+/* 높이가 정해진 패널 안에서 묻기 밑 버튼을 펼치면 이 칸만 스크롤한다(입력창은 그대로 보인다). */
+.assistant-col .explore-presets {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 45%;
+  overflow-y: auto;
+}
+/* 폼 편집 오른쪽 칸의 아래쪽 작업 버튼은 같은 폭 2열로 맞춘다(버튼이 4개여도 크기가 같다). */
+.builder-side .builder-add-section > .button-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.builder-side .builder-add-section > .button-row .btn {
+  width: 100%;
+}
 .explore-more {
   justify-self: start;
   border: 0;
@@ -1713,6 +1728,9 @@ h3 {
     position: static;
     height: auto;
     min-height: 350px;
+  }
+  .assistant-col .explore-presets {
+    max-height: none;
   }
 }
 .explore-preset-group .button-row {

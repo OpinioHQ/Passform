@@ -8,6 +8,7 @@ import {
   matchedLines,
   presetGroups,
   type Choice,
+  type PresetGroup,
 } from '../explore/exploreView';
 import type {
   AnalyzeClarifyResponse,
@@ -331,7 +332,7 @@ export function ExplorePage({
   const seq = React.useRef(0);
   const presets = React.useMemo(() => (definition ? presetGroups(definition) : []), [definition]);
   const optionPresets = presets.filter((g) => g.kind === 'option');
-  const visiblePresets = presets.filter((g) => g.kind === 'main' || moreOptions);
+  const mainPresets = presets.filter((g) => g.kind === 'main');
   const loading = turn?.state === 'loading';
 
   function send(body: AnalyzeRequest, asked: string) {
@@ -352,6 +353,25 @@ export function ExplorePage({
   }
 
   const choose = (choice: Choice) => send({ context: choice.context }, choice.label);
+
+  const presetGroup = (group: PresetGroup) => (
+    <div key={group.title} className="explore-preset-group">
+      <span className="muted small">{group.title}</span>
+      <div className="button-row">
+        {group.choices.map((choice) => (
+          <button
+            key={choice.label}
+            type="button"
+            className="filter-chip"
+            disabled={loading}
+            onClick={() => choose(choice)}
+          >
+            {choice.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="page-shell explore-page">
@@ -451,25 +471,9 @@ export function ExplorePage({
               </button>
             </form>
             {presets.length > 0 && (
+              // 접기 버튼을 펼친 목록 위에 두어 항상 보이게 하고, 목록은 이 칸 안에서 스크롤한다.
               <div className="explore-presets">
-                {visiblePresets.map((group) => (
-                  <div key={group.title} className="explore-preset-group">
-                    <span className="muted small">{group.title}</span>
-                    <div className="button-row">
-                      {group.choices.map((choice) => (
-                        <button
-                          key={choice.label}
-                          type="button"
-                          className="filter-chip"
-                          disabled={loading}
-                          onClick={() => choose(choice)}
-                        >
-                          {choice.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                {mainPresets.map(presetGroup)}
                 {optionPresets.length > 0 && (
                   <button
                     type="button"
@@ -480,6 +484,7 @@ export function ExplorePage({
                     {moreOptions ? '선택지별 인원 접기' : '선택지별 인원 더 보기'}
                   </button>
                 )}
+                {moreOptions && optionPresets.map(presetGroup)}
               </div>
             )}
           </Panel>

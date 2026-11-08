@@ -111,10 +111,17 @@ export function ResultsDashboard({
           />
         ))}
       </div>
+      {/* 폼 전체 제출 응답 수는 어느 탭에서나 보인다(SPEC 53행, AC19). 버전 탭은 그 버전 수를 덧붙인다. */}
       <p className="results-count">
-        {selected
-          ? `${versionLabel([selected.form_version])} 응답 ${selected.response_count}건`
-          : `전체 응답 ${results.response_count}건`}
+        <span>전체 응답 {results.response_count}건</span>
+        {selected && (
+          <>
+            <span aria-hidden="true"> · </span>
+            <span>
+              {versionLabel([selected.form_version])} 응답 {selected.response_count}건
+            </span>
+          </>
+        )}
       </p>
       <div className={`explore-grid ${aside ? 'with-assistant' : ''}`}>
         <div className="explore-left">

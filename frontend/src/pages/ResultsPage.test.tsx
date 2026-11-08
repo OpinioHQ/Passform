@@ -124,6 +124,7 @@ describe('결과 화면', () => {
     expect(screen.queryByRole('heading', { level: 2, name: '참석하나요?' })).toBeNull();
     const version2 = card('참석할 예정인가요?');
     expect(within(optionRow(version2, '아니요')).getByText('2명')).toBeTruthy();
+    expect(screen.getByText('전체 응답 7건')).toBeTruthy();
     expect(screen.getByText('폼 버전 2 응답 4건')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('tab', { name: '폼 버전 1' }));

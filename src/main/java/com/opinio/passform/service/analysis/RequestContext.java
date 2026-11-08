@@ -1,5 +1,6 @@
 package com.opinio.passform.service.analysis;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -30,6 +31,13 @@ public record RequestContext(List<String> conditions, String match, @JsonInclude
 	// 되살린 조건은 결합 방식을 원문에서 확인하지 못했으므로 match를 지운다. 2개 이상이면 다시 묻게 된다.
 	RequestContext withRevivedConditions(List<String> revived) {
 		return new RequestContext(revived, null, operation, sort, target, topic);
+	}
+
+	// 파서가 낸 조건 뒤에 되살린 조건을 붙인다. 파서가 낸 match는 그대로 둔다(골든 parser_partially_dropped_condition_clarify note).
+	RequestContext withAddedConditions(List<String> added) {
+		List<String> all = new ArrayList<>(conditions);
+		all.addAll(added);
+		return new RequestContext(List.copyOf(all), match, operation, sort, target, topic);
 	}
 
 }

@@ -376,14 +376,6 @@ class AnalysisServiceTest {
 	}
 
 	@Test
-	void 정렬_목록은_다른_순서를_내지_않고_실패한다() {
-		String context = "{\"conditions\":[],\"operation\":\"list\",\"sort\":{\"by\":\"학과\",\"order\":\"asc\"}}";
-
-		assertThatThrownBy(() -> askContext(false, context)).isInstanceOf(AnalysisStepPendingException.class)
-			.hasMessageContaining("E7");
-	}
-
-	@Test
 	void 되묻기를_통과한_요약은_요약_서비스가_낸_summary를_돌려준다() {
 		String context = "{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"지원 동기\"}";
 		when(summaries.summarize(any(), anyList(), anyList())).thenReturn(new SummaryService.Outcome(SUMMARY, List.of()));

@@ -2,16 +2,13 @@ package com.opinio.passform.llm;
 
 import java.util.List;
 
-import org.springframework.stereotype.Component;
-
 import com.opinio.passform.domain.analysis.ConditionMatch;
 import com.opinio.passform.domain.error.DomainException;
 import com.opinio.passform.domain.error.ErrorCode;
 import com.opinio.passform.domain.form.VersionQuestions;
 
-// E7의 실제 매처가 들어올 때까지의 운영 bean이다. E7이 이 클래스를 지운다.
+// 운영 bean이 아니다(운영은 RuleFirstConditionMatcher + LlmConditionMatcher). LLM 없이 service를 시험할 때 쓰는 매처다.
 // 조건이 있는데 "매칭 없음"을 돌려주면 unknown_condition으로 잘못 되묻게 되므로 503으로 멈춘다.
-@Component
 public class PendingConditionMatcher implements ConditionMatcher {
 
 	@Override

@@ -7,12 +7,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.opinio.passform.domain.analysis.ConditionEvaluator;
 import com.opinio.passform.domain.analysis.ConditionMatch;
 import com.opinio.passform.domain.analysis.EvaluationResult;
 import com.opinio.passform.domain.analysis.MatchMode;
@@ -20,6 +20,7 @@ import com.opinio.passform.domain.analysis.ResponseRecord;
 import com.opinio.passform.domain.error.DomainException;
 import com.opinio.passform.domain.error.ErrorCode;
 import com.opinio.passform.domain.form.Form;
+import com.opinio.passform.domain.form.FormDefinition;
 import com.opinio.passform.domain.form.FormVersion;
 import com.opinio.passform.domain.form.FormVersionId;
 import com.opinio.passform.domain.form.VersionQuestions;
@@ -31,6 +32,7 @@ import com.opinio.passform.repository.FormRepository;
 import com.opinio.passform.repository.FormVersionRepository;
 import com.opinio.passform.repository.ResponseRepository;
 import com.opinio.passform.service.analysis.AnalyzeView.ClarifyView;
+import com.opinio.passform.service.analysis.AnalyzeView.CoverageView;
 import com.opinio.passform.service.analysis.AnalyzeView.MatchedView;
 import com.opinio.passform.service.analysis.AnalyzeView.ResultView;
 
@@ -59,7 +61,7 @@ public class AnalysisService {
 
 	private final SummaryService summaries;
 
-	private final ConditionEvaluator evaluator = new ConditionEvaluator();
+	private final PathAwareEvaluation pathAwareEvaluation = new PathAwareEvaluation();
 
 	public AnalysisService(FormRepository forms, FormVersionRepository formVersions, ResponseRepository responses,
 			QueryParser parser, ConditionMatcher matcher, RequestContextSchema contextSchema, SummaryService summaries) {
@@ -78,7 +80,11 @@ public class AnalysisService {
 		JsonNode request = readRequest(command.body());
 		// 통계 표현이 문항 문구·선택지인지 보려면 표 3행 전에 버전 정의가 필요하다. 판정은 하지 않고 읽기만 한다.
 		List<Response> submitted = responses.findSubmittedNotDeletedByFormId(form.getId());
-		List<VersionQuestions> versions = respondedVersions(form.getId(), submitted);
+		Map<Integer, Map<String, Object>> definitions = respondedDefinitions(form.getId(), submitted);
+		List<VersionQuestions> versions = definitions.entrySet()
+			.stream()
+			.map(entry -> VersionQuestions.of(entry.getKey(), entry.getValue()))
+			.toList();
 
 		String query = null;
 		boolean statistics = false;
@@ -93,14 +99,17 @@ public class AnalysisService {
 				return AnalyzeView.clarify(null, ClarifyRules.parseFailed());
 			}
 			statistics = QueryText.asksStatistics(query, versions);
-			context = statistics ? parsed.get() : QueryText.reviveDroppedConditions(query, parsed.get());
+			// 스키마 재검증 뒤, 표 3행 전에 보정한다(SPEC 334행). 조건이 있으면 선택지 문구를, 없으면 남는 낱말을 되살린다.
+			context = statistics ? parsed.get()
+					: QueryText.reviveDroppedConditions(query, QueryText.reviveDroppedOptions(query, parsed.get(), versions));
 		}
 		else {
 			context = RequestContextSchema.toContext(request.get("context"));
 		}
 		context = context.withoutUnusedKeys();
 
-		Optional<ClarifyView> clarify = ClarifyRules.beforeMatching(query, context, aiSummaryEnabled(form), statistics);
+		Optional<ClarifyView> clarify = ClarifyRules.beforeMatching(query, context, aiSummaryEnabled(form), statistics,
+				versions);
 		if (clarify.isPresent()) {
 			return AnalyzeView.clarify(context, clarify.get());
 		}
@@ -111,12 +120,17 @@ public class AnalysisService {
 			.filter(entry -> versionNumbers.contains(entry.formVersion()))
 			.toList();
 
-		clarify = ClarifyRules.afterMatching(context, matches, versions);
+		List<ResponseRecord> records = submitted.stream().map(Response::toResponseRecord).toList();
+		Map<Integer, FormDefinition> forms = new TreeMap<>();
+		definitions.forEach((version, definition) -> forms.put(version, FormDefinition.from(definition)));
+		ListSort sort = RequestContext.LIST.equals(context.operation()) && context.sort() != null
+				? new ListSort(context.sort().by(), versions, forms, records) : null;
+
+		clarify = ClarifyRules.afterMatching(context, matches, versions, sort);
 		if (clarify.isPresent()) {
 			return AnalyzeView.clarify(context, clarify.get());
 		}
-		failIfStepPending(context);
-		return result(context, matches, versions, submitted);
+		return result(context, matches, versions, submitted, records, forms, sort);
 	}
 
 	private Form ownedForm(AnalyzeCommand command) {
@@ -202,13 +216,14 @@ public class AnalysisService {
 				&& settings.get("ai_summary") instanceof Map<?, ?> aiSummary && Boolean.TRUE.equals(aiSummary.get("enabled"));
 	}
 
-	private List<VersionQuestions> respondedVersions(UUID formId, List<Response> submitted) {
-		return submitted.stream()
+	// 제출 응답이 있는 버전의 배포 정의. 버전 오름차순이다.
+	private Map<Integer, Map<String, Object>> respondedDefinitions(UUID formId, List<Response> submitted) {
+		Map<Integer, Map<String, Object>> definitions = new TreeMap<>();
+		submitted.stream()
 			.map(Response::getFormVersion)
 			.distinct()
-			.sorted()
-			.map(version -> VersionQuestions.of(version, versionDefinition(formId, version).getDefinition()))
-			.toList();
+			.forEach(version -> definitions.put(version, versionDefinition(formId, version).getDefinition()));
+		return definitions;
 	}
 
 	private FormVersion versionDefinition(UUID formId, int version) {
@@ -216,22 +231,26 @@ public class AnalysisService {
 			.orElseThrow(() -> new IllegalStateException("배포 정의가 없다: 폼 버전 " + version));
 	}
 
-	private static void failIfStepPending(RequestContext context) {
-		if (RequestContext.LIST.equals(context.operation()) && context.sort() != null) {
-			throw new AnalysisStepPendingException("정렬 목록(E7 #45)");
-		}
-	}
-
+	// 결과 처리(analyze_api.md 2절 ⑤·⑥). sort는 list에 sort가 있을 때만 있다.
 	private AnalyzeView result(RequestContext context, List<ConditionMatch> matches, List<VersionQuestions> versions,
-			List<Response> submitted) {
-		List<ResponseRecord> records = submitted.stream().map(Response::toResponseRecord).toList();
+			List<Response> submitted, List<ResponseRecord> records, Map<Integer, FormDefinition> forms, ListSort sort) {
 		MatchMode mode = context.match() == null ? null : MatchMode.valueOf(context.match().toUpperCase(Locale.ROOT));
-		EvaluationResult evaluation = evaluator.evaluate(context.conditions(), mode, matches, records);
+		EvaluationResult evaluation = pathAwareEvaluation.evaluate(context.conditions(), mode, matches, records, forms);
 		if (RequestContext.SUMMARIZE.equals(context.operation())) {
 			return summaryResult(context, versions, submitted, evaluation);
 		}
-		List<String> responseIds = RequestContext.LIST.equals(context.operation()) ? evaluation.responseIds() : null;
-		return AnalyzeView.ok(context, matchedViews(evaluation.matched(), versions), evaluation.coverage(),
+		List<String> responseIds = null;
+		List<Integer> sortUnavailable = null;
+		if (RequestContext.LIST.equals(context.operation())) {
+			responseIds = evaluation.responseIds();
+			if (sort != null) {
+				String order = context.sort().order() == null ? "asc" : context.sort().order();
+				sortUnavailable = sort.unavailableVersions(responseIds);
+				responseIds = sort.sort(responseIds, order);
+			}
+		}
+		return AnalyzeView.ok(context, matchedViews(evaluation.matched(), versions),
+				CoverageView.of(evaluation.coverage(), sortUnavailable),
 				new ResultView(context.operation(), evaluation.count(), responseIds, null));
 	}
 
@@ -245,7 +264,7 @@ public class AnalysisService {
 			.toList();
 		SummaryService.Outcome outcome = summaries.summarize(context, versions, matched);
 		return AnalyzeView.ok(context, matchedViews(evaluation.matched(), versions),
-				evaluation.coverage().withSummaryUnavailable(outcome.unavailableVersions()),
+				CoverageView.of(evaluation.coverage().withSummaryUnavailable(outcome.unavailableVersions()), null),
 				new ResultView(context.operation(), evaluation.count(), evaluation.responseIds(), outcome.summary()));
 	}
 

@@ -14,7 +14,6 @@ import com.opinio.passform.domain.error.ErrorCode;
 import com.opinio.passform.domain.form.Form;
 import com.opinio.passform.domain.inbox.SavedForm;
 import com.opinio.passform.domain.inbox.SavedFormId;
-import com.opinio.passform.domain.inbox.SavedFormState;
 import com.opinio.passform.domain.response.Answer;
 import com.opinio.passform.domain.response.Response;
 import com.opinio.passform.repository.FormRepository;
@@ -87,7 +86,7 @@ public class DraftService {
 			draft.replaceDraftAnswers(answers, now);
 		}
 		if (!savedForms.existsById(new SavedFormId(userId, formId))) {
-			savedForms.save(new SavedForm(userId, formId, SavedFormState.SAVED, now));
+			savedForms.save(SavedForm.saved(userId, formId, now));
 		}
 		return new SaveResult(draft.getId(), now, created);
 	}

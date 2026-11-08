@@ -38,6 +38,7 @@ import com.opinio.passform.domain.response.Response;
 import com.opinio.passform.repository.FormRepository;
 import com.opinio.passform.repository.FormVersionRepository;
 import com.opinio.passform.repository.ResponseRepository;
+import com.opinio.passform.repository.SavedFormRepository;
 
 class SubmissionServiceTest {
 
@@ -71,7 +72,8 @@ class SubmissionServiceTest {
 			saved.add(response);
 			return response;
 		});
-		return new SubmissionService(forms, versions, responses, Clock.fixed(now, ZoneOffset.UTC));
+		return new SubmissionService(forms, versions, responses, mock(SavedFormRepository.class),
+				Clock.fixed(now, ZoneOffset.UTC));
 	}
 
 	private void givenForm(FormStatus status, int currentVersion, Instant deadline, Integer limit,

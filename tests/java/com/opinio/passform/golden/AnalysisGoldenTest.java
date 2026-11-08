@@ -81,9 +81,9 @@ class AnalysisGoldenTest {
 	private static final Path RESPONSE_SCHEMA = Path.of("src/response_analysis/schemas/analyze_response.schema.json");
 
 	// 사람이 승인한 skip이다. 분기 건너뜀과 응답 경로 계산은 E7(#45) 몫이고, E7이 이 목록을 지운다.
-	private static final Set<String> SKIPPED_FOR_E7 = Set.of("parser_partially_dropped_condition_clarify");
+	private static final Set<String> SKIPPED_FOR_E7 = Set.of();
 
-	private static final Set<String> APPROVED_SKIPS = Set.of("parser_partially_dropped_condition_clarify");
+	private static final Set<String> APPROVED_SKIPS = Set.of();
 
 	private static final Set<String> JUDGE_KEYS = Set.of("expect_error", "expect_reason", "expect_options",
 			"expect_parser_calls", "expect_count", "expect_response_ids", "expect_not_evaluable_count",
@@ -132,7 +132,7 @@ class AnalysisGoldenTest {
 	}
 
 	@Test
-	void skip_목록은_승인한_두_건뿐이고_모두_파일에_있다() throws IOException {
+	void skip_목록은_승인한_것뿐이고_모두_파일에_있다() throws IOException {
 		assertEquals(APPROVED_SKIPS, SKIPPED_FOR_E7, "승인하지 않은 이름이 skip 목록에 들어갔다");
 		Set<String> names = new HashSet<>();
 		loadCases(Files.readString(CASES)).forEach(c -> names.add(String.valueOf(c.get("name"))));
@@ -155,7 +155,7 @@ class AnalysisGoldenTest {
 	private static void runCase(Map<String, Object> c) throws Exception {
 		List<String> problems = problemsOf(c);
 		assertTrue(problems.isEmpty(), () -> "케이스 형식 오류: " + problems);
-		Assumptions.assumeFalse(SKIPPED_FOR_E7.contains(c.get("name")), "E7 #45: 분기 응답 경로 계산이 E7 범위다");
+		Assumptions.assumeFalse(SKIPPED_FOR_E7.contains(c.get("name")), "사람이 승인한 skip");
 
 		Map<String, Object> input = map(c.get("input"), "input");
 		Scenario scenario = Scenario.of(input);

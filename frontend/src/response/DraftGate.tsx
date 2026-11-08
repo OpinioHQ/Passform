@@ -54,18 +54,26 @@ function isDraftShape(value: unknown): value is { response_id: string; form_vers
   );
 }
 
-async function loggedIn(): Promise<boolean> {
+const AUTOSAVE_STOPPED = '작성 중인 답을 불러오지 못해 자동 저장을 멈췄어요. 새로고침해 주세요.';
+
+/**
+ * 401일 때만 비로그인으로 본다. 그 밖의 실패(서버 오류, 네트워크 오류)는 로그인 여부를 모르므로
+ * `null`을 돌려준다. 로그인 사용자의 답이 이 브라우저에 남지 않게 하기 위해서다(AGENTS 3절 1항).
+ */
+async function loggedIn(): Promise<boolean | null> {
   try {
     await api.me();
     return true;
-  } catch {
-    return false;
+  } catch (e) {
+    return e instanceof ApiError && e.status === 401 ? false : null;
   }
 }
 
 async function decide(form: PublicForm): Promise<Session> {
   const browser = readBrowserDraft(form.form_id);
-  if (!(await loggedIn())) {
+  const login = await loggedIn();
+  if (login === null) return { step: 'ready', sink: null, notice: AUTOSAVE_STOPPED };
+  if (!login) {
     const sink = browserSink(form);
     if (!browser) return { step: 'ready', sink };
     if (browser.form_version !== form.definition_version) {
@@ -99,7 +107,7 @@ async function decide(form: PublicForm): Promise<Session> {
       return {
         step: 'ready',
         sink: null,
-        notice: '작성 중인 답을 불러오지 못해 자동 저장을 멈췄어요. 새로고침해 주세요.',
+        notice: AUTOSAVE_STOPPED,
       };
     }
   }

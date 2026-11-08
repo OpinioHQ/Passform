@@ -144,8 +144,12 @@ export interface Autosave {
   schedule(answers: AnswerMap): void;
   /** 기다리는 저장을 지금 보내고 끝날 때까지 기다린다. 제출 직전에 쓴다. 실패해도 reject하지 않는다. */
   flush(): Promise<void>;
-  /** 기다리는 저장을 버린다. 제출에 성공한 뒤나 초안을 지울 때 쓴다. */
-  cancel(): void;
+  /**
+   * 기다리는 저장을 버리고, 이미 보낸 저장이 끝날 때까지 기다린다. 제출에 성공한 뒤나 초안을 지울 때 쓴다.
+   * 초안을 지울 때는 이것을 기다린 뒤 지운다. 늦게 처리된 저장이 지운 초안을 되살리지 않게 하기 위해서다.
+   * 실패해도 reject하지 않는다.
+   */
+  cancel(): Promise<void>;
 }
 
 /** 자동 저장 상태. 저장 중이거나 보내지 않은 변경이 있으면 화면을 나갈 때 경고한다(SPEC 5절 205행). */
@@ -215,6 +219,7 @@ export function useAutosave(sink: DraftSink | null): Autosave {
     pending.current = null;
     generation.current++;
     setStatus('idle');
+    return inFlight.current ?? Promise.resolve();
   }, []);
 
   const unsaved = status === 'pending' || status === 'saving';

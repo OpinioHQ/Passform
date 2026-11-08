@@ -222,15 +222,20 @@ function ResponseForm({
   // 버전이 바뀐 뒤 "최신 폼 다시 열기"는 옛 답을 지우고 새로 시작하는 선택이다(T4 사람 결정, SPEC 5절 208행).
   // 지우지 못해도 다시 연다. 그때는 옛 초안 안내가 다시 지울 기회를 준다.
   async function reopenLatest() {
-    autosave.cancel();
-    if (sink) await sink.clear().catch(() => undefined);
+    const settled = autosave.cancel();
+    // 이미 보낸 저장이 끝난 뒤 지운다. 지운 뒤에 저장이 처리되면 초안이 되살아난다.
+    if (sink) {
+      await settled;
+      await sink.clear().catch(() => undefined);
+    }
     (onReload ?? onRestart)();
   }
 
   // 응답자가 작성 중 초안을 직접 지운다(SPEC 5절 208행). 지우지 못하면 답은 그대로 둔다.
   async function discardDraft() {
     if (!sink) return;
-    autosave.cancel();
+    // 이미 보낸 저장이 끝난 뒤 지운다. 지운 뒤에 저장이 처리되면 초안이 되살아난다.
+    await autosave.cancel();
     try {
       await sink.clear();
       onRestart();
@@ -340,7 +345,7 @@ function ResponseForm({
     try {
       await onSubmit(body);
       // 성공한 뒤에만 초안을 정리한다. 실패하면 서버 초안과 브라우저 초안을 그대로 둔다.
-      autosave.cancel();
+      void autosave.cancel();
       sink?.submitted();
       setOutcome('submitted');
     } catch (e) {

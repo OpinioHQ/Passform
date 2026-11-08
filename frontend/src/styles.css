@@ -1711,13 +1711,34 @@ h3 {
   width: 100%;
 }
 .explore-more {
-  justify-self: start;
+  justify-self: stretch;
+  text-align: left;
   border: 0;
-  background: none;
+  background: #fff;
   color: #3158d5;
   font-size: 12px;
   padding: 4px 0;
   cursor: pointer;
+}
+/* 펼친 목록을 스크롤해도 접기 버튼은 위에 붙어 보인다. */
+.assistant-col .explore-more {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+/* 말풍선 아이콘과 제목을 한 줄에, 설명은 제목 글자와 같은 왼쪽 선에 맞춘다. */
+.assistant-head > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 8px;
+  align-items: center;
+}
+.assistant-head > div .assistant-symbol {
+  display: flex;
+  margin-right: 0;
+}
+.assistant-head > div p {
+  grid-column: 2;
 }
 /* 한 줄로 접히면 답변 도우미를 결과 위에 둔다. */
 @media (max-width: 1130px) {

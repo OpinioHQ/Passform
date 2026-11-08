@@ -18,7 +18,7 @@ import type {
   SummaryEvidence,
 } from '../types/analyze';
 import type { CreatorFormDefinition, ResponseDetail } from '../types/api';
-import { versionLabel } from './ResultsPage';
+import { resultsDescription, versionLabel } from './ResultsPage';
 
 /** 목록은 이만큼씩 상세를 읽는다. 순서는 result.response_ids 그대로다(AC62). */
 const LIST_PAGE = 20;
@@ -263,11 +263,9 @@ function OkResult({
 function ClarifyResult({
   response,
   onChoose,
-  onResults,
 }: {
   response: AnalyzeClarifyResponse;
   onChoose: (choice: Choice) => void;
-  onResults: () => void;
 }) {
   const view = clarifyView(response);
   return (
@@ -296,28 +294,32 @@ function ClarifyResult({
         </>
       )}
       {view.toResults && (
-        <Button variant="secondary" onClick={onResults}>
-          결과 화면의 버전별 보기
-        </Button>
+        <p className="muted small">대시보드의 폼 버전 탭에서 버전별 결과를 볼 수 있어요.</p>
       )}
     </div>
   );
 }
 
-/** 탐색 화면(E8 #46). 자연어로 묻고 서버가 준 근거와 함께 결과를 본다. */
+/**
+ * 결과 화면 + 답변 도우미(E8 #46). 왼쪽은 결과 대시보드, 오른쪽은 자연어 묻기.
+ * 도우미 결과는 대시보드 위 카드로 보이고 대시보드 숫자(폼 전체 기준)는 바꾸지 않는다.
+ * definition을 못 읽으면(null) 묻기 밑 버튼만 빠진다.
+ */
 export function ExplorePage({
   definition,
   analyze,
   loadResponse,
   onBuilder,
-  onResults,
+  dashboard,
 }: {
-  definition: CreatorFormDefinition;
+  definition: CreatorFormDefinition | null;
   analyze: (body: AnalyzeRequest) => Promise<AnalyzeResponse>;
   loadResponse: (responseId: string) => Promise<ResponseDetail>;
   onBuilder: () => void;
-  onResults: () => void;
+  dashboard: React.ReactNode;
 }) {
+  const [assistantOpen, setAssistantOpen] = React.useState(true);
+  const [moreOptions, setMoreOptions] = React.useState(false);
   const [query, setQuery] = React.useState('');
   const [turn, setTurn] = React.useState<Turn | null>(null);
   // 왼쪽 결과는 마지막 ok 응답을 둔다. 되묻기 중에도 직전 결과가 남는다.
@@ -327,7 +329,9 @@ export function ExplorePage({
     response: AnalyzeOkResponse;
   } | null>(null);
   const seq = React.useRef(0);
-  const presets = React.useMemo(() => presetGroups(definition), [definition]);
+  const presets = React.useMemo(() => (definition ? presetGroups(definition) : []), [definition]);
+  const optionPresets = presets.filter((g) => g.kind === 'option');
+  const visiblePresets = presets.filter((g) => g.kind === 'main' || moreOptions);
   const loading = turn?.state === 'loading';
 
   function send(body: AnalyzeRequest, asked: string) {
@@ -352,121 +356,138 @@ export function ExplorePage({
   return (
     <div className="page-shell explore-page">
       <Heading
-        eyebrow="제작자 워크스페이스 / 응답 탐색"
-        title="모인 답변을 살펴보세요"
-        desc={`${definition.title || '제목 없는 폼'} · 모든 폼 버전의 제출 응답에서 찾아요.`}
+        eyebrow="제작자 워크스페이스 / 결과"
+        title="결과"
+        desc={resultsDescription}
         action={
           <div className="button-row">
             <Button variant="secondary" onClick={onBuilder}>
               폼 편집
             </Button>
-            <Button variant="secondary" onClick={onResults}>
-              결과 보기
+            <Button variant="secondary" onClick={() => setAssistantOpen(!assistantOpen)}>
+              <Icon name="message" size={16} /> 답변 도우미 {assistantOpen ? '끄기' : '켜기'}
             </Button>
           </div>
         }
       />
-      <div className="explore-grid with-assistant">
+      <div className={`explore-grid ${assistantOpen ? 'with-assistant' : ''}`}>
         <div className="explore-left">
-          <Panel className="result-panel explore-answer">
-            <div className="section-title">
-              <h2>탐색 결과</h2>
-            </div>
-            {shown ? (
-              <div key={shown.id}>
-                <p className="muted small explore-asked">{shown.asked}</p>
-                <OkResult response={shown.response} loadResponse={loadResponse} />
+          {shown && (
+            <Panel className="result-panel explore-answer" key={shown.id}>
+              <div className="section-title">
+                <div>
+                  <h2>AI 탐색 결과</h2>
+                  <p className="muted small explore-asked">{shown.asked}</p>
+                </div>
+                <Button variant="secondary" onClick={() => setShown(null)}>
+                  지우기
+                </Button>
               </div>
-            ) : (
-              <p className="muted">오른쪽 답변 도우미에 물어보면 결과가 여기에 보여요.</p>
+              <OkResult response={shown.response} loadResponse={loadResponse} />
+            </Panel>
+          )}
+          {dashboard}
+        </div>
+        {assistantOpen && (
+          <Panel className="assistant-panel">
+            <div className="assistant-head">
+              <div>
+                <span className="assistant-symbol">
+                  <Icon name="message" size={17} />
+                </span>
+                <b>답변 도우미</b>
+                <p className="muted small">이 폼의 응답을 말로 물어보세요.</p>
+              </div>
+              <button
+                className="icon-btn"
+                aria-label="답변 도우미 닫기"
+                onClick={() => setAssistantOpen(false)}
+              >
+                <Icon name="x" />
+              </button>
+            </div>
+            <div className="chat-body">
+              {!turn && (
+                <div className="chat-bubble bot">
+                  <p>예: "3학년은 몇 명이야?", "지원 동기 요약해줘"</p>
+                </div>
+              )}
+              {turn && (
+                <>
+                  <p className="chat-bubble user">{turn.asked}</p>
+                  <div className="chat-bubble bot" key={turn.id}>
+                    {turn.state === 'loading' && <p className="muted">분석하는 중이에요.</p>}
+                    {turn.state === 'failed' && (
+                      <p className="error" role="alert">
+                        {turn.message}
+                      </p>
+                    )}
+                    {turn.state === 'done' && turn.response.status === 'ok' && (
+                      <p>
+                        조건에 맞는 응답 {turn.response.result.count}건을 찾았어요. 대시보드 위
+                        결과에서 확인해 주세요.
+                      </p>
+                    )}
+                    {turn.state === 'done' && turn.response.status === 'clarify' && (
+                      <ClarifyResult response={turn.response} onChoose={choose} />
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+            <form
+              className="composer"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const text = query.trim();
+                if (!text || loading) return;
+                send({ query: text }, text);
+              }}
+            >
+              <input
+                aria-label="응답에 대해 묻기"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="예: 3학년은 몇 명이야?"
+              />
+              <button aria-label="질문 보내기" type="submit" disabled={loading}>
+                <Icon name="arrow" size={18} />
+              </button>
+            </form>
+            {presets.length > 0 && (
+              <div className="explore-presets">
+                {visiblePresets.map((group) => (
+                  <div key={group.title} className="explore-preset-group">
+                    <span className="muted small">{group.title}</span>
+                    <div className="button-row">
+                      {group.choices.map((choice) => (
+                        <button
+                          key={choice.label}
+                          type="button"
+                          className="filter-chip"
+                          disabled={loading}
+                          onClick={() => choose(choice)}
+                        >
+                          {choice.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {optionPresets.length > 0 && (
+                  <button
+                    type="button"
+                    className="explore-more"
+                    aria-expanded={moreOptions}
+                    onClick={() => setMoreOptions(!moreOptions)}
+                  >
+                    {moreOptions ? '선택지별 인원 접기' : '선택지별 인원 더 보기'}
+                  </button>
+                )}
+              </div>
             )}
           </Panel>
-        </div>
-        <Panel className="assistant-panel">
-          <div className="assistant-head">
-            <div>
-              <span className="assistant-symbol">
-                <Icon name="message" size={17} />
-              </span>
-              <b>답변 도우미</b>
-              <p className="muted small">이 폼의 응답을 말로 물어보세요.</p>
-            </div>
-          </div>
-          <div className="chat-body">
-            {!turn && (
-              <div className="chat-bubble bot">
-                <p>예: "3학년은 몇 명이야?", "지원 동기 요약해줘"</p>
-              </div>
-            )}
-            {turn && (
-              <>
-                <p className="chat-bubble user">{turn.asked}</p>
-                <div className="chat-bubble bot" key={turn.id}>
-                  {turn.state === 'loading' && <p className="muted">분석하는 중이에요.</p>}
-                  {turn.state === 'failed' && (
-                    <p className="error" role="alert">
-                      {turn.message}
-                    </p>
-                  )}
-                  {turn.state === 'done' && turn.response.status === 'ok' && (
-                    <p>
-                      조건에 맞는 응답 {turn.response.result.count}건을 찾았어요. 왼쪽에서 확인해
-                      주세요.
-                    </p>
-                  )}
-                  {turn.state === 'done' && turn.response.status === 'clarify' && (
-                    <ClarifyResult
-                      response={turn.response}
-                      onChoose={choose}
-                      onResults={onResults}
-                    />
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-          <form
-            className="composer"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const text = query.trim();
-              if (!text || loading) return;
-              send({ query: text }, text);
-            }}
-          >
-            <input
-              aria-label="응답에 대해 묻기"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="예: 3학년은 몇 명이야?"
-            />
-            <button aria-label="질문 보내기" type="submit" disabled={loading}>
-              <Icon name="arrow" size={18} />
-            </button>
-          </form>
-          {presets.length > 0 && (
-            <div className="explore-presets">
-              {presets.map((group) => (
-                <div key={group.title} className="explore-preset-group">
-                  <span className="muted small">{group.title}</span>
-                  <div className="button-row">
-                    {group.choices.map((choice) => (
-                      <button
-                        key={choice.label}
-                        type="button"
-                        className="filter-chip"
-                        disabled={loading}
-                        onClick={() => choose(choice)}
-                      >
-                        {choice.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Panel>
+        )}
       </div>
     </div>
   );

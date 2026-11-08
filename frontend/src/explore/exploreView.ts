@@ -283,6 +283,8 @@ function isPersonal(q: Question): boolean {
 
 export interface PresetGroup {
   title: string;
+  /** main은 처음부터 보이고, option(선택지별 인원)은 "더 보기"로 펼친다. */
+  kind: 'main' | 'option';
   choices: Choice[];
 }
 
@@ -303,6 +305,7 @@ export function presetGroups(definition: CreatorFormDefinition): PresetGroup[] {
   const groups: PresetGroup[] = [
     {
       title: '전체',
+      kind: 'main',
       choices: [{ label: '전체 응답 목록', context: { conditions: [], operation: 'list' } }],
     },
   ];
@@ -318,6 +321,7 @@ export function presetGroups(definition: CreatorFormDefinition): PresetGroup[] {
     });
     groups.push({
       title: '문항 요약',
+      kind: 'main',
       choices: summarizable.map((q) => ({
         label: `${q.question_note} 요약`,
         context: { conditions: [], operation: 'summarize', target: q.question_note },
@@ -336,7 +340,9 @@ export function presetGroups(definition: CreatorFormDefinition): PresetGroup[] {
           ]
         : [];
     });
-    if (choices.length > 0) groups.push({ title: `${q.question_note} 선택지별 인원`, choices });
+    if (choices.length > 0) {
+      groups.push({ title: `${q.question_note} 선택지별 인원`, kind: 'option', choices });
+    }
   }
   return groups;
 }

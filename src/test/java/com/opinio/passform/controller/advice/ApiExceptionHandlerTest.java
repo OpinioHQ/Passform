@@ -62,6 +62,7 @@ class ApiExceptionHandlerTest {
 			Map.entry(ErrorCode.INVALID_OPTION, HttpStatus.BAD_REQUEST),
 			Map.entry(ErrorCode.CHARACTER_LIMIT_EXCEEDED, HttpStatus.BAD_REQUEST),
 			Map.entry(ErrorCode.FORM_VERSION_CHANGED, HttpStatus.CONFLICT),
+			Map.entry(ErrorCode.UNSUPPORTED_KEY, HttpStatus.BAD_REQUEST),
 			Map.entry(ErrorCode.INVALID_CONTEXT, HttpStatus.BAD_REQUEST),
 			Map.entry(ErrorCode.LLM_UNAVAILABLE, HttpStatus.SERVICE_UNAVAILABLE));
 

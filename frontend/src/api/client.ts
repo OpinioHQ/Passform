@@ -1,8 +1,10 @@
 import type {
   AnalyzeRequest,
   AnalyzeResponse,
+  AutofillResult,
   ConsentTemplate,
   CreatedForm,
+  CreatedProfile,
   CreatorFormDefinition,
   CreatorFormSummary,
   FormDefinition,
@@ -10,6 +12,8 @@ import type {
   FormStateView,
   FormStatus,
   MeResponse,
+  Profile,
+  ProfileInput,
   PublicForm,
   ResponseDetail,
   ResponseHistoryDetail,
@@ -86,9 +90,17 @@ function me(): Promise<MeResponse> {
   return mePromise;
 }
 
-/** 실제 API 연결점. 화면이 호출하는 것은 `/me`, 내 폼함·저장, 제출 이력, 폼 공개 조회, 응답 초안, 제출, 결과, 응답 상세, 빌더뿐이다. */
+/** 실제 API 연결점. 화면이 호출하는 것은 `/me`, 프로필, 자동채우기, 내 폼함·저장, 제출 이력, 폼 공개 조회, 응답 초안, 제출, 결과, 응답 상세, 빌더뿐이다. */
 export const api = {
   me,
+  profiles: () => request<Profile[]>('/me/profiles'),
+  createProfile: (body: ProfileInput) => request<CreatedProfile>('/me/profiles', json(body)),
+  updateProfile: (profileId: string, body: ProfileInput) =>
+    request<void>(`/me/profiles/${segment(profileId)}`, { ...json(body), method: 'PUT' }),
+  deleteProfile: (profileId: string) =>
+    request<void>(`/me/profiles/${segment(profileId)}`, { method: 'DELETE' }),
+  autofill: (formId: string, profileId: string) =>
+    request<AutofillResult>(`/forms/${segment(formId)}/autofill`, json({ profile_id: profileId })),
   savedForms: () => request<SavedFormSummary[]>('/me/forms'),
   createdForms: () => request<CreatorFormSummary[]>('/me/created-forms'),
   consentTemplates: () => request<ConsentTemplate[]>('/consent-templates'),

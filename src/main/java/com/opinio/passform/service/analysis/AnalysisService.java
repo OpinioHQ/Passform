@@ -1,6 +1,7 @@
 package com.opinio.passform.service.analysis;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -58,16 +59,19 @@ public class AnalysisService {
 
 	private final RequestContextSchema contextSchema;
 
+	private final SummaryService summaries;
+
 	private final PathAwareEvaluation pathAwareEvaluation = new PathAwareEvaluation();
 
 	public AnalysisService(FormRepository forms, FormVersionRepository formVersions, ResponseRepository responses,
-			QueryParser parser, ConditionMatcher matcher, RequestContextSchema contextSchema) {
+			QueryParser parser, ConditionMatcher matcher, RequestContextSchema contextSchema, SummaryService summaries) {
 		this.forms = forms;
 		this.formVersions = formVersions;
 		this.responses = responses;
 		this.parser = parser;
 		this.matcher = matcher;
 		this.contextSchema = contextSchema;
+		this.summaries = summaries;
 	}
 
 	public AnalyzeView analyze(AnalyzeCommand command) {
@@ -126,8 +130,7 @@ public class AnalysisService {
 		if (clarify.isPresent()) {
 			return AnalyzeView.clarify(context, clarify.get());
 		}
-		failIfStepPending(context);
-		return result(context, matches, versions, records, forms, sort);
+		return result(context, matches, versions, submitted, records, forms, sort);
 	}
 
 	private Form ownedForm(AnalyzeCommand command) {
@@ -228,17 +231,14 @@ public class AnalysisService {
 			.orElseThrow(() -> new IllegalStateException("배포 정의가 없다: 폼 버전 " + version));
 	}
 
-	private static void failIfStepPending(RequestContext context) {
-		if (RequestContext.SUMMARIZE.equals(context.operation())) {
-			throw new AnalysisStepPendingException("요약(T7)");
-		}
-	}
-
-	// 결과 처리(analyze_api.md 2절 ⑤). sort는 list에 sort가 있을 때만 있다.
+	// 결과 처리(analyze_api.md 2절 ⑤·⑥). sort는 list에 sort가 있을 때만 있다.
 	private AnalyzeView result(RequestContext context, List<ConditionMatch> matches, List<VersionQuestions> versions,
-			List<ResponseRecord> records, Map<Integer, FormDefinition> forms, ListSort sort) {
+			List<Response> submitted, List<ResponseRecord> records, Map<Integer, FormDefinition> forms, ListSort sort) {
 		MatchMode mode = context.match() == null ? null : MatchMode.valueOf(context.match().toUpperCase(Locale.ROOT));
 		EvaluationResult evaluation = pathAwareEvaluation.evaluate(context.conditions(), mode, matches, records, forms);
+		if (RequestContext.SUMMARIZE.equals(context.operation())) {
+			return summaryResult(context, versions, submitted, evaluation);
+		}
 		List<String> responseIds = null;
 		List<Integer> sortUnavailable = null;
 		if (RequestContext.LIST.equals(context.operation())) {
@@ -252,6 +252,20 @@ public class AnalysisService {
 		return AnalyzeView.ok(context, matchedViews(evaluation.matched(), versions),
 				CoverageView.of(evaluation.coverage(), sortUnavailable),
 				new ResultView(context.operation(), evaluation.count(), responseIds, null));
+	}
+
+	// 요약 대상은 조건 평가가 정한 일치 응답이고, 위에서 한 번 읽은 응답에서 고른다(AC20, AC88).
+	private AnalyzeView summaryResult(RequestContext context, List<VersionQuestions> versions, List<Response> submitted,
+			EvaluationResult evaluation) {
+		Set<String> matchedIds = Set.copyOf(evaluation.responseIds());
+		List<Response> matched = submitted.stream()
+			.filter(response -> matchedIds.contains(response.getId().toString()))
+			.sorted(Comparator.comparing(response -> response.getId().toString()))
+			.toList();
+		SummaryService.Outcome outcome = summaries.summarize(context, versions, matched);
+		return AnalyzeView.ok(context, matchedViews(evaluation.matched(), versions),
+				CoverageView.of(evaluation.coverage().withSummaryUnavailable(outcome.unavailableVersions()), null),
+				new ResultView(context.operation(), evaluation.count(), evaluation.responseIds(), outcome.summary()));
 	}
 
 	private static List<MatchedView> matchedViews(List<ConditionMatch> matched, List<VersionQuestions> versions) {

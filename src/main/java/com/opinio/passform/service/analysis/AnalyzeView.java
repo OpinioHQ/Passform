@@ -5,6 +5,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.opinio.passform.domain.analysis.Coverage;
+import com.opinio.passform.domain.analysis.SummaryUnavailableVersion;
 import com.opinio.passform.domain.analysis.VersionCoverage;
 
 // analyze_response.schema.json의 200 응답. ok이면 clarify가 null이고, clarify이면 matched·coverage·result가 null이다.
@@ -15,14 +16,14 @@ public record AnalyzeView(String status, RequestContext context, List<MatchedVie
 		return new AnalyzeView("ok", context, matched, coverage, result, null);
 	}
 
-	// 평가 함수의 Coverage(잠긴 타입)에 list 정렬 범위를 더한 출력이다(SPEC 314행). 정렬 범위가 없으면 키를 내지 않는다.
+	// 평가 함수의 Coverage(요약 범위 포함)에 list 정렬 범위를 더한 출력이다(SPEC 314행). 해당 범위가 없으면 키를 내지 않는다.
 	@JsonInclude(Include.NON_NULL)
 	public record CoverageView(int totalSubmittedCount, int notEvaluableCount, List<VersionCoverage> notEvaluableByVersion,
-			List<Integer> sortUnavailableByVersion) {
+			List<Integer> sortUnavailableByVersion, List<SummaryUnavailableVersion> summaryUnavailableByVersion) {
 
 		static CoverageView of(Coverage coverage, List<Integer> sortUnavailableByVersion) {
 			return new CoverageView(coverage.totalSubmittedCount(), coverage.notEvaluableCount(),
-					coverage.notEvaluableByVersion(), sortUnavailableByVersion);
+					coverage.notEvaluableByVersion(), sortUnavailableByVersion, coverage.summaryUnavailableByVersion());
 		}
 
 	}
@@ -35,8 +36,8 @@ public record AnalyzeView(String status, RequestContext context, List<MatchedVie
 			String option) {
 	}
 
-	// summary는 T7이 채운다. 지금은 count·list뿐이라 항상 null이다.
-	public record ResultView(String operation, int count, List<String> responseIds, Object summary) {
+	// summary는 summarize에서만 객체이고 count·list에서는 null이다.
+	public record ResultView(String operation, int count, List<String> responseIds, SummaryView summary) {
 	}
 
 	// options는 사유에 따라 문자열이거나 QuestionOption이다(SPEC 336~347행).

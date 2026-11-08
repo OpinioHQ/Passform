@@ -83,7 +83,7 @@ class ListSortTest {
 		ResponseRepository responses = mock(ResponseRepository.class);
 		when(responses.findSubmittedNotDeletedByFormId(FORM_ID)).thenReturn(submitted);
 		AnalysisService service = new AnalysisService(forms, formVersions, responses, mock(QueryParser.class),
-				new PendingConditionMatcher(), new RequestContextSchema());
+				new PendingConditionMatcher(), new RequestContextSchema(), mock(SummaryService.class));
 		String sort = "{\"by\":\"" + by + "\",\"order\":\"" + order + "\"}";
 		return service.analyze(new AnalyzeCommand(OWNER, FORM_ID.toString(),
 				"{\"context\":{\"conditions\":[],\"operation\":\"list\",\"sort\":" + sort + "}}"));

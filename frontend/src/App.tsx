@@ -5,7 +5,6 @@ import { demoForm } from './demo/data';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-import { ProfilePage } from './pages/ProfilePage';
 import {
   CreatedFormsRoute,
   EditFormRoute,
@@ -15,7 +14,12 @@ import {
   NewFormRoute,
 } from './routes/creatorRoutes';
 import { paths, routePatterns } from './routes/paths';
-import { FormResponseRoute, MyFormsRoute, MyResponsesRoute } from './routes/respondentRoutes';
+import {
+  FormResponseRoute,
+  MyFormsRoute,
+  MyProfileRoute,
+  MyResponsesRoute,
+} from './routes/respondentRoutes';
 
 function LandingRoute() {
   const navigate = useNavigate();
@@ -38,7 +42,7 @@ export function App() {
           <Route path={routePatterns.myForms} element={<MyFormsRoute />} />
           <Route path={routePatterns.myResponses} element={<MyResponsesRoute />} />
           <Route path={routePatterns.myResponse} element={<MyResponsesRoute />} />
-          <Route path={routePatterns.myProfile} element={<ProfilePage />} />
+          <Route path={routePatterns.myProfile} element={<MyProfileRoute />} />
           <Route path={routePatterns.publicForm} element={<FormResponseRoute />} />
           <Route path={routePatterns.form} element={<FormResponseRoute />} />
           <Route path={routePatterns.creator} element={<CreatedFormsRoute />} />

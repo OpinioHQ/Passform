@@ -9,7 +9,6 @@ const routesWithDemoValues: string[] = [
   routePatterns.myForms,
   routePatterns.myResponses,
   routePatterns.myResponse,
-  routePatterns.myProfile,
   routePatterns.formExplore,
 ];
 

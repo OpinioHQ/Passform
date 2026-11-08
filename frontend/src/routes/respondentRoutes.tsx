@@ -5,12 +5,84 @@ import { useNotice } from '../components/AppLayout';
 import { Heading, Panel } from '../components/UI';
 import { useDemoData } from '../demo/DemoDataContext';
 import { demoForm, demoSavedForms, demoSubmission } from '../demo/data';
+import { demoUser } from '../demo/screens';
 import { HistoryPage } from '../pages/HistoryPage';
 import { InboxPage } from '../pages/InboxPage';
+import { ProfilePage } from '../pages/ProfilePage';
 import { ClosedNotice, ResponsePage } from '../pages/ResponsePage';
 import { DraftGate } from '../response/DraftGate';
-import type { PublicForm, SavedFormSummary, SubmitResponseInput } from '../types/api';
+import type {
+  Profile,
+  ProfileInput,
+  PublicForm,
+  SavedFormSummary,
+  SubmitResponseInput,
+} from '../types/api';
 import { paths } from './paths';
+
+const demoProfiles: Profile[] = [
+  {
+    profile_id: 'demo-profile',
+    label: demoUser.profileLabel,
+    personal_info: { name: demoUser.name, email: demoUser.email },
+  },
+];
+
+/** `/me/profile`. 실제 API에서는 서버 값만 보이고, 가짜 데이터 모드에서는 화면 상태로만 바뀐다. */
+export function MyProfileRoute() {
+  const [profiles, setProfiles] = React.useState<Profile[] | null>(
+    useLiveApi ? null : demoProfiles,
+  );
+  const [loadError, setLoadError] = React.useState<'login' | 'failed' | null>(null);
+
+  React.useEffect(() => {
+    if (!useLiveApi) return;
+    let active = true;
+    api
+      .profiles()
+      .then((next) => {
+        if (active) setProfiles(next);
+      })
+      .catch((e: unknown) => {
+        if (active) setLoadError(e instanceof ApiError && e.status === 401 ? 'login' : 'failed');
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // 서버가 성공을 돌려준 뒤에는 목록을 다시 읽지 않고 화면에 바로 반영한다. 재조회 실패를 저장 실패로 보이면 다시 눌러 중복이 생긴다.
+  async function create(input: ProfileInput) {
+    const id = useLiveApi
+      ? (await api.createProfile(input)).profile_id
+      : `demo-profile-${Date.now()}`;
+    setProfiles((list) => [{ profile_id: id, ...input }, ...(list ?? [])]);
+  }
+
+  async function update(profileId: string, input: ProfileInput) {
+    if (useLiveApi) await api.updateProfile(profileId, input);
+    setProfiles((list) =>
+      (list ?? []).map((p) =>
+        p.profile_id === profileId ? { profile_id: profileId, ...input } : p,
+      ),
+    );
+  }
+
+  async function remove(profileId: string) {
+    if (useLiveApi) await api.deleteProfile(profileId);
+    setProfiles((list) => (list ?? []).filter((p) => p.profile_id !== profileId));
+  }
+
+  return (
+    <ProfilePage
+      profiles={profiles}
+      loadError={loadError}
+      onCreate={create}
+      onUpdate={update}
+      onDelete={remove}
+    />
+  );
+}
 
 export function MyFormsRoute() {
   const navigate = useNavigate();

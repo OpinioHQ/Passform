@@ -1659,14 +1659,41 @@ h3 {
   gap: 10px;
   padding: 0 12px 14px;
 }
+/* 결과 대시보드: 탭 → 고른 보기의 응답 수 → (문항 카드 | 탐색 도우미). */
 .results-dashboard .tab-bar {
   flex-wrap: wrap;
   row-gap: 8px;
 }
-.tab-bar .tab-count {
-  display: block;
-  margin: 4px 0 0;
-  font-size: 13px;
+.results-count {
+  margin: 14px 0 0;
+  font-size: 14px;
+  color: #73776f;
+}
+.results-dashboard .explore-grid {
+  margin-top: 16px;
+}
+/* 도우미 윗선을 첫 카드에 맞추고, 높이는 카드 영역과 같게(화면보다 길면 화면 높이까지, 스크롤해도 따라온다). */
+.results-dashboard .explore-grid.with-assistant {
+  align-items: stretch;
+}
+.results-dashboard .explore-left {
+  gap: 16px;
+}
+.results-dashboard .explore-left > .result-card {
+  margin-top: 0;
+}
+.assistant-col {
+  min-width: 0;
+}
+.assistant-col .assistant-panel {
+  position: sticky;
+  top: 16px;
+  height: min(100%, calc(100vh - 32px));
+  min-height: 420px;
+}
+.assistant-col .chat-body {
+  min-height: 0;
+  overflow-y: auto;
 }
 .explore-more {
   justify-self: start;
@@ -1679,8 +1706,13 @@ h3 {
 }
 /* 한 줄로 접히면 답변 도우미를 결과 위에 둔다. */
 @media (max-width: 1130px) {
-  .explore-page .assistant-panel {
+  .assistant-col {
     order: -1;
+  }
+  .assistant-col .assistant-panel {
+    position: static;
+    height: auto;
+    min-height: 350px;
   }
 }
 .explore-preset-group .button-row {

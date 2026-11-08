@@ -46,7 +46,12 @@ function renderPage(responses: AnalyzeResponse[], details?: (id: string) => Resp
       analyze={analyze}
       loadResponse={loadResponse}
       onBuilder={() => {}}
-      dashboard={<p>대시보드</p>}
+      renderDashboard={({ aiResult, aside }) => (
+        <>
+          {aiResult}
+          {aside}
+        </>
+      )}
     />,
   );
   return { analyze, loadResponse };

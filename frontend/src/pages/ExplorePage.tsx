@@ -18,7 +18,7 @@ import type {
   SummaryEvidence,
 } from '../types/analyze';
 import type { CreatorFormDefinition, ResponseDetail } from '../types/api';
-import { versionLabel } from './ResultsPage';
+import { versionLabel, type DashboardSlots } from './ResultsPage';
 
 /** 목록은 이만큼씩 상세를 읽는다. 순서는 result.response_ids 그대로다(AC62). */
 const LIST_PAGE = 20;
@@ -301,22 +301,22 @@ function ClarifyResult({
 }
 
 /**
- * 결과 화면 + 탐색 도우미(E8 #46). 왼쪽은 결과 대시보드, 오른쪽은 자연어 묻기.
- * 도우미 결과는 대시보드 위 카드로 보이고 대시보드 숫자(폼 전체 기준)는 바꾸지 않는다.
- * definition을 못 읽으면(null) 묻기 밑 버튼만 빠진다.
+ * 결과 대시보드 + 탐색 도우미(E8 #46). 이 컴포넌트는 묻기 상태만 갖고,
+ * AI 탐색 결과 카드와 도우미 패널을 대시보드의 두 자리(aiResult, aside)에 넘긴다.
+ * 대시보드 숫자(폼 전체 기준)는 바꾸지 않는다. definition을 못 읽으면(null) 묻기 밑 버튼만 빠진다.
  */
 export function ExplorePage({
   definition,
   analyze,
   loadResponse,
   onBuilder,
-  dashboard,
+  renderDashboard,
 }: {
   definition: CreatorFormDefinition | null;
   analyze: (body: AnalyzeRequest) => Promise<AnalyzeResponse>;
   loadResponse: (responseId: string) => Promise<ResponseDetail>;
   onBuilder: () => void;
-  dashboard: React.ReactNode;
+  renderDashboard: (slots: DashboardSlots) => React.ReactNode;
 }) {
   const [assistantOpen, setAssistantOpen] = React.useState(true);
   const [moreOptions, setMoreOptions] = React.useState(false);
@@ -369,25 +369,22 @@ export function ExplorePage({
           </div>
         }
       />
-      <div className={`explore-grid ${assistantOpen ? 'with-assistant' : ''}`}>
-        <div className="explore-left">
-          {shown && (
-            <Panel className="result-panel explore-answer" key={shown.id}>
-              <div className="section-title">
-                <div>
-                  <h2>AI 탐색 결과</h2>
-                  <p className="muted small explore-asked">{shown.asked}</p>
-                </div>
-                <Button variant="secondary" onClick={() => setShown(null)}>
-                  지우기
-                </Button>
+      {renderDashboard({
+        aiResult: shown && (
+          <Panel className="result-panel explore-answer" key={shown.id}>
+            <div className="section-title">
+              <div>
+                <h2>AI 탐색 결과</h2>
+                <p className="muted small explore-asked">{shown.asked}</p>
               </div>
-              <OkResult response={shown.response} loadResponse={loadResponse} />
-            </Panel>
-          )}
-          {dashboard}
-        </div>
-        {assistantOpen && (
+              <Button variant="secondary" onClick={() => setShown(null)}>
+                지우기
+              </Button>
+            </div>
+            <OkResult response={shown.response} loadResponse={loadResponse} />
+          </Panel>
+        ),
+        aside: assistantOpen && (
           <Panel className="assistant-panel">
             <div className="assistant-head">
               <div>
@@ -486,8 +483,8 @@ export function ExplorePage({
               </div>
             )}
           </Panel>
-        )}
-      </div>
+        ),
+      })}
     </div>
   );
 }

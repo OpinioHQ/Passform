@@ -33,6 +33,8 @@ final class QueryText {
 
 	private static final Pattern EDGE_PUNCTUATION = Pattern.compile("^[\\p{P}\\p{S}]+|[\\p{P}\\p{S}]+$");
 
+	private static final Pattern WORD_BREAK = Pattern.compile("[\\p{P}\\p{S}]");
+
 	// 알려진 동작어만 꼬리에서 뗀다. 모르는 "~줘"는 조건으로 남겨 되묻는다(SPEC 334행).
 	private static final Pattern ACTION_TAIL = Pattern.compile("(알려|보여|세어|정리해|요약해|나열해|찾아|뽑아)(줘|주세요|줄래요|줄래|주라)$");
 
@@ -76,9 +78,10 @@ final class QueryText {
 
 	// 표 5행 혼합 부정: 부정 표현이 있는데 부정된 낱말 말고 다른 조건 표현도 남아 있다.
 	// 문항 문구 낱말("맡은 역할이")은 조건이 아니므로 긍정 조건으로 세지 않는다(골든 question_wording_not_dropped_condition과 같은 규칙).
+	// 부정어는 문항 문구("제외 사유")에 들어 있어도 부정으로 센다(SPEC 342행, AC26).
 	static boolean mixesNegation(String query, RequestContext context, List<VersionQuestions> versions) {
 		List<String> words = wordsWithoutAction(query).stream()
-			.filter(word -> !isQuestionWording(word, versions))
+			.filter(word -> isNegation(word) || !isQuestionWording(word, versions))
 			.toList();
 		List<String> positive = new ArrayList<>();
 		boolean negated = false;
@@ -118,14 +121,17 @@ final class QueryText {
 	}
 
 	// SPEC 334행: 파서가 조건 일부를 버렸으면 원문에 글자 그대로 있는 선택지 문구를 되살린다. 조건이 하나라도 있을 때만 본다.
-	// 선택지 문구만 되살리고 문항 문구·일반어는 되살리지 않는다. 이미 든 조건이나 쓰이는 target·topic·sort.by 안의 글자도 그대로 둔다.
+	// 선택지 문구만 되살리고 문항 문구·일반어("수", "명" 등 GENERIC)는 되살리지 않는다.
+	// 원문에서 이미 든 조건이나 쓰이는 target·topic·sort.by가 나온 자리 안의 글자도 그대로 둔다("기획팀" 안의 "기획").
 	// 낱말 경계(앞은 글자가 아님, 뒤는 끝·공백·문장부호·조사)에서만 찾아 "예정" 속 "예" 같은 글자를 되살리지 않는다.
 	static RequestContext reviveDroppedOptions(String query, RequestContext parsed, List<VersionQuestions> versions) {
 		if (parsed.conditions().isEmpty()) {
 			return parsed;
 		}
-		List<String> used = new ArrayList<>(parsed.conditions());
-		usedPhrases(parsed).forEach(used::add);
+		List<int[]> used = new ArrayList<>();
+		Stream.concat(parsed.conditions().stream(), usedPhrases(parsed))
+			.filter(phrase -> !phrase.isBlank())
+			.forEach(phrase -> used.addAll(spans(query, phrase, false)));
 		List<int[]> wording = new ArrayList<>();
 		versions.stream()
 			.flatMap(version -> version.questions().stream())
@@ -139,9 +145,8 @@ final class QueryText {
 			.flatMap(version -> version.questions().stream())
 			.filter(VersionQuestions.Question::isChoice)
 			.flatMap(question -> question.options().stream())
-			.filter(option -> !option.isBlank())
+			.filter(option -> !option.isBlank() && !isGeneric(option))
 			.distinct()
-			.filter(option -> used.stream().noneMatch(phrase -> phrase.contains(option)))
 			.forEach(option -> spans(query, option, true).forEach(span -> {
 				// 같은 자리에서 시작하면 긴 선택지를 남긴다.
 				if (!found.containsKey(span[0]) || found.get(span[0]).length() < option.length()) {
@@ -158,7 +163,8 @@ final class QueryText {
 				.anyMatch(other -> other != start && other <= start && ends.get(other) >= end);
 			boolean insideWording = wording.stream()
 				.anyMatch(span -> span[0] <= start && span[1] >= end && span[1] - span[0] > end - start);
-			if (!insideOther && !insideWording && !revived.contains(entry.getValue())) {
+			boolean insideUsed = used.stream().anyMatch(span -> span[0] <= start && span[1] >= end);
+			if (!insideOther && !insideWording && !insideUsed && !revived.contains(entry.getValue())) {
 				revived.add(entry.getValue());
 			}
 		}
@@ -189,9 +195,11 @@ final class QueryText {
 		return start == 0 || !Character.isLetterOrDigit(text.charAt(start - 1));
 	}
 
+	// 토큰은 공백이나 문장부호·기호에서 끊는다("소프트웨어학과,3학년").
 	private static boolean endsWord(String text, int end) {
 		int tokenEnd = end;
-		while (tokenEnd < text.length() && !Character.isWhitespace(text.charAt(tokenEnd))) {
+		while (tokenEnd < text.length() && !Character.isWhitespace(text.charAt(tokenEnd))
+				&& !WORD_BREAK.matcher(String.valueOf(text.charAt(tokenEnd))).matches()) {
 			tokenEnd++;
 		}
 		String rest = EDGE_PUNCTUATION.matcher(text.substring(end, tokenEnd)).replaceAll("");

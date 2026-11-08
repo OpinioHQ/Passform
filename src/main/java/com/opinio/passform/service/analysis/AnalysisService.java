@@ -31,6 +31,7 @@ import com.opinio.passform.repository.FormRepository;
 import com.opinio.passform.repository.FormVersionRepository;
 import com.opinio.passform.repository.ResponseRepository;
 import com.opinio.passform.service.analysis.AnalyzeView.ClarifyView;
+import com.opinio.passform.service.analysis.AnalyzeView.CoverageView;
 import com.opinio.passform.service.analysis.AnalyzeView.MatchedView;
 import com.opinio.passform.service.analysis.AnalyzeView.ResultView;
 
@@ -115,12 +116,18 @@ public class AnalysisService {
 			.filter(entry -> versionNumbers.contains(entry.formVersion()))
 			.toList();
 
-		clarify = ClarifyRules.afterMatching(context, matches, versions);
+		List<ResponseRecord> records = submitted.stream().map(Response::toResponseRecord).toList();
+		Map<Integer, FormDefinition> forms = new TreeMap<>();
+		definitions.forEach((version, definition) -> forms.put(version, FormDefinition.from(definition)));
+		ListSort sort = RequestContext.LIST.equals(context.operation()) && context.sort() != null
+				? new ListSort(context.sort().by(), versions, forms, records) : null;
+
+		clarify = ClarifyRules.afterMatching(context, matches, versions, sort);
 		if (clarify.isPresent()) {
 			return AnalyzeView.clarify(context, clarify.get());
 		}
 		failIfStepPending(context);
-		return result(context, matches, versions, submitted, definitions);
+		return result(context, matches, versions, records, forms, sort);
 	}
 
 	private Form ownedForm(AnalyzeCommand command) {
@@ -222,23 +229,28 @@ public class AnalysisService {
 	}
 
 	private static void failIfStepPending(RequestContext context) {
-		if (RequestContext.LIST.equals(context.operation()) && context.sort() != null) {
-			throw new AnalysisStepPendingException("정렬 목록(E7 #45)");
-		}
 		if (RequestContext.SUMMARIZE.equals(context.operation())) {
 			throw new AnalysisStepPendingException("요약(T7)");
 		}
 	}
 
+	// 결과 처리(analyze_api.md 2절 ⑤). sort는 list에 sort가 있을 때만 있다.
 	private AnalyzeView result(RequestContext context, List<ConditionMatch> matches, List<VersionQuestions> versions,
-			List<Response> submitted, Map<Integer, Map<String, Object>> definitions) {
-		List<ResponseRecord> records = submitted.stream().map(Response::toResponseRecord).toList();
+			List<ResponseRecord> records, Map<Integer, FormDefinition> forms, ListSort sort) {
 		MatchMode mode = context.match() == null ? null : MatchMode.valueOf(context.match().toUpperCase(Locale.ROOT));
-		Map<Integer, FormDefinition> forms = new TreeMap<>();
-		definitions.forEach((version, definition) -> forms.put(version, FormDefinition.from(definition)));
 		EvaluationResult evaluation = pathAwareEvaluation.evaluate(context.conditions(), mode, matches, records, forms);
-		List<String> responseIds = RequestContext.LIST.equals(context.operation()) ? evaluation.responseIds() : null;
-		return AnalyzeView.ok(context, matchedViews(evaluation.matched(), versions), evaluation.coverage(),
+		List<String> responseIds = null;
+		List<Integer> sortUnavailable = null;
+		if (RequestContext.LIST.equals(context.operation())) {
+			responseIds = evaluation.responseIds();
+			if (sort != null) {
+				String order = context.sort().order() == null ? "asc" : context.sort().order();
+				sortUnavailable = sort.unavailableVersions(responseIds);
+				responseIds = sort.sort(responseIds, order);
+			}
+		}
+		return AnalyzeView.ok(context, matchedViews(evaluation.matched(), versions),
+				CoverageView.of(evaluation.coverage(), sortUnavailable),
 				new ResultView(context.operation(), evaluation.count(), responseIds, null));
 	}
 

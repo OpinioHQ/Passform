@@ -18,7 +18,7 @@ import com.opinio.passform.service.analysis.AnalyzeView.ClarifyView;
 import com.opinio.passform.service.analysis.AnalyzeView.QuestionOption;
 
 // SPEC 336~347행의 되묻기 표. 위에 있는 사유 하나만 돌려준다. LLM 없이 코드로 판정한다(AGENTS 3절 4항).
-// 6·7행의 sort.by와 9행은 E7이 더한다. message는 화면에 그대로 나간다: 내부 ID와 "판정 불가"를 쓰지 않는다.
+// message는 화면에 그대로 나간다: 내부 ID와 "판정 불가"를 쓰지 않는다.
 final class ClarifyRules {
 
 	private ClarifyRules() {
@@ -65,17 +65,60 @@ final class ClarifyRules {
 		return Optional.empty();
 	}
 
-	// 표 6·7·8·10행: 매칭 뒤에 판정한다. matches는 제출 응답이 있는 버전의 항목만 담는다.
+	// 표 6~10행: 매칭 뒤에 판정한다. matches는 제출 응답이 있는 버전의 항목만 담는다.
+	// sort는 list에 sort가 있을 때만 있고, 그 밖에는 null이다(SPEC 311행: 다른 동작의 sort는 검증하지 않는다).
 	static Optional<ClarifyView> afterMatching(RequestContext context, List<ConditionMatch> matches,
-			List<VersionQuestions> versions) {
+			List<VersionQuestions> versions, ListSort sort) {
 		Map<Integer, Map<String, Question>> lookup = lookup(versions);
 		List<QuestionOption> targetMatches = targetMatches(context, versions);
 		return unknown(context, matches, versions, targetMatches)
+			.or(() -> unknownSort(context, sort, versions))
 			.or(() -> contradictorySingleChoice(context, matches, lookup))
 			.or(() -> ambiguousCondition(context, matches, lookup))
 			.or(() -> ambiguousTarget(targetMatches, lookup))
+			.or(() -> ambiguousSort(sort))
 			.or(() -> doubleNegation(context, matches, lookup))
+			.or(() -> unsortable(context, sort, versions))
 			.or(() -> unsummarizableTarget(context, targetMatches, versions, lookup));
+	}
+
+	// 표 6행 sort.by: 어느 버전에도 그 문구의 문항이 없다. 후보는 표대로 선택형 문항 목록이다.
+	private static Optional<ClarifyView> unknownSort(RequestContext context, ListSort sort,
+			List<VersionQuestions> versions) {
+		if (sort == null || !sort.located().isEmpty()) {
+			return Optional.empty();
+		}
+		return Optional.of(new ClarifyView("unknown_condition",
+				"폼에서 '" + context.sort().by() + "' 문항을 찾지 못했어요. 정렬할 문항을 골라 주세요.",
+				questionOptions(versions, Question::isChoice)));
+	}
+
+	// 표 7행 후자: sort.by가 뜻이 다른 여러 문항에 걸린다.
+	private static Optional<ClarifyView> ambiguousSort(ListSort sort) {
+		if (sort == null) {
+			return Optional.empty();
+		}
+		List<QuestionAt> questions = sort.located().stream().map(at -> new QuestionAt(at.formVersion(), at.question())).toList();
+		if (!differentMeanings(questions)) {
+			return Optional.empty();
+		}
+		Set<QuestionOption> candidates = new LinkedHashSet<>();
+		questions.forEach(at -> candidates.add(questionOption(at.formVersion(), at.question())));
+		return Optional.of(new ClarifyView("ambiguous_match", "정렬할 문항이 여러 개에 걸려 있어요. 어느 문항인지 골라 주세요.",
+				List.copyOf(candidates)));
+	}
+
+	// 표 9행.
+	private static Optional<ClarifyView> unsortable(RequestContext context, ListSort sort, List<VersionQuestions> versions) {
+		if (sort == null || sort.sortable()) {
+			return Optional.empty();
+		}
+		List<QuestionOption> candidates = sort.sortableQuestions(versions)
+			.stream()
+			.map(at -> questionOption(at.formVersion(), at.question()))
+			.toList();
+		return Optional.of(new ClarifyView("unsortable_field",
+				"'" + context.sort().by() + "' 문항으로는 정렬할 수 없어요. 아래 문항 중에서 골라 주세요.", candidates));
 	}
 
 	static Map<Integer, Map<String, Question>> lookup(List<VersionQuestions> versions) {

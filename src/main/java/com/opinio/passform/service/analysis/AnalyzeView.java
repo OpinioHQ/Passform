@@ -5,13 +5,26 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.opinio.passform.domain.analysis.Coverage;
+import com.opinio.passform.domain.analysis.VersionCoverage;
 
 // analyze_response.schema.json의 200 응답. ok이면 clarify가 null이고, clarify이면 matched·coverage·result가 null이다.
-public record AnalyzeView(String status, RequestContext context, List<MatchedView> matched, Coverage coverage,
+public record AnalyzeView(String status, RequestContext context, List<MatchedView> matched, CoverageView coverage,
 		ResultView result, ClarifyView clarify) {
 
-	static AnalyzeView ok(RequestContext context, List<MatchedView> matched, Coverage coverage, ResultView result) {
+	static AnalyzeView ok(RequestContext context, List<MatchedView> matched, CoverageView coverage, ResultView result) {
 		return new AnalyzeView("ok", context, matched, coverage, result, null);
+	}
+
+	// 평가 함수의 Coverage(잠긴 타입)에 list 정렬 범위를 더한 출력이다(SPEC 314행). 정렬 범위가 없으면 키를 내지 않는다.
+	@JsonInclude(Include.NON_NULL)
+	public record CoverageView(int totalSubmittedCount, int notEvaluableCount, List<VersionCoverage> notEvaluableByVersion,
+			List<Integer> sortUnavailableByVersion) {
+
+		static CoverageView of(Coverage coverage, List<Integer> sortUnavailableByVersion) {
+			return new CoverageView(coverage.totalSubmittedCount(), coverage.notEvaluableCount(),
+					coverage.notEvaluableByVersion(), sortUnavailableByVersion);
+		}
+
 	}
 
 	static AnalyzeView clarify(RequestContext context, ClarifyView clarify) {

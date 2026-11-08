@@ -1,5 +1,5 @@
 import React from 'react';
-import { Badge, Heading, Panel } from '../components/UI';
+import { Badge, Button, Heading, Panel } from '../components/UI';
 import type { FormResults, QuestionType } from '../types/api';
 
 /** 화면 문구는 "폼 버전 1"로 쓴다(AGENTS 5절). */
@@ -54,16 +54,30 @@ function OptionRow({
 const maxOf = (counts: number[]) => counts.reduce((a, b) => Math.max(a, b), 0);
 
 /** 결과 대시보드(SPEC 234행, AC19). 숫자는 서버가 센 값을 그대로 보인다. */
-export function ResultsPage({ results }: { results: FormResults }) {
+export function ResultsPage({
+  results,
+  onExplore,
+}: {
+  results: FormResults;
+  /** 탐색 화면(E8 #46) 진입. 내가 만든 폼 → 결과 보기 → 응답 탐색. */
+  onExplore?: () => void;
+}) {
   const [view, setView] = React.useState<'combined' | number>('combined');
   const selected =
     view === 'combined' ? undefined : results.versions.find((v) => v.form_version === view);
   return (
-    <div className="page-shell">
+    <div className="page-shell results-page">
       <Heading
         eyebrow="제작자 워크스페이스 / 결과"
         title="결과"
         desc="선택형 문항의 응답 수예요. 통합 보기는 문구·유형이 같은 문항의 같은 선택지만 합쳐요."
+        action={
+          onExplore && (
+            <Button variant="secondary" onClick={onExplore}>
+              응답 탐색
+            </Button>
+          )
+        }
       />
       <div className="metric-grid">
         <Panel className="metric">

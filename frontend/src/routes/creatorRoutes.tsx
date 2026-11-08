@@ -113,11 +113,20 @@ const demoOnly = '이 화면은 서버에 연결했을 때 실제 응답으로�
 
 export function FormResultsRoute() {
   const { formId = '' } = useParams();
+  const navigate = useNavigate();
   const load = React.useCallback(() => api.results(formId), [formId]);
   const result = useServerData(load, '폼을 찾을 수 없어요.');
   const eyebrow = '제작자 워크스페이스 / 결과';
   if (!useLiveApi) return <Waiting eyebrow={eyebrow} title="결과" message={demoOnly} />;
-  if (result.state === 'ready') return <ResultsPage key={formId} results={result.data} />;
+  if (result.state === 'ready') {
+    return (
+      <ResultsPage
+        key={formId}
+        results={result.data}
+        onExplore={() => navigate(paths.formExplore(formId))}
+      />
+    );
+  }
   return (
     <Waiting
       eyebrow={eyebrow}

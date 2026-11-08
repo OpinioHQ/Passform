@@ -1643,7 +1643,8 @@ h3 {
 }
 
 /* 탐색 화면(E8 #46). 360px에서도 가로로 넘치지 않게 줄바꿈하고 최소 폭을 둔다(AC68). */
-.explore-page .heading-row {
+.explore-page .heading-row,
+.results-page .heading-row {
   flex-wrap: wrap;
 }
 .explore-page .heading-row h1,

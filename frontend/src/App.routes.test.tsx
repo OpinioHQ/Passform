@@ -302,14 +302,28 @@ describe('VITE_USE_API=true', () => {
   it('/f/:slug 는 공개 조회만 부르고 내 폼함을 부르지 않는다', async () => {
     const urls = await openLiveAt('/f/test');
     expect(await screen.findByText('서버에서 받은 폼')).toBeTruthy();
-    expect(urls()).toEqual(['http://api.test/me', 'http://api.test/f/test']);
+    // 로그인이면 계정 초안을 조회한다(T5 #53, 사람 승인). 공개 조회 밖의 로그인 API는 이것뿐이다.
+    await waitFor(() =>
+      expect(urls()).toEqual([
+        'http://api.test/me',
+        'http://api.test/f/test',
+        'http://api.test/me/forms/live-form/response-draft',
+      ]),
+    );
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('/forms/:formId 는 formById 를 부른다', async () => {
     const urls = await openLiveAt('/forms/abc');
     expect(await screen.findByText('서버에서 받은 폼')).toBeTruthy();
-    expect(urls()).toEqual(['http://api.test/me', 'http://api.test/forms/abc']);
+    // 로그인이면 계정 초안을 조회한다(T5 #53, 사람 승인). 공개 조회 밖의 로그인 API는 이것뿐이다.
+    await waitFor(() =>
+      expect(urls()).toEqual([
+        'http://api.test/me',
+        'http://api.test/forms/abc',
+        'http://api.test/me/forms/live-form/response-draft',
+      ]),
+    );
   });
 
   it('/me/forms 에서만 내 폼함을 부른다', async () => {

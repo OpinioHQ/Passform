@@ -332,13 +332,13 @@ describe('VITE_USE_API=true', () => {
   });
 
   it('연결한 세 호출 밖의 화면은 API를 부르지 않는다', async () => {
-    const urls = await openLiveAt('/me/responses');
+    const urls = await openLiveAt('/me/profile');
     await waitFor(() => expect(screen.getByRole('banner')).toBeTruthy());
     expect(urls()).toEqual(['http://api.test/me']);
   });
 
   it('가짜 값이 남은 화면에는 띠를 보이고, 없는 화면에는 보이지 않는다', async () => {
-    await openLiveAt('/me/forms');
+    await openLiveAt('/me/profile');
     expect(screen.getByText(/가상 값이 남아 있습니다/)).toBeTruthy();
     cleanup();
     await openLiveAt('/login');

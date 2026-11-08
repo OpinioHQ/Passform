@@ -54,6 +54,7 @@ import com.opinio.passform.domain.response.Response;
 import com.opinio.passform.repository.FormRepository;
 import com.opinio.passform.repository.FormVersionRepository;
 import com.opinio.passform.repository.ResponseRepository;
+import com.opinio.passform.repository.SavedFormRepository;
 import com.opinio.passform.repository.UserRepository;
 import com.opinio.passform.service.CurrentUserService;
 import com.opinio.passform.service.SubmissionService;
@@ -102,6 +103,9 @@ class SubmissionControllerTest {
 
 	@MockitoBean
 	private UserRepository users;
+
+	@MockitoBean
+	private SavedFormRepository savedForms;
 
 	private Form form;
 

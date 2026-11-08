@@ -52,13 +52,33 @@ export interface SubmittedResponse {
   submitted_at: string;
   updated_at: null;
 }
-/** `GET /me/forms`(SPEC 200행). */
+/** `GET /me/forms`(SPEC 200행). `closed`는 서버가 계산한다. */
 export interface SavedFormSummary {
   form_id: string;
   title: string;
   deadline: string | null;
   state: 'saved' | 'submitted';
   has_draft: boolean;
+  saved_at: string;
+  submitted_at: string | null;
+  closed: boolean;
+}
+/** `POST /me/saved-forms`의 입력(SPEC 199행). 201은 처음 저장, 200은 이미 저장함이다. */
+export interface SaveFormInput {
+  form_id: string;
+}
+/** `GET /me/responses/{response_id}`(SPEC 193행). 문항·문구는 제출 버전 기준이다. */
+export interface ResponseHistoryDetail {
+  form_title: string;
+  form_version: number;
+  /** 폼·받은 응답 전체 삭제로 조회 전용이 되면 `null`(T12). */
+  form_definition: PublicForm | null;
+  content: ResponseContentItem[];
+  attachments: ResponseAttachment[];
+  submitted_at: string;
+  updated_at: string | null;
+  editable: boolean;
+  cancellable: boolean;
 }
 /** `GET /me/responses`의 항목(SPEC 192행). */
 export interface ResponseHistoryItem {

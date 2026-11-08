@@ -16,8 +16,10 @@ import type {
   ProfileInput,
   PublicForm,
   ResponseDetail,
+  ResponseHistoryDetail,
   ResponseHistoryItem,
   ResponseDraft,
+  SaveFormInput,
   SaveResponseDraftInput,
   SavedFormSummary,
   SavedResponseDraft,
@@ -88,7 +90,7 @@ function me(): Promise<MeResponse> {
   return mePromise;
 }
 
-/** 실제 API 연결점. 화면이 호출하는 것은 `/me`, 프로필, 자동채우기, `/me/forms`, 폼 공개 조회, 응답 초안, 제출, 결과, 응답 상세, 빌더뿐이다. */
+/** 실제 API 연결점. 화면이 호출하는 것은 `/me`, 프로필, 자동채우기, 내 폼함·저장, 제출 이력, 폼 공개 조회, 응답 초안, 제출, 결과, 응답 상세, 빌더뿐이다. */
 export const api = {
   me,
   profiles: () => request<Profile[]>('/me/profiles'),
@@ -122,7 +124,10 @@ export const api = {
     request<SubmittedResponse>(`/forms/${segment(formId)}/responses`, json(body)),
   analyze: (formId: string, body: AnalyzeRequest) =>
     request<AnalyzeResponse>(`/forms/${segment(formId)}/analyze`, json(body)),
+  saveForm: (body: SaveFormInput) => request<void>('/me/saved-forms', json(body)),
   myResponses: () => request<ResponseHistoryItem[]>('/me/responses'),
+  myResponse: (responseId: string) =>
+    request<ResponseHistoryDetail>(`/me/responses/${segment(responseId)}`),
   results: (formId: string) => request<FormResults>(`/forms/${segment(formId)}/results`),
   responseDetail: (formId: string, responseId: string) =>
     request<ResponseDetail>(`/forms/${segment(formId)}/responses/${segment(responseId)}`),

@@ -51,6 +51,22 @@ public class SavedForm implements Persistable<SavedFormId> {
 		this.savedAt = savedAt;
 	}
 
+	// 저장 버튼이나 첫 자동 저장으로 처음 들어온 항목(AC17).
+	public static SavedForm saved(UUID userId, UUID formId, Instant now) {
+		return new SavedForm(userId, formId, SavedFormState.SAVED, now);
+	}
+
+	// 저장하지 않았던 폼에 제출해 처음 들어온 항목. saved_at은 제출 시각이다(SPEC 5절 200행).
+	public static SavedForm submitted(UUID userId, UUID formId, Instant now) {
+		return new SavedForm(userId, formId, SavedFormState.SUBMITTED, now);
+	}
+
+	// 제출하면 항목은 그대로 두고 상태만 바꾼다. saved_at은 처음 들어온 시각이라 바꾸지 않는다.
+	// 취소로 saved에 돌아가는 규칙은 T10이 이 엔티티에 더한다(AC17).
+	public void markSubmitted() {
+		this.state = SavedFormState.SUBMITTED;
+	}
+
 	@Override
 	public SavedFormId getId() {
 		return new SavedFormId(userId, formId);

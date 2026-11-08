@@ -40,6 +40,10 @@ interface Props {
   draft?: { sink: DraftSink; initialAnswers?: AnswerMap };
   /** 초안을 불러오지 못했을 때처럼 화면 위에 늘 보일 안내. */
   draftNotice?: string;
+  /** 내 폼함에 저장(E5 #43, AC17). 로그인 사용자에게만 넘긴다. 없으면 버튼을 보이지 않는다. */
+  onSaveToInbox?: () => Promise<void>;
+  /** 이미 내 폼함에 있으면 버튼 대신 "저장된 폼"을 보인다. */
+  savedInInbox?: boolean;
 }
 
 type Outcome = 'submitted' | 'closed' | 'version_changed';
@@ -920,6 +924,40 @@ function ResponseForm({
   );
 }
 
+function SaveToInbox({ onSave, saved }: { onSave: () => Promise<void>; saved: boolean }) {
+  const [state, setState] = React.useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
+  if (saved && state !== 'saved') return <Badge tone="neutral">저장된 폼</Badge>;
+  if (state === 'saved') {
+    return (
+      <span className="small muted" role="status">
+        내 폼함에 저장했어요
+      </span>
+    );
+  }
+  return (
+    <>
+      <Button
+        variant="secondary"
+        disabled={state === 'saving'}
+        onClick={() => {
+          setState('saving');
+          onSave().then(
+            () => setState('saved'),
+            () => setState('failed'),
+          );
+        }}
+      >
+        <Icon name="bookmark" size={16} /> 내 폼함에 저장
+      </Button>
+      {state === 'failed' && (
+        <span className="small muted" role="alert">
+          저장하지 못했어요. 다시 시도해 주세요.
+        </span>
+      )}
+    </>
+  );
+}
+
 /** `/f/:slug`, `/forms/:formId`의 응답 화면(T4 #52). 로그인 없이 쓸 수 있다. */
 export function ResponsePage(props: Props) {
   const [attempt, setAttempt] = React.useState(0);
@@ -934,10 +972,18 @@ export function ResponsePage(props: Props) {
             : '질문을 확인하고, 편한 속도로 답변해 주세요.'
         }
         action={
-          props.onBack && (
-            <Button variant="secondary" onClick={props.onBack}>
-              <Icon name="back" size={16} /> {props.preview ? '편집으로 돌아가기' : '내 폼함으로'}
-            </Button>
+          (props.onBack || props.onSaveToInbox) && (
+            <div className="button-row">
+              {props.onSaveToInbox && !props.preview && (
+                <SaveToInbox onSave={props.onSaveToInbox} saved={props.savedInInbox ?? false} />
+              )}
+              {props.onBack && (
+                <Button variant="secondary" onClick={props.onBack}>
+                  <Icon name="back" size={16} />{' '}
+                  {props.preview ? '편집으로 돌아가기' : '내 폼함으로'}
+                </Button>
+              )}
+            </div>
           )
         }
       />

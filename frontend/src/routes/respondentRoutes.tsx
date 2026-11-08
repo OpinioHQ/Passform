@@ -1,13 +1,18 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ApiError, api, useLiveApi } from '../api/client';
-import { useNotice } from '../components/AppLayout';
 import { Heading, Panel } from '../components/UI';
 import { useDemoData } from '../demo/DemoDataContext';
-import { demoForm, demoSavedForms, demoSubmission } from '../demo/data';
+import {
+  demoForm,
+  demoHistoryDetail,
+  demoHistoryItem,
+  demoSavedForms,
+  demoSubmission,
+} from '../demo/data';
 import { demoUser } from '../demo/screens';
-import { HistoryPage } from '../pages/HistoryPage';
-import { InboxPage } from '../pages/InboxPage';
+import { HistoryPage, type HistoryDetailState } from '../pages/HistoryPage';
+import { InboxPage, type InboxProblem } from '../pages/InboxPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { ClosedNotice, ResponsePage } from '../pages/ResponsePage';
 import { DraftGate } from '../response/DraftGate';
@@ -15,10 +20,13 @@ import type {
   Profile,
   ProfileInput,
   PublicForm,
+  ResponseHistoryItem,
   SavedFormSummary,
   SubmitResponseInput,
 } from '../types/api';
 import { paths } from './paths';
+
+const isUnauthorized = (e: unknown) => e instanceof ApiError && e.status === 401;
 
 const demoProfiles: Profile[] = [
   {
@@ -86,8 +94,10 @@ export function MyProfileRoute() {
 
 export function MyFormsRoute() {
   const navigate = useNavigate();
-  const { setNotice } = useNotice();
-  const [forms, setForms] = React.useState<SavedFormSummary[]>(useLiveApi ? [] : demoSavedForms);
+  const [forms, setForms] = React.useState<SavedFormSummary[] | null>(
+    useLiveApi ? null : demoSavedForms,
+  );
+  const [problem, setProblem] = React.useState<InboxProblem | null>(null);
   React.useEffect(() => {
     if (!useLiveApi) return;
     let active = true;
@@ -96,24 +106,38 @@ export function MyFormsRoute() {
       .then((next) => {
         if (active) setForms(next);
       })
-      .catch(() => {
-        if (active) {
-          setNotice('내 폼함 API 연결에 실패했습니다. 서버 및 인증 설정을 확인해 주세요.');
-        }
+      .catch((e: unknown) => {
+        if (active) setProblem(isUnauthorized(e) ? 'login' : 'failed');
       });
     return () => {
       active = false;
     };
-  }, [setNotice]);
-  return (
-    <InboxPage
-      forms={forms}
-      onOpen={(id) => navigate(paths.form(id))}
-      onCreated={() =>
-        setNotice('받은 폼 저장은 실제 API 연동 전입니다. 현재는 가상 폼 목록을 표시합니다.')
-      }
-    />
-  );
+  }, []);
+  return <InboxPage forms={forms} problem={problem} onOpen={(id) => navigate(paths.form(id))} />;
+}
+
+/**
+ * 로그인 사용자에게만 응답 화면의 "내 폼함에 저장"을 보인다. `/me`는 헤더와 같은 결과를 쓴다.
+ * 이미 내 폼함에 있으면 `saved`다. 비로그인이거나 확인하지 못하면 `null`이고 버튼을 보이지 않는다.
+ */
+function useInboxEntry(formId: string | undefined): 'saved' | 'unsaved' | null {
+  const [entry, setEntry] = React.useState<'saved' | 'unsaved' | null>(null);
+  React.useEffect(() => {
+    if (!useLiveApi || formId === undefined) return;
+    let active = true;
+    setEntry(null);
+    api
+      .me()
+      .then(() => api.savedForms())
+      .then((forms) => {
+        if (active) setEntry(forms.some((f) => f.form_id === formId) ? 'saved' : 'unsaved');
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [formId]);
+  return entry;
 }
 
 /** `/f/:slug`와 `/forms/:formId`가 함께 쓴다. 공개 경로라 로그인 전용 API를 부르지 않는다. */
@@ -125,6 +149,7 @@ export function FormResponseRoute() {
   const [failure, setFailure] = React.useState<'closed' | 'not_found' | 'failed' | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [reloads, setReloads] = React.useState(0);
+  const inboxEntry = useInboxEntry(form?.form_id);
   React.useEffect(() => {
     if (!useLiveApi) return;
     let active = true;
@@ -189,6 +214,8 @@ export function FormResponseRoute() {
     onSubmit: submit,
     onReload: () => setReloads((n) => n + 1),
     saving: busy,
+    onSaveToInbox: inboxEntry ? () => api.saveForm({ form_id: form.form_id }) : undefined,
+    savedInInbox: inboxEntry === 'saved',
   };
   const key = `${form.form_id}:${form.definition_version}:${reloads}`;
   // 실제 API에서만 초안을 저장·복원한다(T5 #53). 가짜 데이터 모드는 저장하지 않는다.
@@ -200,10 +227,61 @@ export function MyResponsesRoute() {
   const { responseId } = useParams();
   const navigate = useNavigate();
   const { responses } = useDemoData();
+  const demoItems = React.useMemo(() => responses.map(demoHistoryItem), [responses]);
+  const [liveItems, setLiveItems] = React.useState<ResponseHistoryItem[] | null>(null);
+  const [problem, setProblem] = React.useState<'login' | 'failed' | null>(null);
+  const [liveDetail, setLiveDetail] = React.useState<HistoryDetailState>({ status: 'idle' });
+  const items = useLiveApi ? liveItems : demoItems;
+  const selectedId = responseId ?? items?.[0]?.response_id;
+
+  React.useEffect(() => {
+    if (!useLiveApi) return;
+    let active = true;
+    api
+      .myResponses()
+      .then((next) => {
+        if (active) setLiveItems(next);
+      })
+      .catch((e: unknown) => {
+        if (active) setProblem(isUnauthorized(e) ? 'login' : 'failed');
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (!useLiveApi || selectedId === undefined) return;
+    let active = true;
+    setLiveDetail({ status: 'loading' });
+    api
+      .myResponse(selectedId)
+      .then((detail) => {
+        if (active) setLiveDetail({ status: 'ready', detail });
+      })
+      .catch((e: unknown) => {
+        if (!active) return;
+        setLiveDetail({
+          status: e instanceof ApiError && e.status === 404 ? 'not_found' : 'failed',
+        });
+      });
+    return () => {
+      active = false;
+    };
+  }, [selectedId]);
+
+  const demoDetail = React.useMemo<HistoryDetailState>(() => {
+    if (selectedId === undefined) return { status: 'idle' };
+    const found = responses.find((r) => r.response_id === selectedId);
+    return found ? { status: 'ready', detail: demoHistoryDetail(found) } : { status: 'not_found' };
+  }, [responses, selectedId]);
+
   return (
     <HistoryPage
-      responses={responses}
-      selectedId={responseId}
+      items={items}
+      problem={problem}
+      selectedId={selectedId}
+      detail={useLiveApi ? liveDetail : demoDetail}
       onSelect={(id) => navigate(paths.myResponse(id))}
       onNavigate={() => navigate(paths.myForms)}
     />

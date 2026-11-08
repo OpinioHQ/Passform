@@ -1,5 +1,6 @@
 package com.opinio.passform.repository;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -77,6 +78,41 @@ public interface ResponseRepository extends JpaRepository<Response, UUID> {
 			  and r.status = com.opinio.passform.domain.analysis.ResponseStatus.IN_PROGRESS
 			""")
 	boolean hasDraft(@Param("userId") UUID userId, @Param("formId") UUID formId);
+
+	// 제출 이력(SPEC 5절 192행). 본인의 submitted 응답만, submitted_at 내림차순 → response_id 오름차순(AGENTS 5절).
+	// 제작자가 지운 응답도 조회 전용 이력으로 남는다(SPEC 5절 224행).
+	@Query("""
+			select r from Response r
+			where r.userId = :userId
+			  and r.status = com.opinio.passform.domain.analysis.ResponseStatus.SUBMITTED
+			order by r.submittedAt desc, r.id
+			""")
+	List<Response> findSubmittedByUserId(@Param("userId") UUID userId);
+
+	// 내 폼함 has_draft를 한 번에 구한다(SPEC 5절 200행).
+	@Query("""
+			select distinct r.formId from Response r
+			where r.userId = :userId
+			  and r.status = com.opinio.passform.domain.analysis.ResponseStatus.IN_PROGRESS
+			""")
+	List<UUID> findDraftFormIds(@Param("userId") UUID userId);
+
+	// 내 폼함 submitted_at: 폼마다 본인 제출 기록 중 가장 최근 submitted_at(SPEC 5절 200행).
+	@Query("""
+			select r.formId as formId, max(r.submittedAt) as submittedAt from Response r
+			where r.userId = :userId
+			  and r.status = com.opinio.passform.domain.analysis.ResponseStatus.SUBMITTED
+			group by r.formId
+			""")
+	List<LatestSubmission> findLatestSubmissions(@Param("userId") UUID userId);
+
+	interface LatestSubmission {
+
+		UUID getFormId();
+
+		Instant getSubmittedAt();
+
+	}
 
 	interface FormResponseCount {
 

@@ -40,6 +40,8 @@ interface Props {
   draftNotice?: string;
   /** 내 폼함에 저장(E5 #43, AC17). 로그인 사용자에게만 넘긴다. 없으면 버튼을 보이지 않는다. */
   onSaveToInbox?: () => Promise<void>;
+  /** 이미 내 폼함에 있으면 버튼 대신 "저장된 폼"을 보인다. */
+  savedInInbox?: boolean;
 }
 
 type Outcome = 'submitted' | 'closed' | 'version_changed';
@@ -851,8 +853,9 @@ function ResponseForm({
   );
 }
 
-function SaveToInbox({ onSave }: { onSave: () => Promise<void> }) {
+function SaveToInbox({ onSave, saved }: { onSave: () => Promise<void>; saved: boolean }) {
   const [state, setState] = React.useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
+  if (saved && state !== 'saved') return <Badge tone="neutral">저장된 폼</Badge>;
   if (state === 'saved') {
     return (
       <span className="small muted" role="status">
@@ -901,7 +904,7 @@ export function ResponsePage(props: Props) {
           (props.onBack || props.onSaveToInbox) && (
             <div className="button-row">
               {props.onSaveToInbox && !props.preview && (
-                <SaveToInbox onSave={props.onSaveToInbox} />
+                <SaveToInbox onSave={props.onSaveToInbox} saved={props.savedInInbox ?? false} />
               )}
               {props.onBack && (
                 <Button variant="secondary" onClick={props.onBack}>

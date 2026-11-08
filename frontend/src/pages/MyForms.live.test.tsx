@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { demoForm } from '../demo/data';
-import type { ResponseHistoryDetail, ResponseHistoryItem } from '../types/api';
+import type { ResponseHistoryDetail, ResponseHistoryItem, SavedFormSummary } from '../types/api';
 
 const me = {
   user_id: 'u1',
@@ -108,6 +108,7 @@ describe('응답 화면의 내 폼함에 저장 (AC17)', () => {
     const fetchMock = stubApi({
       'GET /me': { status: 200, body: me },
       'GET /forms/live-form': { status: 200, body: liveForm },
+      'GET /me/forms': { status: 200, body: [] },
       'POST /me/saved-forms': { status: 201 },
     });
     await openLive('/forms/live-form');
@@ -119,5 +120,26 @@ describe('응답 화면의 내 폼함에 저장 (AC17)', () => {
     await waitFor(() =>
       expect(screen.queryByRole('button', { name: /내 폼함에 저장/ })).toBeNull(),
     );
+  });
+
+  it('이미 내 폼함에 있으면 버튼 대신 저장된 폼으로 보인다', async () => {
+    const saved: SavedFormSummary = {
+      form_id: 'live-form',
+      title: '서버에서 받은 폼',
+      deadline: null,
+      state: 'saved',
+      has_draft: false,
+      saved_at: '2026-11-04T15:30:00Z',
+      submitted_at: null,
+      closed: false,
+    };
+    stubApi({
+      'GET /me': { status: 200, body: me },
+      'GET /forms/live-form': { status: 200, body: liveForm },
+      'GET /me/forms': { status: 200, body: [saved] },
+    });
+    await openLive('/forms/live-form');
+    expect(await screen.findByText('저장된 폼')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /내 폼함에 저장/ })).toBeNull();
   });
 });

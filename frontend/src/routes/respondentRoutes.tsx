@@ -48,23 +48,28 @@ export function MyFormsRoute() {
   return <InboxPage forms={forms} problem={problem} onOpen={(id) => navigate(paths.form(id))} />;
 }
 
-/** 로그인 사용자에게만 응답 화면의 "내 폼함에 저장"을 보인다. `/me`는 헤더와 같은 결과를 쓴다. */
-function useLoggedIn(): boolean {
-  const [loggedIn, setLoggedIn] = React.useState(false);
+/**
+ * 로그인 사용자에게만 응답 화면의 "내 폼함에 저장"을 보인다. `/me`는 헤더와 같은 결과를 쓴다.
+ * 이미 내 폼함에 있으면 `saved`다. 비로그인이거나 확인하지 못하면 `null`이고 버튼을 보이지 않는다.
+ */
+function useInboxEntry(formId: string | undefined): 'saved' | 'unsaved' | null {
+  const [entry, setEntry] = React.useState<'saved' | 'unsaved' | null>(null);
   React.useEffect(() => {
-    if (!useLiveApi) return;
+    if (!useLiveApi || formId === undefined) return;
     let active = true;
+    setEntry(null);
     api
       .me()
-      .then(() => {
-        if (active) setLoggedIn(true);
+      .then(() => api.savedForms())
+      .then((forms) => {
+        if (active) setEntry(forms.some((f) => f.form_id === formId) ? 'saved' : 'unsaved');
       })
       .catch(() => undefined);
     return () => {
       active = false;
     };
-  }, []);
-  return loggedIn;
+  }, [formId]);
+  return entry;
 }
 
 /** `/f/:slug`와 `/forms/:formId`가 함께 쓴다. 공개 경로라 로그인 전용 API를 부르지 않는다. */
@@ -76,7 +81,7 @@ export function FormResponseRoute() {
   const [failure, setFailure] = React.useState<'closed' | 'not_found' | 'failed' | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [reloads, setReloads] = React.useState(0);
-  const loggedIn = useLoggedIn();
+  const inboxEntry = useInboxEntry(form?.form_id);
   React.useEffect(() => {
     if (!useLiveApi) return;
     let active = true;
@@ -141,7 +146,8 @@ export function FormResponseRoute() {
     onSubmit: submit,
     onReload: () => setReloads((n) => n + 1),
     saving: busy,
-    onSaveToInbox: loggedIn ? () => api.saveForm({ form_id: form.form_id }) : undefined,
+    onSaveToInbox: inboxEntry ? () => api.saveForm({ form_id: form.form_id }) : undefined,
+    savedInInbox: inboxEntry === 'saved',
   };
   const key = `${form.form_id}:${form.definition_version}:${reloads}`;
   // 실제 API에서만 초안을 저장·복원한다(T5 #53). 가짜 데이터 모드는 저장하지 않는다.

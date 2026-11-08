@@ -16,7 +16,7 @@ import type { CreatorFormDefinition, Question } from '../types/api';
  */
 
 export const operationLabels: Record<AnalyzeOperation, string> = {
-  count: '인원 수',
+  count: '응답 수',
   list: '목록',
   summarize: '요약',
 };
@@ -283,7 +283,7 @@ function isPersonal(q: Question): boolean {
 
 export interface PresetGroup {
   title: string;
-  /** main은 처음부터 보이고, option(선택지별 인원)은 "더 보기"로 펼친다. */
+  /** main은 처음부터 보이고, option(선택지별 응답 수)은 "더 보기"로 펼친다. */
   kind: 'main' | 'option';
   choices: Choice[];
 }
@@ -334,14 +334,14 @@ export function presetGroups(definition: CreatorFormDefinition): PresetGroup[] {
       return condition
         ? [
             {
-              label: `${option} 인원`,
+              label: `${option} 응답 수`,
               context: { conditions: [condition], operation: 'count' as const },
             },
           ]
         : [];
     });
     if (choices.length > 0) {
-      groups.push({ title: `${q.question_note} 선택지별 인원`, kind: 'option', choices });
+      groups.push({ title: `${q.question_note} 선택지별 응답 수`, kind: 'option', choices });
     }
   }
   return groups;

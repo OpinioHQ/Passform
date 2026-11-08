@@ -216,7 +216,7 @@ function SummaryResult({ summary, count }: { summary: AnalyzeSummary; count: num
                     {option.label}{' '}
                     <span className="muted small">{versionLabel(option.form_versions)}</span>
                   </span>
-                  <strong>{option.count}명</strong>
+                  <strong>{option.count}</strong>
                 </li>
               ))}
             </ul>
@@ -425,7 +425,7 @@ export function ExplorePage({
             <div className="chat-body">
               {!turn && (
                 <div className="chat-bubble bot">
-                  <p>예: "3학년은 몇 명이야?", "지원 동기 요약해줘"</p>
+                  <p>예: "3학년 응답은 몇 건이야?", "지원 동기 요약해줘"</p>
                 </div>
               )}
               {turn && (
@@ -464,7 +464,7 @@ export function ExplorePage({
                 aria-label="응답에 대해 묻기"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="예: 3학년은 몇 명이야?"
+                placeholder="예: 3학년 응답은 몇 건이야?"
               />
               <button aria-label="질문 보내기" type="submit" disabled={loading}>
                 <Icon name="arrow" size={18} />
@@ -481,7 +481,7 @@ export function ExplorePage({
                     aria-expanded={moreOptions}
                     onClick={() => setMoreOptions(!moreOptions)}
                   >
-                    {moreOptions ? '선택지별 인원 접기' : '선택지별 인원 더 보기'}
+                    {moreOptions ? '선택지별 응답 수 접기' : '선택지별 응답 수 더 보기'}
                   </button>
                 )}
                 {moreOptions && optionPresets.map(presetGroup)}

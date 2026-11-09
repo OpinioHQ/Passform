@@ -845,7 +845,7 @@ function ResponseForm({
       {sink && (restored || autosave.status !== 'idle') && (
         <div className="form-footer draft-actions">
           <Button variant="ghost" onClick={() => void discardDraft()}>
-            작성한 답 지우기
+            응답 전체 지우기
           </Button>
         </div>
       )}

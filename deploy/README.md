@@ -58,7 +58,12 @@ curl -s https://api.passform.kr/health   # {"status":"ok"}
 5. Google 테스트 사용자로 등록하지 않은 계정으로도 로그인되는지 본다(ARCHITECTURE 10절).
 6. 저장소, Vercel 환경변수, `VITE_` 값 어디에도 비밀값이 없다.
 
-## 6. 업데이트와 운영
+## 6. 첫 폼 배포 전 확인
+
+1. OpenAI 프로젝트의 데이터 설정(Residency, 데이터 공유 꺼짐)이 SPEC 211행의 AI 요약 고지(처리 국가 "OpenAI가 정하는 국외 지역…")와 같은지 확인한다.
+2. 다르면 폼을 배포하기 전에 고지를 먼저 고친다(SPEC 362행). 고지는 폼을 처음 배포할 때 그 폼에 고정되어 나중에 바뀌지 않는다(SPEC 158행).
+
+## 7. 업데이트와 운영
 
 ```sh
 cd ~/Passform && git pull

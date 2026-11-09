@@ -301,9 +301,12 @@ function OkResult({
 function ClarifyResult({
   response,
   onChoose,
+  onPickOption,
 }: {
   response: AnalyzeClarifyResponse;
   onChoose: (choice: Choice) => void;
+  /** 후보 선택지를 입력창에 붙인다. 보내지는 않는다(analyze_api.md A7: 다시 입력은 사람이 한다). */
+  onPickOption: (option: string) => void;
 }) {
   const view = clarifyView(response);
   return (
@@ -324,11 +327,26 @@ function ClarifyResult({
             {view.questions.map((q) => (
               <li key={q.note}>
                 <b>{q.note}</b> <span className="muted small">{versionLabel(q.versions)}</span>
-                {q.options.length > 0 && <div className="small">{q.options.join(' · ')}</div>}
+                {q.options.length > 0 && (
+                  <div className="button-row">
+                    {q.options.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        className="filter-chip"
+                        onClick={() => onPickOption(option)}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
-          <p className="muted small">위 문항이나 선택지 표현으로 다시 물어봐 주세요.</p>
+          <p className="muted small">
+            위 문항이나 선택지 표현으로 다시 물어봐 주세요. 선택지를 누르면 질문 끝에 붙어요.
+          </p>
         </>
       )}
       {view.toResults && (
@@ -370,6 +388,7 @@ export function ExplorePage({
     response: AnalyzeOkResponse;
   } | null>(null);
   const seq = React.useRef(0);
+  const input = React.useRef<HTMLInputElement>(null);
   const presets = React.useMemo(
     () => (definition ? presetGroups(definition, results) : []),
     [definition, results],
@@ -485,7 +504,14 @@ export function ExplorePage({
                       <p>{okMessage(turn.response)}</p>
                     )}
                     {turn.state === 'done' && turn.response.status === 'clarify' && (
-                      <ClarifyResult response={turn.response} onChoose={choose} />
+                      <ClarifyResult
+                        response={turn.response}
+                        onChoose={choose}
+                        onPickOption={(option) => {
+                          setQuery(`${turn.asked} ${option}`);
+                          input.current?.focus();
+                        }}
+                      />
                     )}
                   </div>
                 </>
@@ -501,6 +527,7 @@ export function ExplorePage({
               }}
             >
               <input
+                ref={input}
                 aria-label="응답에 대해 묻기"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}

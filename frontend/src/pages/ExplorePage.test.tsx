@@ -324,6 +324,17 @@ describe('되묻기', () => {
     });
   });
 
+  it('unknown_condition 후보 선택지를 누르면 원래 질문 끝에 붙여 입력창에 두고 보내지 않는다', async () => {
+    const { analyze } = renderPage([example('clarify_6_unknown_condition')]);
+    ask('없는선택지표현 몇 명?');
+    const grade = (await screen.findByText('학년', { selector: 'b' })).closest('li')!;
+    fireEvent.click(within(grade).getByRole('button', { name: '3학년' }));
+    const input = screen.getByLabelText<HTMLInputElement>('응답에 대해 묻기');
+    expect(input.value).toBe('없는선택지표현 몇 명? 3학년');
+    expect(document.activeElement).toBe(input);
+    expect(analyze).toHaveBeenCalledTimes(1);
+  });
+
   it('double_negation: 확정 문장을 고르면 match를 지워 보낸다', async () => {
     const { analyze } = renderPage([example('clarify_8_double_negation'), example('ok_count')]);
     ask('8번 미응답 아닌 사람');

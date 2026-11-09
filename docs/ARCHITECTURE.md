@@ -156,11 +156,13 @@ SPEC 4절 비포함과 같다. 주관식 내용으로 `count`·`list` 거르기,
 - 이유: 도메인이 아예 다르면 세션 쿠키가 제3자 쿠키가 되어 Safari 등에서 로그인이 깨질 수 있다. Vercel 프록시는 요청이 120초로 제한되고, 업로드 본문 한도와 `vercel.app` 승인 가능 여부를 확인하지 못했다. 백엔드 HTTPS에 어차피 도메인이 필요하다.
 - 세션 쿠키는 `Secure`, `SameSite=Lax`. CORS는 `app.<도메인>` 출처만 허용하고 자격 증명을 허용한다. CSRF는 켜 두고, 로그인 없는 응답 제출(SPEC 188행)까지 확인한다.
 - Google 콜백은 `https://api.<도메인>/login/oauth2/code/google`, 권한은 `openid`, `email`, `profile`만 쓴다. 등록하지 않은 Google 계정으로 로그인되는지 직접 확인한다.
-- **제안(E9 착수 전 확정):** EC2 1대에 docker compose로 백엔드, Postgres, HTTPS 프록시를 둔다. DB는 하루 1회 백업한다. 동료 소수가 일주일 쓰는 규모를 가정했고, 동시 300명(AC34)은 보장하지 못한다.
-- **제안(E9 착수 전 확정):** 비밀값은 AWS SSM Parameter Store에 두고 서버 환경변수로 주입한다. 저장소, `VITE_` 변수, Vercel 설정에 넣지 않는다.
+- **결정(2026-11-09, 사용자):** 도메인은 `passform.kr`이다. 프론트 `https://app.passform.kr`, 백엔드 `https://api.passform.kr`.
+- **결정(2026-11-09, 사용자):** EC2 1대(서울, Ubuntu 24.04, t3.small)에 docker compose로 백엔드, Postgres, Caddy(자동 HTTPS)를 둔다. DB 포트는 밖에 열지 않는다. DB는 하루 1회 백업한다. 동료 소수가 일주일 쓰는 규모를 가정했고, 동시 300명(AC34)은 보장하지 못한다. 설정은 `deploy/`, 절차는 `deploy/README.md`.
+- **결정(2026-11-09, 사용자, SSM 제안 대체):** 비밀값(DB 비밀번호, `GOOGLE_CLIENT_ID`·`GOOGLE_CLIENT_SECRET`, `OPENAI_API_KEY`)은 서버의 `deploy/.env`(권한 600)에만 두고 compose가 컨테이너 환경변수로 넘긴다. 저장소, 이슈, PR, 로그, `VITE_` 변수, Vercel 설정에 넣지 않는다. 프론트의 공개 값(`VITE_USE_API`, `VITE_API_BASE_URL`)은 `frontend/.env.production`에 둔다.
+- CSRF 쿠키 도메인은 `passform.kr`로 넣는다. 정한 값 `.passform.kr`과 같은 뜻이지만(RFC 6265는 앞 점을 무시한다) Tomcat이 앞 점을 거부해 모든 요청이 실패하기 때문이다. Caddy 뒤에서 Google 콜백이 `https`로 만들어지도록 `SERVER_FORWARD_HEADERS_STRATEGY=native`를 쓴다.
 - OpenAI: 프로젝트 전용 키를 쓰고 프로젝트 한도에서 "Enforce a hard limit"을 켠다. 켜지 않으면 호출이 멈추지 않는다. 초과 시 오는 429 `project_spend_limit_exceeded`는 `503 llm_unavailable`로 처리한다. 시연 중 멈추지 않도록 한도를 넉넉히 잡는다.
 - 첫 폼을 배포하기 전에 SPEC 362행대로 OpenAI 프로젝트의 데이터 위치와 공유 설정을 확인한다. 고지는 첫 배포 때 고정되기 때문이다.
-- ☐ 도메인 구입. E9 첫날 Google 로그인 왕복을 먼저 시험한다.
+- 도메인 구입 완료. E9 첫날 Google 로그인 왕복을 먼저 시험한다.
 - 시험 데모의 `demo` 프로필과 `X-Demo-User`는 배포에 쓰지 않는다.
 
 **폼 스키마 결정 (리뷰에서 팀 확정)**

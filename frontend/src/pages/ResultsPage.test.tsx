@@ -107,8 +107,8 @@ describe('결과 화면', () => {
     expect(screen.getByText('전체 응답 7건')).toBeTruthy();
     const combined = card('참석하나요?');
     expect(within(combined).getByText('폼 버전 1·2')).toBeTruthy();
-    expect(within(optionRow(combined, '예')).getByText('3명')).toBeTruthy();
-    expect(within(optionRow(combined, '보류')).getByText('1명')).toBeTruthy();
+    expect(within(optionRow(combined, '예')).getByText('3')).toBeTruthy();
+    expect(within(optionRow(combined, '보류')).getByText('1')).toBeTruthy();
     expect(within(optionRow(combined, '보류')).getByText('폼 버전 2에만 있음')).toBeTruthy();
     expect(within(optionRow(combined, '예')).queryByText(/에만 있음/)).toBeNull();
   });
@@ -123,16 +123,16 @@ describe('결과 화면', () => {
     );
     expect(screen.queryByRole('heading', { level: 2, name: '참석하나요?' })).toBeNull();
     const version2 = card('참석할 예정인가요?');
-    expect(within(optionRow(version2, '아니요')).getByText('2명')).toBeTruthy();
+    expect(within(optionRow(version2, '아니요')).getByText('2')).toBeTruthy();
     expect(screen.getByText('전체 응답 7건')).toBeTruthy();
     expect(screen.getByText('폼 버전 2 응답 4건')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('tab', { name: '폼 버전 1' }));
-    expect(within(optionRow(card('참석하나요?'), '예')).getByText('2명')).toBeTruthy();
+    expect(within(optionRow(card('참석하나요?'), '예')).getByText('2')).toBeTruthy();
     expect(screen.queryByText('보류')).toBeNull();
 
     fireEvent.click(screen.getByRole('tab', { name: '통합 보기' }));
-    expect(within(optionRow(card('참석하나요?'), '예')).getByText('3명')).toBeTruthy();
+    expect(within(optionRow(card('참석하나요?'), '예')).getByText('3')).toBeTruthy();
     // 버전을 봐도 전체 응답 수는 그대로다.
     expect(screen.getByText('전체 응답 7건')).toBeTruthy();
     expect(screen.queryByText(/v\d|q\d/)).toBeNull();

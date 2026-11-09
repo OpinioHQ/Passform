@@ -1,19 +1,12 @@
 import React from 'react';
 import { Badge, Panel } from '../components/UI';
-import type { FormResults, QuestionType } from '../types/api';
+import { QUESTION_TYPE_LABELS } from '../components/questionTypeLabels';
+import type { FormResults } from '../types/api';
 
 /** 화면 문구는 "폼 버전 1"로 쓴다(AGENTS 5절). */
 export function versionLabel(versions: number[]): string {
   return `폼 버전 ${versions.join('·')}`;
 }
-
-const typeLabels: Record<QuestionType, string> = {
-  multiple_choice: '객관식',
-  dropdown: '드롭다운',
-  checkbox: '체크박스',
-  short_answer: '단답',
-  long_answer: '장문',
-};
 
 function sameVersions(left: number[], right: number[]): boolean {
   return left.length === right.length && left.every((version, i) => version === right[i]);
@@ -42,7 +35,7 @@ function OptionRow({
             </>
           )}
         </span>
-        <strong>{count}명</strong>
+        <strong>{count}</strong>
       </div>
       <div className="track" aria-hidden="true">
         <div style={{ width: `${max === 0 ? 0 : (count / max) * 100}%` }} />
@@ -140,7 +133,7 @@ export function ResultsDashboard({
                 <div className="result-card-head">
                   <h2>{q.question_note}</h2>
                   <div className="button-row">
-                    <Badge>{typeLabels[q.question_type]}</Badge>
+                    <Badge>{QUESTION_TYPE_LABELS[q.question_type]}</Badge>
                     <Badge tone="blue">{versionLabel(q.form_versions)}</Badge>
                   </div>
                 </div>

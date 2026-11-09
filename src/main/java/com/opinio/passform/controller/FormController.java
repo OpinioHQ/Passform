@@ -46,6 +46,12 @@ public class FormController {
 		return forms.create(new CreateCommand(currentUser.requireUserId(), body));
 	}
 
+	@PostMapping("/forms/{formId}/copy")
+	@ResponseStatus(HttpStatus.CREATED)
+	public CreatedForm copy(@PathVariable String formId) {
+		return forms.copy(currentUser.requireUserId(), formId);
+	}
+
 	@GetMapping("/forms/{formId}/definition")
 	public Map<String, Object> definition(@PathVariable String formId) {
 		return forms.getDefinition(currentUser.requireUserId(), formId).toBody();

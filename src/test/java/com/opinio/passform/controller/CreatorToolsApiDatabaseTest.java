@@ -33,12 +33,15 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeReader;
+import com.opinio.passform.repository.ResponseRepository;
 import com.opinio.passform.repository.UserRepository;
 import com.opinio.passform.support.DatabaseTest;
 import com.opinio.passform.support.SampleForms;
@@ -54,6 +57,9 @@ class CreatorToolsApiDatabaseTest extends DatabaseTest {
 
 	@Autowired
 	private UserRepository users;
+
+	@Autowired
+	private ResponseRepository responses;
 
 	@Autowired
 	private JdbcTemplate jdbc;
@@ -245,6 +251,109 @@ class CreatorToolsApiDatabaseTest extends DatabaseTest {
 
 		byte[] png = qr(owner, formId).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
 		assertThat(decodeQr(png)).isEqualTo(shareUrlOf(formId));
+	}
+
+	private ResultActions copy(UUID user, String formId) throws Exception {
+		return mockMvc.perform(post("/forms/" + formId + "/copy").with(user(user.toString())).with(csrf()));
+	}
+
+	private JsonNode definitionOf(String formId) throws Exception {
+		return JSON.readTree(mockMvc.perform(get("/forms/" + formId + "/definition").with(user(owner.toString())))
+			.andExpect(status().isOk())
+			.andReturn()
+			.getResponse()
+			.getContentAsString(StandardCharsets.UTF_8));
+	}
+
+	// 폼 정의만 남긴다. status·share_url·definition_version은 정의 밖의 값이다(SPEC 5절 116행).
+	private static ObjectNode withoutState(JsonNode body) {
+		ObjectNode definition = ((ObjectNode) body).deepCopy();
+		definition.remove(List.of("status", "share_url", "definition_version"));
+		return definition;
+	}
+
+	private int count(String sql, Object... args) {
+		return jdbc.queryForObject(sql, Integer.class, args);
+	}
+
+	// 분기·설정(수정 허용, 인원, AI 요약 켬)이 있는 배포 폼에 응답 5건을 둔다.
+	@SuppressWarnings("unchecked")
+	private String openFormWithResponses() throws Exception {
+		Map<String, Object> definition = SampleForms.branched();
+		Map<String, Object> settings = (Map<String, Object>) definition.get("settings");
+		settings.put("editable", true);
+		settings.put("response_limit", 30);
+		settings.put("ai_summary", new LinkedHashMap<>(Map.of("enabled", true)));
+		String formId = createDraft(definition);
+		patchForm(owner, formId, Map.of("status", "open")).andExpect(status().isOk());
+		for (int i = 0; i < 5; i++) {
+			responses.saveAndFlush(TestData.submitted(UUID.fromString(formId), null, 1, TestData.NOW));
+		}
+		return formId;
+	}
+
+	@Test
+	void copy_form_without_responses() throws Exception {
+		String sourceId = openFormWithResponses();
+		JsonNode sourceBefore = definitionOf(sourceId);
+		String noticeBefore = jdbc.queryForObject("select ai_summary_notice::text from forms where form_id = ?::uuid",
+				String.class, sourceId);
+
+		String body = copy(owner, sourceId).andExpect(status().isCreated())
+			.andReturn()
+			.getResponse()
+			.getContentAsString();
+		JsonNode created = JSON.readTree(body);
+		String copyId = created.get("form_id").asString();
+		assertThat(created.get("status").asString()).isEqualTo("draft");
+		assertThat(created.properties()).hasSize(2);
+		assertThat(copyId).isNotEqualTo(sourceId);
+
+		JsonNode copied = definitionOf(copyId);
+		assertThat(withoutState(copied)).isEqualTo(withoutState(sourceBefore));
+		assertThat(copied.get("status").asString()).isEqualTo("draft");
+		assertThat(copied.get("share_url").isNull()).isTrue();
+		assertThat(copied.get("definition_version").isNull()).isTrue();
+		assertThat(count("select count(*) from responses where form_id = ?::uuid", copyId)).isZero();
+		assertThat(count("select count(*) from form_versions where form_id = ?::uuid", copyId)).isZero();
+		assertThat(count("select count(*) from forms where form_id = ?::uuid and owner_id = ? and slug is null"
+				+ " and ai_summary_notice is null", copyId, owner)).isEqualTo(1);
+
+		assertThat(definitionOf(sourceId)).isEqualTo(sourceBefore);
+		assertThat(count("select count(*) from responses where form_id = ?::uuid", sourceId)).isEqualTo(5);
+		assertThat(jdbc.queryForObject("select ai_summary_notice::text from forms where form_id = ?::uuid", String.class,
+				sourceId)).isEqualTo(noticeBefore).isNotNull();
+	}
+
+	@Test
+	void copy_form_without_responses_AC90_복사본은_AI_요약을_바꿀_수_있고_원본은_그대로다() throws Exception {
+		String sourceId = openFormWithResponses();
+		JsonNode sourceBefore = definitionOf(sourceId);
+		String copyId = JSON.readTree(copy(owner, sourceId).andExpect(status().isCreated())
+			.andReturn()
+			.getResponse()
+			.getContentAsString()).get("form_id").asString();
+
+		Map<String, Object> settings = new LinkedHashMap<>(
+				Map.of("editable", true, "cancellable", false, "response_limit", 30, "display",
+						Map.of("default_mode", "section_page"), "ai_summary", Map.of("enabled", false)));
+		patchForm(owner, copyId, Map.of("settings", settings)).andExpect(status().isOk());
+		patchForm(owner, copyId, Map.of("title", "복사본 제목")).andExpect(status().isOk());
+
+		assertThat(definitionOf(copyId).at("/settings/ai_summary/enabled").asBoolean()).isFalse();
+		assertThat(definitionOf(sourceId)).isEqualTo(sourceBefore);
+		assertThat(sourceBefore.at("/settings/ai_summary/enabled").asBoolean()).isTrue();
+	}
+
+	@Test
+	void AC2_복사는_로그인이_없으면_401_제작자가_아니면_403이고_폼을_만들지_않는다() throws Exception {
+		String formId = createDraft(SampleForms.unbranched());
+
+		mockMvc.perform(post("/forms/" + formId + "/copy").with(csrf())).andExpect(status().isUnauthorized());
+		expectForbiddenWithoutContent(copy(other, formId));
+		copy(owner, UUID.randomUUID().toString()).andExpect(status().isNotFound());
+		assertThat(count("select count(*) from forms where owner_id = ?", other)).isZero();
+		assertThat(count("select count(*) from forms where owner_id = ?", owner)).isEqualTo(1);
 	}
 
 	@Test

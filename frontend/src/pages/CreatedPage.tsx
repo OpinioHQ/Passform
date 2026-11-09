@@ -15,6 +15,7 @@ export function CreatedPage({
   onEdit,
   onResults,
   loadQr,
+  onCopy,
 }: {
   forms: CreatorFormSummary[];
   load: CreatedFormsLoad;
@@ -23,9 +24,25 @@ export function CreatedPage({
   onResults: (formId: string) => void;
   /** 공유 링크가 있는 폼의 QR PNG(AC10). 없으면 QR 버튼을 보이지 않는다. */
   loadQr?: (formId: string) => Promise<Blob>;
+  /** 폼 복사(AC40). 성공하면 부른 쪽이 새 초안 빌더로 이동한다. 실패하면 reject한다. */
+  onCopy?: (formId: string) => Promise<void>;
 }) {
   const now = Date.now();
   const [qrFor, setQrFor] = React.useState<string | null>(null);
+  const [copying, setCopying] = React.useState<string | null>(null);
+  const [copyFailed, setCopyFailed] = React.useState<string | null>(null);
+  async function copy(formId: string) {
+    if (!onCopy) return;
+    setCopying(formId);
+    setCopyFailed(null);
+    try {
+      await onCopy(formId);
+    } catch {
+      setCopyFailed(formId);
+    } finally {
+      setCopying(null);
+    }
+  }
   // ShareQr는 load가 바뀔 때만 다시 받는다. 열린 카드 하나의 함수만 만든다.
   const loadOpenQr = React.useCallback(
     () => (qrFor && loadQr ? loadQr(qrFor) : Promise.reject(new Error('QR 없음'))),
@@ -110,7 +127,23 @@ export function CreatedPage({
                     {showingQr ? 'QR 닫기' : 'QR 보기'}
                   </button>
                 )}
+                {onCopy && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    aria-label={`${name} 복사`}
+                    disabled={copying !== null}
+                    onClick={() => void copy(form.form_id)}
+                  >
+                    {copying === form.form_id ? '복사 중…' : '복사'}
+                  </button>
+                )}
               </div>
+              {copyFailed === form.form_id && (
+                <p className="error" role="alert">
+                  복사하지 못했어요. 잠시 뒤 다시 시도해 주세요.
+                </p>
+              )}
               {showingQr && <ShareQr load={loadOpenQr} label={name} />}
             </Panel>
           );

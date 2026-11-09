@@ -149,6 +149,8 @@ export const api = {
     request<CreatorFormDefinition>(`/forms/${segment(formId)}/definition`),
   updateForm: (formId: string, body: Partial<FormDefinition> & { status?: FormStatus }) =>
     request<FormStateView>(`/forms/${segment(formId)}`, { ...json(body), method: 'PATCH' }),
+  copyForm: (formId: string) =>
+    request<CreatedForm>(`/forms/${segment(formId)}/copy`, { method: 'POST' }),
   branchGraph: (formId: string) => request<BranchGraph>(`/forms/${segment(formId)}/branch-graph`),
   formQr,
   formBySlug: (slug: string) => request<PublicForm>(`/f/${segment(slug)}`),

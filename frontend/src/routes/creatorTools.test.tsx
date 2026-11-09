@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // E14 #59: 제작자 도구(QR·폼 복사·초안 자동 저장)를 실제 API 모드 화면으로 시험한다. API는 fetch 모의로 바꾼다.
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -111,6 +111,42 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
   vi.resetModules();
+});
+
+describe('폼 복사 (AC40)', () => {
+  it('목록에서 복사하면 새 초안 빌더로 가고, 실패하면 머문 채 알린다', async () => {
+    let copyReply: Reply = { status: 500, body: { error: 'internal_error' } };
+    const { calls } = stubApi((method, path) => {
+      if (method === 'GET' && path === '/me/created-forms') {
+        return { status: 200, body: [summary('f1', 'open', 'https://app.test/f/abc')] };
+      }
+      if (method === 'POST' && path === '/forms/f1/copy') return copyReply;
+      if (method === 'GET' && path === '/forms/f9/definition') {
+        return {
+          status: 200,
+          body: definition({ status: 'draft', share_url: null, version: null }),
+        };
+      }
+      if (method === 'GET' && path === '/consent-templates')
+        return { status: 200, body: templates };
+      return undefined;
+    });
+    await openLive('/creator');
+    await screen.findByText('서버 폼');
+
+    fireEvent.click(screen.getByRole('button', { name: '서버 폼 복사' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('복사하지 못했어요');
+    expect(screen.getByTestId('path').textContent).toBe('/creator');
+
+    copyReply = { status: 201, body: { form_id: 'f9', status: 'draft' } };
+    fireEvent.click(screen.getByRole('button', { name: '서버 폼 복사' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('path').textContent).toBe('/creator/forms/f9/edit'),
+    );
+    expect(((await screen.findByLabelText('폼 제목')) as HTMLInputElement).value).toBe('서버 폼');
+    expect(screen.queryByLabelText('공유 링크')).toBeNull();
+    expect(calls('POST', '/forms/f1/copy')).toHaveLength(2);
+  });
 });
 
 describe('QR (AC10)', () => {

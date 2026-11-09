@@ -106,6 +106,11 @@ function LiveCreatedForms() {
       onEdit={(id) => navigate(paths.editForm(id))}
       onResults={(id) => navigate(paths.formResults(id))}
       loadQr={api.formQr}
+      onCopy={async (id) => {
+        // 복사본은 원본과 제목이 같은 새 초안이다(AC40). 바로 그 빌더를 연다.
+        const created = await api.copyForm(id);
+        navigate(paths.editForm(created.form_id));
+      }}
     />
   );
 }

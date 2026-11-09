@@ -164,14 +164,38 @@ function Evidence({ items }: { items: SummaryEvidence[] }) {
   );
 }
 
-function summaryStatusMessage(summary: AnalyzeSummary, count: number): string | null {
+/**
+ * 특정 의견 요약(유형 D)은 관련 의견의 개수를 보이지 않는다(AC89, SPEC 79·323행).
+ * 건수가 의견 수로 읽힐 수 있어 이 결과에서는 건수 줄과 건수가 든 문구를 모두 숨긴다.
+ */
+function isTopicSummary(response: AnalyzeOkResponse): boolean {
+  return response.result.operation === 'summarize' && response.result.summary.topic !== null;
+}
+
+/** 결과가 나왔을 때 도우미 말풍선. 특정 의견 요약은 건수를 쓰지 않는다. */
+function okMessage(response: AnalyzeOkResponse): string {
+  if (!isTopicSummary(response)) {
+    return `조건에 맞는 응답 ${response.result.count}건을 찾았어요. 대시보드 위 결과에서 확인해 주세요.`;
+  }
+  return response.result.summary?.status === 'ok'
+    ? '요약을 만들었어요. 대시보드 위 결과에서 확인해 주세요.'
+    : '결과를 정리했어요. 대시보드 위 결과에서 확인해 주세요.';
+}
+
+function summaryStatusMessage(
+  summary: AnalyzeSummary,
+  count: number,
+  hideCounts: boolean,
+): string | null {
   switch (summary.status) {
     case 'ok':
       return null;
     case 'no_matches':
       return '조건에 맞는 응답이 없어 요약할 내용이 없어요.';
     case 'no_consented_responses':
-      return `조건에 맞는 응답 ${count}건 모두 AI 요약에 동의하지 않아 요약하지 않았어요.`;
+      return hideCounts
+        ? '조건에 맞는 응답이 모두 AI 요약에 동의하지 않아 요약하지 않았어요.'
+        : `조건에 맞는 응답 ${count}건 모두 AI 요약에 동의하지 않아 요약하지 않았어요.`;
     case 'insufficient_evidence':
       return `'${summary.topic?.query ?? ''}' 관련 답을 충분히 찾지 못해 요약하지 않았어요.`;
     case 'too_many_responses':
@@ -179,14 +203,24 @@ function summaryStatusMessage(summary: AnalyzeSummary, count: number): string | 
   }
 }
 
-function SummaryResult({ summary, count }: { summary: AnalyzeSummary; count: number }) {
-  const status = summaryStatusMessage(summary, count);
+function SummaryResult({
+  summary,
+  count,
+  hideCounts,
+}: {
+  summary: AnalyzeSummary;
+  count: number;
+  hideCounts: boolean;
+}) {
+  const status = summaryStatusMessage(summary, count, hideCounts);
   return (
     <div className="explore-summary">
       {status && <p className="explore-status">{status}</p>}
       {summary.excluded_no_consent_count > 0 && summary.status !== 'no_consented_responses' && (
         <p className="muted small">
-          AI 요약에 동의하지 않은 {summary.excluded_no_consent_count}건은 요약에서 뺐어요.
+          {hideCounts
+            ? 'AI 요약에 동의하지 않은 응답은 요약에서 뺐어요.'
+            : `AI 요약에 동의하지 않은 ${summary.excluded_no_consent_count}건은 요약에서 뺐어요.`}
         </p>
       )}
       {summary.items.map((item) => (
@@ -244,18 +278,21 @@ function OkResult({
   loadResponse: (responseId: string) => Promise<ResponseDetail>;
 }) {
   const { result } = response;
+  const topic = isTopicSummary(response);
   return (
     <div className="explore-result">
-      <p className="explore-count">
-        조건에 맞는 응답 <strong>{result.count}</strong>건
-      </p>
+      {!topic && (
+        <p className="explore-count">
+          조건에 맞는 응답 <strong>{result.count}</strong>건
+        </p>
+      )}
       <CoverageBox response={response} />
       <MatchedBox response={response} />
       {result.operation === 'list' && (
         <ListResult ids={result.response_ids} loadResponse={loadResponse} />
       )}
       {result.operation === 'summarize' && (
-        <SummaryResult summary={result.summary} count={result.count} />
+        <SummaryResult summary={result.summary} count={result.count} hideCounts={topic} />
       )}
     </div>
   );
@@ -445,10 +482,7 @@ export function ExplorePage({
                       </p>
                     )}
                     {turn.state === 'done' && turn.response.status === 'ok' && (
-                      <p>
-                        조건에 맞는 응답 {turn.response.result.count}건을 찾았어요. 대시보드 위
-                        결과에서 확인해 주세요.
-                      </p>
+                      <p>{okMessage(turn.response)}</p>
                     )}
                     {turn.state === 'done' && turn.response.status === 'clarify' && (
                       <ClarifyResult response={turn.response} onChoose={choose} />

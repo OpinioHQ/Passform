@@ -1710,6 +1710,9 @@ h3 {
 .builder-side .builder-add-section > .button-row .btn {
   width: 100%;
 }
+.builder-results-hint {
+  margin: 8px 0 0;
+}
 .explore-more {
   justify-self: stretch;
   text-align: left;

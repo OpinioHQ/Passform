@@ -252,6 +252,29 @@ describe('결과', () => {
   });
 });
 
+describe('특정 의견 요약의 건수 (팀원 리뷰 반영, AC89)', () => {
+  const countText = /\d+\s*건/;
+
+  it('topic 요약은 건수 없이 요약문과 근거만 보인다', async () => {
+    renderPage([example('ok_summarize_topic')]);
+    ask('비용이 부담된다는 의견 요약해줘');
+    expect(await screen.findByText("'비용이 부담된다'에 대한 의견")).toBeTruthy();
+    expect(screen.getByText('회비와 서버 비용이 부담될 수 있다는 우려가 있습니다.')).toBeTruthy();
+    expect(screen.getAllByText('회비와 서버 비용이 부담될까 걱정됩니다.')).toHaveLength(3);
+    expect(screen.getByText('요약을 만들었어요. 대시보드 위 결과에서 확인해 주세요.')).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(countText);
+  });
+
+  it('근거가 부족한 topic 요약(insufficient_evidence)도 건수를 보이지 않는다', async () => {
+    renderPage([example('ok_summary_insufficient_evidence')]);
+    ask('우주여행 의견 요약해줘');
+    expect(
+      await screen.findByText("'우주여행' 관련 답을 충분히 찾지 못해 요약하지 않았어요."),
+    ).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(countText);
+  });
+});
+
 describe('일부만 확인', () => {
   it('사실은 항상 보이고, 분기로 건너뛴 이유는 물음표를 눌러야 보인다', async () => {
     renderPage([example('ok_count_branch_skipped')]);

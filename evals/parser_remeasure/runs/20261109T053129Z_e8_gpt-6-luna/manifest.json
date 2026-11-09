@@ -1,0 +1,26 @@
+{
+  "started_at": "2026-11-09T05:31:29.199491+00:00",
+  "model_requested": "gpt-6-luna",
+  "question_set": "e8",
+  "prompt_version": {
+    "v2": 2,
+    "v3": "v3 안"
+  },
+  "questions_sha256": "ba9396aa3c4bf44dcd80bc98022fe9bb05c4c1fb07950acab78849707da87dab",
+  "schema_commit": "525f12867bb0de3f36477ae51a572f5d71f2086a",
+  "instructions": {
+    "v2": {
+      "sha256": "eac119aa2a7ed98c6c3ec39c39d13abec9bfa7c14c477be23147058651fb650c",
+      "chars": 1954
+    },
+    "v3": {
+      "sha256": "c1d672c7ba73180c1b2bdce85bb72c742c5e6df4f2a72d53283aa91d0920c097",
+      "chars": 2488
+    }
+  },
+  "rounds": 5,
+  "max_calls": 60,
+  "calls_used_total": 30,
+  "finished_at": "2026-11-09T05:34:39.312867+00:00",
+  "calls_used_last_session": 30
+}

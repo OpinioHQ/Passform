@@ -1,0 +1,4 @@
+﻿id,form,pattern,question,conditions,match,operation,sort_by,sort_order,target,topic,memo
+e01,form_a_versions,E8 실측,소프트웨어학과 3학년 몇 건이야?,소프트웨어학과|3학년,all,count,,,,,"근거: parse_query 규칙(나란히 말하면 all), 골든 소프트웨어학과랑 3학년 메모. 사람 확인"
+e02,form_summary,E8 실측,지원 동기에서 가장 많이 나온 의견은?,[],,summarize,,,지원 동기,,근거: SPEC 유형 C 빈도 질문. 사람 확인
+e03,form_summary,E8 실측,비용이 부담된다는 의견있어?,[],,null,,,,,"근거: parse_query operation 규칙(요약·수 요청이 아니면 null), AC27. 사람 결정"

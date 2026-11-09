@@ -1,0 +1,29 @@
+{
+  "started_at": "2026-11-09T05:35:00.467005+00:00",
+  "model_requested": "gpt-6.1-terra",
+  "question_set": "main",
+  "prompt_version": {
+    "v2": 2,
+    "v3": "v3 안"
+  },
+  "questions_sha256": "6f5d295cdd464aac7edc9ca77b916d6605789668f8b6c8374aa3997b269d812f",
+  "schema_commit": "525f12867bb0de3f36477ae51a572f5d71f2086a",
+  "instructions": {
+    "v2": {
+      "sha256": "eac119aa2a7ed98c6c3ec39c39d13abec9bfa7c14c477be23147058651fb650c",
+      "chars": 1954
+    },
+    "v3": {
+      "sha256": "c1d672c7ba73180c1b2bdce85bb72c742c5e6df4f2a72d53283aa91d0920c097",
+      "chars": 2488
+    }
+  },
+  "rounds": 5,
+  "max_calls": 600,
+  "calls_used_total": 300,
+  "resumed_at": [
+    "2026-11-09T08:06:20.684144+00:00"
+  ],
+  "finished_at": "2026-11-09T08:27:55.802721+00:00",
+  "calls_used_last_session": 200
+}

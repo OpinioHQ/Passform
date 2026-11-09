@@ -1,0 +1,31 @@
+﻿id,form,pattern,question,conditions,match,operation,sort_by,sort_order,target,topic,memo
+q01,form_b_mixed,조건 버림,철학과 학생 수 세어줘,철학과,,count,,,,,
+q02,form_a_versions,조건 버림,간호학과 지원자 몇 명이야,간호학과,,count,,,,,
+q03,form_b_mixed,조건 버림,컴퓨터공학부 5학년 몇 명이야,컴퓨터공학부|5학년,all,count,,,,,
+q04,form_b_mixed,부정,컴퓨터공학과가 아닌 학생은 몇 명이야,컴퓨터공학과,not,count,,,,,
+q05,form_b_mixed,부정,팀장이 아닌 사람 보여줘,팀장,not,list,,,,,
+q06,form_required_branch,부정,동아리 제외하고 몇 명이야,동아리,not,count,,,,,
+q07,form_b_mixed,명사 붙임,데이터사이언스학과 학생 몇 명이야,데이터사이언스학과,,count,,,,,
+q08,form_required_branch,명사 붙임,학생회 소속 참석자 수 세어줘,학생회,,count,,,,,"근거: 골든 branch_skipped_condition_not_evaluable(문항을 말해도 값만), parse_query 예시 3(사람 명사 제외)"
+q09,form_b_mixed,조건 묶음,컴퓨터공학과 3학년 몇 명이야,컴퓨터공학과|3학년,all,count,,,,,
+q10,form_b_mixed,조건 묶음,경영학과 2학년 학생들 보여줘,경영학과|2학년,all,list,,,,,
+q11,form_summary,topic 복사,건의 사항 요약해줘,[],,summarize,,,건의 사항,,
+q12,form_b_mixed,topic 복사,자기소개 정리해줘,[],,summarize,,,자기소개,,
+q13,form_summary,일반어 target,이번 신청 결과 정리해줘,[],,summarize,,,,,
+q14,form_summary,일반어 target,들어온 답변 전체 요약해줘,[],,summarize,,,,,
+q15,form_summary,주제가 조건으로,일정이 촉박하다는 의견 요약해줘,[],,summarize,,,,일정이 촉박하다,
+q16,form_summary,주제가 조건으로,면접 시간을 알고 싶다는 의견 정리해줘,[],,summarize,,,,면접 시간을 알고 싶다,
+q17,form_b_mixed,match 붙임,지금까지 몇 명 응답했어,[],,count,,,,,
+q18,form_a_versions,match 붙임,응답 전부 보여줘,[],,list,,,,,
+q19,form_b_mixed,operation 흔들림,경영학과가 아닌 3학년 몇 명,경영학과가 아닌|3학년,,count,,,,,"근거: 스파이크 3-5 예시 8, parse_query 혼합 부정 규칙(match 생략). v3 예시와 같은 꼴"
+q20,form_b_mixed,operation 흔들림,컴퓨터공학과 아닌 1학년 인원,컴퓨터공학과 아닌|1학년,,count,,,,,"근거: 스파이크 3-5 예시 8, parse_query 혼합 부정 규칙(match 생략). v3 예시와 같은 꼴"
+q21,form_b_mixed,미응답 형식,자기소개에 답하지 않은 사람 수,자기소개 - 미응답,,count,,,,,
+q22,form_required_branch,미응답 형식,식사 신청에 응답 안 한 사람 보여줘,식사 신청 - 미응답,,list,,,,,
+q23,form_required_branch,정상,참석하는 사람을 참석 날짜 빠른 순으로 보여줘,참석하는 사람,,list,참석 날짜,asc,,,에이전트 초안을 사람이 확인
+q24,form_b_mixed,정상,디자인이나 개발 고른 학생 수 알려줘,디자인|개발,any,count,,,,,
+q25,form_b_mixed,정상,소프트웨어학과이면서 팀장인 사람 보여줘,소프트웨어학과|팀장,all,list,,,,,
+q26,form_summary,정상,기획 지원자들의 지원 동기 정리해줘,기획,,summarize,,,지원 동기,,
+q27,form_required_branch,되묻기,학생회 쪽은 어때,학생회,,null,,,,,
+q28,form_b_mixed,되묻기,4학년 비율 알려줘,4학년,,null,,,,,에이전트 초안을 사람이 확인
+q29,form_b_mixed,되묻기,경영학과랑 팀원인 사람 수 세어줘,경영학과|팀원,,count,,,,,에이전트 초안을 사람이 확인
+q30,form_required_branch,되묻기,하고 싶은 말이 긴 순서로 보여줘,[],,list,하고 싶은 말,desc,,,에이전트 초안을 사람이 확인

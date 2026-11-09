@@ -22,6 +22,7 @@ import {
 import { friendlyError, statusLabel } from '../builder/messages';
 import { QuestionEditor, RowButton } from '../builder/QuestionEditor';
 import { ShareQr } from '../builder/ShareQr';
+import { useCreatorAutosave, useLeaveWarning } from '../builder/creatorAutosave';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
 import type {
   ConsentTemplate,
@@ -87,6 +88,25 @@ export function BuilderPage({
   const { status, share_url: shareUrl, definition_version: version } = formState;
   const busy = pending !== '';
   const messagesRef = React.useRef<HTMLDivElement>(null);
+  const pageRef = React.useRef<HTMLDivElement>(null);
+
+  // draft만 자동 저장한다(SPEC 153행, AC84). open·closed는 지금처럼 명시적으로 저장한다.
+  const autosaveRequest = React.useCallback(
+    (def: FormDefinition) => api.updateForm(formId, def),
+    [formId],
+  );
+  const markSaved = React.useCallback(() => setDirty(false), []);
+  const autosave = useCreatorAutosave(autosaveRequest, markSaved);
+  const { schedule } = autosave;
+  React.useEffect(() => {
+    if (status === 'draft' && dirty) schedule(definition);
+  }, [status, dirty, definition, schedule]);
+  // 저장이 끝나지 않았거나 실패한 편집이 있으면 나갈 때 경고한다.
+  useLeaveWarning(
+    status === 'draft' && dirty,
+    pageRef,
+    '저장되지 않은 변경이 있어요. 이 화면을 나갈까요?',
+  );
 
   // 아래쪽 버튼을 눌러도 결과와 문제 목록(맨 위)이 보이게 한다. 이미 보이면 움직이지 않는다.
   React.useEffect(() => {
@@ -113,6 +133,8 @@ export function BuilderPage({
     setOutcome('');
     setFailure('');
     setProblems([]);
+    // 기다리는 자동 저장을 버리고 보낸 것이 끝나길 기다린다. 이 요청이 현재 편집 전체를 보내므로 겹치지 않게만 한다.
+    await autosave.cancel();
     try {
       const view = await api.updateForm(formId, body);
       setFormState(view);
@@ -251,11 +273,23 @@ export function BuilderPage({
     );
   }
 
+  // 자동 저장 중·완료·실패를 구분한다. 실패는 "저장됨"으로 바뀌지 않는다(AC84). 기다리는 중은 기존 안내를 쓴다.
+  const autosaveText =
+    status !== 'draft'
+      ? null
+      : autosave.status === 'saving'
+        ? PENDING_TEXT.save
+        : autosave.status === 'saved'
+          ? '저장됨'
+          : autosave.status === 'failed'
+            ? '저장 실패 · 지금 편집 내용은 아직 저장되지 않았어요.'
+            : null;
+
   const questionsBefore = (sectionIndex: number) =>
     definition.sections.slice(0, sectionIndex).reduce((sum, s) => sum + s.questions.length, 0);
 
   return (
-    <div className="page-shell builder-page">
+    <div className="page-shell builder-page" ref={pageRef}>
       <Heading
         eyebrow="제작자 워크스페이스 / 폼 편집"
         title="폼 편집"
@@ -270,11 +304,18 @@ export function BuilderPage({
               {version !== null && ` · 폼 버전 ${version}`}
             </Badge>
             <span className="small muted" role="status">
-              {busy ? PENDING_TEXT[pending as Exclude<Pending, ''>] : outcome}
-              {!busy &&
-                dirty &&
-                !failure &&
-                (outcome ? ' · ' : '') + '저장하지 않은 변경이 있어요.'}
+              {busy ? (
+                PENDING_TEXT[pending as Exclude<Pending, ''>]
+              ) : autosaveText ? (
+                <span className={autosave.status === 'failed' ? 'error' : undefined}>
+                  {autosaveText}
+                </span>
+              ) : (
+                <>
+                  {outcome}
+                  {dirty && !failure && (outcome ? ' · ' : '') + '저장하지 않은 변경이 있어요.'}
+                </>
+              )}
             </span>
             <button
               type="button"

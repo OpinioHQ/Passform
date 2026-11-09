@@ -73,6 +73,10 @@
 | `deploy/README.md` 추가 | 서버·콘솔에서 사람이 할 순서를 한곳에 둔다 | 수용 |
 | `frontend/.env.production` 추가 | 공개 값(`VITE_USE_API`, `VITE_API_BASE_URL`)을 저장소에서 검토하게 한다 | 수용 |
 
+## 회차
+
+- 2회차(2026-11-09): PR #99 팀원 인라인 리뷰 2건 반영 — 복원 때 app 정지·`--single-transaction`, 디스크(루트 볼륨 20GB 이상, 로그 크기 제한, `docker image prune -f`, Dockerfile 의존성 레이어).
+
 ## 미룸
 
 - 실제 배포(서버 접속, 콘솔 작업)는 사람이 `deploy/README.md` 순서로 한다.

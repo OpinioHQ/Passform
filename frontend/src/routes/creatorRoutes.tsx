@@ -171,7 +171,7 @@ export function FormResponseDetailRoute() {
   const result = useServerData(load, '응답을 찾을 수 없어요.');
   const eyebrow = '제작자 워크스페이스 / 응답 상세';
   if (!useLiveApi) return <Waiting eyebrow={eyebrow} title="응답 상세" message={demoOnly} />;
-  if (result.state === 'ready') return <ResponseDetailPage detail={result.data} />;
+  if (result.state === 'ready') return <ResponseDetailPage detail={result.data} formId={formId} />;
   return (
     <Waiting
       eyebrow={eyebrow}

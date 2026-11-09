@@ -8,7 +8,13 @@ import React from 'react';
 import { ApiError, api } from '../api/client';
 import { Badge, Button, Panel } from '../components/UI';
 import { ResponsePage } from '../pages/ResponsePage';
-import type { AnswerValue, PublicForm, ResponseAnswer, SubmitResponseInput } from '../types/api';
+import type {
+  AnswerValue,
+  PublicForm,
+  ResponseAnswer,
+  SubmitFiles,
+  SubmitResponseInput,
+} from '../types/api';
 import {
   type DraftSink,
   accountSink,
@@ -17,6 +23,13 @@ import {
   readBrowserDraft,
   removeBrowserDraft,
 } from './draftSync';
+import {
+  ANONYMOUS_SCOPE,
+  fileDraftKey,
+  loadFileDraft,
+  removeFileDraft,
+  saveFileDraft,
+} from './fileDrafts';
 import type { AnswerMap } from './responsePath';
 
 type Session =
@@ -33,7 +46,7 @@ type Session =
 
 interface Props {
   form: PublicForm;
-  onSubmit: (data: SubmitResponseInput) => Promise<void>;
+  onSubmit: (data: SubmitResponseInput, files?: SubmitFiles) => Promise<void>;
   saving: boolean;
   onBack?: () => void;
   onReload?: () => void;
@@ -62,18 +75,23 @@ const AUTOSAVE_STOPPED = '작성 중인 답을 불러오지 못해 자동 저장
  * 401일 때만 비로그인으로 본다. 그 밖의 실패(서버 오류, 네트워크 오류)는 로그인 여부를 모르므로
  * `null`을 돌려준다. 로그인 사용자의 답이 이 브라우저에 남지 않게 하기 위해서다(AGENTS 3절 1항).
  */
-async function loggedIn(): Promise<boolean | null> {
+async function loggedIn(): Promise<string | false | null> {
   try {
-    await api.me();
-    return true;
+    const me = await api.me();
+    return me.user_id ?? 'account';
   } catch (e) {
     return e instanceof ApiError && e.status === 401 ? false : null;
   }
 }
 
-async function decide(form: PublicForm): Promise<Session> {
+/** 파일을 브라우저에 보관할 키. 로그인 여부를 모르면 보관하지 않는다(계정이 섞이지 않게). */
+function fileKeyOf(login: string | false | null, formId: string): string | null {
+  if (login === null) return null;
+  return fileDraftKey(login === false ? ANONYMOUS_SCOPE : login, formId);
+}
+
+async function decide(form: PublicForm, login: string | false | null): Promise<Session> {
   const browser = readBrowserDraft(form.form_id);
-  const login = await loggedIn();
   if (login === null) return { step: 'ready', sink: null, notice: AUTOSAVE_STOPPED };
   if (!login) {
     const sink = browserSink(form);
@@ -128,10 +146,14 @@ export function DraftGate({ form, ...rest }: Props) {
   const [session, setSession] = React.useState<Session>({ step: 'loading' });
   const [error, setError] = React.useState('');
   const [busy, setBusy] = React.useState(false);
+  const [fileKey, setFileKey] = React.useState<string | null>(null);
   React.useEffect(() => {
     let active = true;
-    void decide(form).then((next) => {
-      if (active) setSession(next);
+    void loggedIn().then(async (login) => {
+      const next = await decide(form, login);
+      if (!active) return;
+      setFileKey(fileKeyOf(login, form.form_id));
+      setSession(next);
     });
     return () => {
       active = false;
@@ -143,6 +165,7 @@ export function DraftGate({ form, ...rest }: Props) {
     setError('');
     try {
       await sink.clear();
+      if (fileKey) await removeFileDraft(fileKey).catch(() => undefined);
       setSession({
         step: 'ready',
         sink: sink.kind === 'account' ? accountSink(form, null) : browserSink(form),
@@ -160,6 +183,12 @@ export function DraftGate({ form, ...rest }: Props) {
     try {
       await sink.save(answers);
       removeBrowserDraft(form.form_id);
+      // 로그인 전에 고른 파일도 이 계정의 보관함으로 옮긴다.
+      const anonymousKey = fileDraftKey(ANONYMOUS_SCOPE, form.form_id);
+      if (fileKey) {
+        await saveFileDraft(fileKey, await loadFileDraft(anonymousKey)).catch(() => undefined);
+        await removeFileDraft(anonymousKey).catch(() => undefined);
+      }
       setSession({ step: 'ready', sink, answers: answersToMap(answers) });
     } catch {
       setError(
@@ -258,6 +287,7 @@ export function DraftGate({ form, ...rest }: Props) {
       {...rest}
       draft={session.sink ? { sink: session.sink, initialAnswers: session.answers } : undefined}
       draftNotice={session.notice}
+      files={{ storageKey: fileKey }}
     />
   );
 }

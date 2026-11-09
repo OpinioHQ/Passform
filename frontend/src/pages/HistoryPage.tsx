@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { responseAttachmentUrl, useLiveApi } from '../api/client';
 import { Badge, Button, Heading, Panel } from '../components/UI';
 import { paths } from '../routes/paths';
 import type {
@@ -36,22 +37,33 @@ function valueText(value: AnswerValue | null): string {
   return Array.isArray(value) ? value.join(', ') : value;
 }
 
-function Files({ files }: { files: ResponseAttachment[] }) {
+type FileLink = (attachmentId: string) => string | null;
+
+function Files({ files, linkOf }: { files: ResponseAttachment[]; linkOf: FileLink }) {
   if (files.length === 0) return null;
   return (
-    <ul className="small muted">
-      {files.map((file) => (
-        <li key={file.attachment_id}>
-          {file.filename}
-          {!file.available && ' (삭제된 파일)'}
-        </li>
-      ))}
+    <ul className="small muted attachment-list">
+      {files.map((file) => {
+        const url = file.available ? linkOf(file.attachment_id) : null;
+        return (
+          <li key={file.attachment_id}>
+            {url ? (
+              <a href={url} download={file.filename}>
+                {file.filename}
+              </a>
+            ) : (
+              file.filename
+            )}
+            {!file.available && ' (삭제된 파일)'}
+          </li>
+        );
+      })}
     </ul>
   );
 }
 
-/** 제출 당시 버전의 문항 문구와 답(AC15). 첨부는 파일 이름만 보인다. */
-function Detail({ detail }: { detail: ResponseHistoryDetail }) {
+/** 제출 당시 버전의 문항 문구와 답(AC15). 삭제되지 않은 첨부는 내려받을 수 있다(SPEC 198행). */
+function Detail({ detail, linkOf }: { detail: ResponseHistoryDetail; linkOf: FileLink }) {
   const questionIds = new Set(detail.content.map((a) => a.question_id));
   const leftover = detail.attachments.filter((file) => !questionIds.has(file.question_id));
   return (
@@ -76,11 +88,12 @@ function Detail({ detail }: { detail: ResponseHistoryDetail }) {
             <b>{valueText(a.value)}</b>
             <Files
               files={detail.attachments.filter((file) => file.question_id === a.question_id)}
+              linkOf={linkOf}
             />
           </div>
         ))}
       </div>
-      <Files files={leftover} />
+      <Files files={leftover} linkOf={linkOf} />
     </>
   );
 }
@@ -144,6 +157,12 @@ export function HistoryPage({
   onEdit,
   onCancel,
 }: Props) {
+  const formId = items?.find((item) => item.response_id === selectedId)?.form_id;
+  // 가짜 데이터 모드에는 받을 파일이 없어 이름만 보인다.
+  const linkOf: FileLink = (attachmentId) =>
+    useLiveApi && formId && selectedId
+      ? responseAttachmentUrl(formId, selectedId, attachmentId)
+      : null;
   return (
     <div className="page-shell">
       <Heading
@@ -190,7 +209,7 @@ export function HistoryPage({
           </Panel>
           <Panel className="history-detail">
             {detail.status === 'ready' ? (
-              <Detail detail={detail.detail} />
+              <Detail detail={detail.detail} linkOf={linkOf} />
             ) : (
               <p className="muted">
                 {detail.status === 'not_found'

@@ -1577,6 +1577,25 @@ h3 {
 .attachment-editor input[type='file'] {
   max-width: 100%;
 }
+.response-files {
+  margin-top: 8px;
+  max-width: 100%;
+}
+.response-file-button {
+  position: relative;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  margin-top: 4px;
+}
+.response-file-button input[type='file'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
 .storage-meter {
   margin-bottom: 18px;
 }

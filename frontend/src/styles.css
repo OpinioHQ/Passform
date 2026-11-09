@@ -1215,12 +1215,16 @@ textarea::placeholder {
   margin: 10px 0 16px;
 }
 .filter-chip {
-  background: var(--color-surface-card);
+  background: var(--color-canvas);
   color: var(--color-ink);
-  border: 0;
-  border-radius: var(--radius-md);
-  font-size: 12px;
-  padding: 8px 11px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+}
+.filter-chip:hover {
+  background: var(--color-surface-soft);
 }
 .table-scroll {
   overflow-x: auto;
@@ -1315,8 +1319,12 @@ textarea::placeholder {
   max-width: 94%;
 }
 .chat-bubble.user {
-  background: var(--color-surface-card);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
   align-self: flex-end;
+}
+.chat-bubble.user b {
+  color: inherit;
 }
 .chat-bubble.bot {
   background: var(--color-surface-card);

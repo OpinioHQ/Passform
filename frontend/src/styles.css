@@ -540,7 +540,7 @@ h3 {
 .form-list {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--space-3);
 }
 .saved-form {
   position: relative;
@@ -549,10 +549,11 @@ h3 {
   flex-direction: column;
   gap: 16px;
 }
+/* 이어서 쓸 폼은 검은 테두리 대신 진한 경계선과 옅은 그림자로 띄운다. */
 .saved-form.resume {
-  border-color: var(--color-ink);
-  min-height: 223px;
-  padding: 24px;
+  border-color: var(--color-hairline-strong);
+  box-shadow: var(--shadow-md);
+  min-height: 0;
 }
 .card-status {
   display: flex;
@@ -837,9 +838,9 @@ textarea::placeholder {
 }
 .history-layout {
   display: grid;
-  grid-template-columns: 275px 1fr;
+  grid-template-columns: 300px minmax(0, 1fr);
   align-items: start;
-  gap: 18px;
+  gap: var(--space-6);
 }
 .history-list h3 {
   font-size: 14px;
@@ -848,14 +849,14 @@ textarea::placeholder {
 .history-choice {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--space-1) var(--space-2);
   border: 1px solid var(--color-hairline);
   background: var(--color-canvas);
   border-radius: var(--radius-md);
   text-align: left;
-  padding: 14px;
+  padding: var(--space-3) var(--space-4);
   width: 100%;
-  margin-top: 10px;
+  margin-top: var(--space-2);
 }
 .history-choice.active {
   border-color: var(--color-ink);
@@ -905,11 +906,11 @@ textarea::placeholder {
   margin-top: 20px;
 }
 .answer-line {
-  padding: 15px 0;
-  border-top: 1px solid var(--color-hairline);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--color-hairline-soft);
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: var(--space-1);
 }
 .answer-line small {
   color: var(--color-muted);

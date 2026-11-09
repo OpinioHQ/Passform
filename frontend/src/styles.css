@@ -607,9 +607,9 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 32px;
-  margin-bottom: 23px;
-  padding: 26px 30px;
+  gap: var(--space-8);
+  margin-bottom: var(--space-6);
+  padding: var(--space-8);
 }
 .response-hero h2 {
   font-size: 24px;
@@ -640,7 +640,7 @@ h3 {
   font-size: 12px;
 }
 .questions {
-  padding: 26px 32px;
+  padding: var(--space-8);
 }
 .section-title {
   display: flex;
@@ -658,8 +658,8 @@ h3 {
   font-weight: 600;
 }
 .question {
-  border-top: 1px solid var(--color-hairline);
-  padding: 25px 0;
+  border-top: 1px solid var(--color-hairline-soft);
+  padding: var(--space-6) 0;
 }
 .question-heading {
   display: flex;
@@ -1560,7 +1560,8 @@ textarea::placeholder {
   .response-hero {
     flex-direction: column;
     align-items: stretch;
-    padding: 22px;
+    gap: var(--space-6);
+    padding: var(--space-6) var(--space-4);
   }
   .completion {
     width: 100%;
@@ -1875,6 +1876,17 @@ textarea::placeholder {
   .form-footer .btn {
     min-height: 44px;
   }
+  .response-page .form-footer .btn-primary {
+    flex: 1 1 auto;
+  }
+  /* 휴대폰에서 16px 미만 입력칸은 iOS가 화면을 확대하므로 16px로 둔다. */
+  .question-input input:not([type='radio']):not([type='checkbox']),
+  .question-input select,
+  .question-input textarea,
+  .field input,
+  .autofill-select select {
+    font-size: 16px;
+  }
 }
 
 .profile-card + .profile-card {
@@ -2155,4 +2167,14 @@ textarea::placeholder {
   font: inherit;
   text-decoration: underline;
   cursor: pointer;
+}
+
+/* 응답 화면은 읽기 폭을 720px로 좁혀 가운데 둔다(바깥 여백은 page-shell 그대로). */
+.page-shell.response-page {
+  max-width: calc(720px + 2 * 96px);
+}
+@media (max-width: 1130px) {
+  .page-shell.response-page {
+    max-width: calc(720px + 2 * 36px);
+  }
 }

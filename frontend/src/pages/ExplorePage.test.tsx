@@ -335,6 +335,19 @@ describe('되묻기', () => {
     expect(analyze).toHaveBeenCalledTimes(1);
   });
 
+  it('동작 되묻기 버튼을 거쳐도 후보 선택지는 처음 입력한 질문 끝에 붙는다(코덱스 검토 반영)', async () => {
+    const { analyze } = renderPage([
+      example('clarify_3_missing_operation'),
+      example('clarify_6_unknown_condition'),
+    ]);
+    ask('남학생');
+    fireEvent.click(await screen.findByRole('button', { name: '응답 수' }));
+    const grade = (await screen.findByText('학년', { selector: 'b' })).closest('li')!;
+    fireEvent.click(within(grade).getByRole('button', { name: '3학년' }));
+    expect(screen.getByLabelText<HTMLInputElement>('응답에 대해 묻기').value).toBe('남학생 3학년');
+    expect(analyze).toHaveBeenCalledTimes(2);
+  });
+
   it('double_negation: 확정 문장을 고르면 match를 지워 보낸다', async () => {
     const { analyze } = renderPage([example('clarify_8_double_negation'), example('ok_count')]);
     ask('8번 미응답 아닌 사람');

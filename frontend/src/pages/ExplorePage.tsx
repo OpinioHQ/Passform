@@ -24,10 +24,15 @@ import { versionLabel, type DashboardSlots } from './ResultsPage';
 /** 목록은 이만큼씩 상세를 읽는다. 순서는 result.response_ids 그대로다(AC62). */
 const LIST_PAGE = 20;
 
-type Turn =
-  | { id: number; state: 'loading'; asked: string }
-  | { id: number; state: 'done'; asked: string; response: AnalyzeResponse }
-  | { id: number; state: 'failed'; asked: string; message: string };
+/**
+ * asked는 말풍선에 보일 글자(입력한 질문이나 누른 버튼 라벨)다.
+ * typed는 이 흐름을 시작한 질문이다. 되묻기 버튼("응답 수" 등)을 눌러도 바뀌지 않고, 후보 선택지를 붙이는 바탕이 된다.
+ */
+type Turn = { id: number; asked: string; typed: string } & (
+  | { state: 'loading' }
+  | { state: 'done'; response: AnalyzeResponse }
+  | { state: 'failed'; message: string }
+);
 
 function CoverageBox({ response }: { response: AnalyzeOkResponse }) {
   const [open, setOpen] = React.useState(false);
@@ -397,24 +402,28 @@ export function ExplorePage({
   const mainPresets = presets.filter((g) => g.kind === 'main');
   const loading = turn?.state === 'loading';
 
-  function send(body: AnalyzeRequest, asked: string) {
+  function send(body: AnalyzeRequest, asked: string, typed: string) {
     const id = ++seq.current;
-    setTurn({ id, state: 'loading', asked });
+    setTurn({ id, state: 'loading', asked, typed });
     analyze(body).then(
       (response) => {
         if (id !== seq.current) return;
-        setTurn({ id, state: 'done', asked, response });
+        setTurn({ id, state: 'done', asked, typed, response });
         if (response.status === 'ok') setShown({ id, asked, response });
       },
       (error: unknown) => {
         if (id !== seq.current) return;
         const status = error instanceof ApiError ? error.status : null;
-        setTurn({ id, state: 'failed', asked, message: analyzeErrorMessage(status) });
+        setTurn({ id, state: 'failed', asked, typed, message: analyzeErrorMessage(status) });
       },
     );
   }
 
-  const choose = (choice: Choice) => send({ context: choice.context }, choice.label);
+  /** 묻기 밑 버튼은 새 흐름을 시작하므로 라벨이 바탕이 된다. */
+  const choose = (choice: Choice) => send({ context: choice.context }, choice.label, choice.label);
+  /** 되묻기 버튼은 같은 흐름이라 처음 질문을 바탕으로 이어 간다. */
+  const answer = (choice: Choice) =>
+    send({ context: choice.context }, choice.label, turn?.typed ?? choice.label);
 
   const presetGroup = (group: PresetGroup) => (
     <div key={group.title} className="explore-preset-group">
@@ -506,9 +515,9 @@ export function ExplorePage({
                     {turn.state === 'done' && turn.response.status === 'clarify' && (
                       <ClarifyResult
                         response={turn.response}
-                        onChoose={choose}
+                        onChoose={answer}
                         onPickOption={(option) => {
-                          setQuery(`${turn.asked} ${option}`);
+                          setQuery(`${turn.typed} ${option}`);
                           input.current?.focus();
                         }}
                       />
@@ -523,7 +532,7 @@ export function ExplorePage({
                 e.preventDefault();
                 const text = query.trim();
                 if (!text || loading) return;
-                send({ query: text }, text);
+                send({ query: text }, text, text);
               }}
             >
               <input

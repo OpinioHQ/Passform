@@ -115,7 +115,7 @@ export function FormResultsRoute() {
   const result = useServerData(load, '폼을 찾을 수 없어요.');
   const eyebrow = '제작자 워크스페이스 / 결과';
   if (!useLiveApi) return <Waiting eyebrow={eyebrow} title="결과" message={demoOnly} />;
-  if (result.state === 'ready') return <ResultsPage key={formId} results={result.data} />;
+  if (result.state === 'ready') return <ResultsPage key={formId} formId={formId} results={result.data} />;
   return (
     <Waiting
       eyebrow={eyebrow}

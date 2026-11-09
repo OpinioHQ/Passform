@@ -1,6 +1,7 @@
 import React from 'react';
-import { Badge, Heading, Panel } from '../components/UI';
+import { Badge, Button, Heading, Panel } from '../components/UI';
 import type { FormResults, QuestionType } from '../types/api';
+import { ExportDialog } from './ExportDialog';
 
 /** 화면 문구는 "폼 버전 1"로 쓴다(AGENTS 5절). */
 export function versionLabel(versions: number[]): string {
@@ -54,8 +55,9 @@ function OptionRow({
 const maxOf = (counts: number[]) => counts.reduce((a, b) => Math.max(a, b), 0);
 
 /** 결과 대시보드(SPEC 234행, AC19). 숫자는 서버가 센 값을 그대로 보인다. */
-export function ResultsPage({ results }: { results: FormResults }) {
+export function ResultsPage({ formId, results }: { formId: string; results: FormResults }) {
   const [view, setView] = React.useState<'combined' | number>('combined');
+  const [exportOpen, setExportOpen] = React.useState(false);
   const selected =
     view === 'combined' ? undefined : results.versions.find((v) => v.form_version === view);
   return (
@@ -64,6 +66,11 @@ export function ResultsPage({ results }: { results: FormResults }) {
         eyebrow="제작자 워크스페이스 / 결과"
         title="결과"
         desc="선택형 문항의 응답 수예요. 통합 보기는 문구·유형이 같은 문항의 같은 선택지만 합쳐요."
+        action={
+          <Button variant="secondary" onClick={() => setExportOpen(true)}>
+            내보내기
+          </Button>
+        }
       />
       <div className="metric-grid">
         <Panel className="metric">
@@ -160,6 +167,13 @@ export function ResultsPage({ results }: { results: FormResults }) {
             </Panel>
           );
         })}
+      {exportOpen && (
+        <ExportDialog
+          formId={formId}
+          versions={results.versions.map((v) => v.form_version)}
+          onClose={() => setExportOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -14,7 +14,9 @@ public enum ErrorCode {
 	// 제출 후 수정·취소(SPEC 5절 194~195행).
 	HISTORY_ONLY, NOT_EDITABLE, NOT_CANCELLABLE,
 	// 분석 API(SPEC 5절 235행).
-	INVALID_CONTEXT, LLM_UNAVAILABLE;
+	INVALID_CONTEXT, LLM_UNAVAILABLE,
+	// 첨부와 저장 공간(SPEC 5절 121~124행, 188행, 198행). storage_unavailable은 사람 결정(#63)이다.
+	INVALID_FILE_TYPE, FILE_TOO_LARGE, STORAGE_QUOTA_EXCEEDED, ATTACHMENT_REMOVED, STORAGE_UNAVAILABLE;
 
 	// 응답의 error 값이다(예: not_found).
 	public String code() {

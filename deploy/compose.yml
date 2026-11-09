@@ -47,6 +47,9 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID를 deploy/.env에 설정하세요}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET을 deploy/.env에 설정하세요}
       OPENAI_API_KEY: ${OPENAI_API_KEY:?OPENAI_API_KEY를 deploy/.env에 설정하세요}
+      # 첨부 원본 버킷. 비어 있으면 파일 기능만 503이다. 자격 증명은 넣지 않고 EC2 서버 역할을 쓴다.
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_REGION: ${S3_REGION:-ap-northeast-2}
       # 사람이 정한 배포 값(ARCHITECTURE 10절). 비밀이 아니므로 여기 고정한다.
       SESSION_COOKIE_SECURE: "true"
       FRONTEND_ORIGIN: https://app.passform.kr

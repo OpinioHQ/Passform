@@ -4,20 +4,24 @@ import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.opinio.passform.domain.error.DomainException;
 import com.opinio.passform.domain.error.ErrorCode;
 import com.opinio.passform.domain.form.Form;
+import com.opinio.passform.domain.form.FormAttachments;
 import com.opinio.passform.domain.form.FormPublishValidator;
 import com.opinio.passform.domain.form.FormStatus;
 import com.opinio.passform.domain.form.FormVersion;
@@ -52,11 +56,21 @@ public class FormService {
 
 	private final Clock clock;
 
+	private final FormStorageRules storageRules;
+
 	private final SecureRandom random = new SecureRandom();
 
+	// 저장 공간 규칙 없이 판정만 시험하는 골든 테스트가 쓴다.
 	public FormService(FormRepository forms, FormVersionRepository versions, ResponseRepository responses,
 			ConsentTemplateRepository consentTemplates, FormSchemaValidator schemaValidator, ShareUrls shareUrls,
 			Clock clock) {
+		this(forms, versions, responses, consentTemplates, schemaValidator, shareUrls, clock, FormStorageRules.NONE);
+	}
+
+	@Autowired
+	public FormService(FormRepository forms, FormVersionRepository versions, ResponseRepository responses,
+			ConsentTemplateRepository consentTemplates, FormSchemaValidator schemaValidator, ShareUrls shareUrls,
+			Clock clock, FormStorageRules storageRules) {
 		this.forms = forms;
 		this.versions = versions;
 		this.responses = responses;
@@ -64,18 +78,41 @@ public class FormService {
 		this.schemaValidator = schemaValidator;
 		this.shareUrls = shareUrls;
 		this.clock = clock;
+		this.storageRules = storageRules;
 	}
 
-	// 새 폼은 항상 draft다(AC38). 형식 검증만 한다(AC56).
+	// 새 폼은 항상 draft다(AC38). 형식 검증만 한다(AC56). 첨부는 폼이 생긴 뒤 첨부 API로만 붙는다.
 	@Transactional
 	public CreatedForm create(CreateCommand command) {
-		ValidatedDefinition definition = schemaValidator.validate(command.body());
+		long usedBefore = storageRules.lockAndMeasure(command.ownerId());
+		Object body = command.body() instanceof Map<?, ?> ? FormAttachments.keepStoredLists(objectOf(command.body()), null)
+				: command.body();
+		ValidatedDefinition definition = schemaValidator.validate(body);
 		Instant now = clock.instant();
 		Form form = new Form(command.ownerId(), definition.definition(), now);
 		form.replaceDefinition(definition.definition(), definition.deadline(), definition.editable(),
 				definition.cancellable(), definition.responseLimit(), now);
 		Form saved = forms.save(form);
+		storageRules.requireWithinLimit(command.ownerId(), usedBefore);
 		return new CreatedForm(saved.getId(), saved.getStatus().value());
+	}
+
+	// 첨부 API가 호출자의 트랜잭션 안에서 부른다. 호출자가 폼 행을 잠갔다.
+	// 초안은 작업 정의만 바꾸고, 배포된 폼은 PATCH와 같은 검증을 거쳐 새 불변 버전을 함께 저장한다(SPEC 5절 156행, 169행).
+	@Transactional
+	public void replaceAttachmentLists(Form form, Map<String, Object> definition) {
+		ValidatedDefinition next = schemaValidator.validate(definition);
+		boolean publishing = form.getStatus() != FormStatus.DRAFT;
+		if (publishing) {
+			FormPublishValidator.validate(next.definition());
+			requireConsentTemplate(next.definition());
+		}
+		Instant now = clock.instant();
+		form.replaceDefinition(next.definition(), next.deadline(), next.editable(), next.cancellable(),
+				next.responseLimit(), now);
+		if (publishing) {
+			publishIfChanged(form, next, now);
+		}
 	}
 
 	@Transactional(readOnly = true)
@@ -91,13 +128,19 @@ public class FormService {
 	public StateView update(UpdateCommand command) {
 		Form form = forms.findByIdForUpdate(parseId(command.formId())).orElseThrow(FormService::notFound);
 		requireOwner(form, command.userId());
+		// 잠금 순서는 폼 행 → 소유자 행이다.
+		long usedBefore = storageRules.lockAndMeasure(form.getOwnerId());
 
 		Map<String, Object> changes = objectOf(command.body());
 		FormStatus target = changes.containsKey("status") ? parseStatus(changes.remove("status")) : form.getStatus();
 		// PATCH는 보낸 최상위 키를 통째로 바꾸고 바꾼 뒤의 전체 정의로 검증한다(SPEC 5절 152행).
+		// 첨부 목록만은 첨부 API의 결과를 유지한다. 빌더가 오래된 목록을 보내도 덮어쓰지 않는다.
 		Map<String, Object> merged = new LinkedHashMap<>(form.getWorkingDefinition());
 		merged.putAll(changes);
+		merged = FormAttachments.keepStoredLists(merged, form.getWorkingDefinition());
 		ValidatedDefinition next = schemaValidator.validate(merged);
+		Set<String> removedAttachments = new HashSet<>(FormAttachments.allIds(form.getWorkingDefinition()));
+		removedAttachments.removeAll(FormAttachments.allIds(next.definition()));
 
 		form.checkAiSummaryChange(FormSchemaValidator.aiSummaryEnabled(form.getWorkingDefinition()),
 				next.aiSummaryEnabled());
@@ -121,6 +164,9 @@ public class FormService {
 		if (publishing) {
 			publishIfChanged(form, next, now);
 		}
+		// 문항을 지워 정의에서 빠진 첨부를 정리한다. 새 버전을 저장한 뒤라 과거 버전 참조까지 본다.
+		storageRules.releaseUnreferenced(form.getId(), removedAttachments);
+		storageRules.requireWithinLimit(form.getOwnerId(), usedBefore);
 		return new StateView(form.getStatus().value(), shareUrls.of(form.getSlug()), form.getDefinitionVersion());
 	}
 
@@ -172,7 +218,7 @@ public class FormService {
 		return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 	}
 
-	private static void requireOwner(Form form, UUID userId) {
+	static void requireOwner(Form form, UUID userId) {
 		if (form.isDeleted()) {
 			throw notFound();
 		}

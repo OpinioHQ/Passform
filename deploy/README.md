@@ -46,7 +46,7 @@ curl -s https://api.passform.kr/health   # {"status":"ok"}
 ## 4. 프론트 (Vercel)
 
 - Root Directory `frontend`, Framework Vite, Build `npm run build`, Output `dist`.
-- API 주소는 `frontend/.env.production`에 있다. Vercel 환경변수에는 아무것도 넣지 않는다.
+- API 주소는 `frontend/.env.production`에 있다. Vercel에 `VITE_USE_API`·`VITE_API_BASE_URL`을 넣었다면 `.env.production`과 같은 값이어야 한다(Vercel 값이 우선한다). 그 밖의 값은 Vercel에 넣지 않는다.
 - 새로고침 라우팅은 `frontend/vercel.json`이 처리한다.
 
 ## 5. 첫날 확인 (이슈 #47 완료 조건)

@@ -1,0 +1,70 @@
+# 배포 서버(EC2 한 대) 전용. 로컬 개발은 저장소 루트의 docker-compose.yml을 쓴다.
+# 실행: deploy 폴더에서 `docker compose up -d --build` (값은 같은 폴더의 .env, 권한 600)
+# `docker compose config`는 비밀값을 그대로 출력한다. 그 출력을 어디에도 붙이지 않는다.
+name: passform
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-passform}
+      POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME을 deploy/.env에 설정하세요}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD를 deploy/.env에 설정하세요}
+    # ports를 두지 않는다. DB는 같은 compose 네트워크의 app만 접속한다.
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    # 비밀값은 .env에서 이름을 지정해 넘긴다. 빈 값이면 띄우지 않는다.
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-passform}
+      DB_USERNAME: ${DB_USERNAME:?DB_USERNAME을 deploy/.env에 설정하세요}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD를 deploy/.env에 설정하세요}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID를 deploy/.env에 설정하세요}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET을 deploy/.env에 설정하세요}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?OPENAI_API_KEY를 deploy/.env에 설정하세요}
+      # 사람이 정한 배포 값(ARCHITECTURE 10절). 비밀이 아니므로 여기 고정한다.
+      SESSION_COOKIE_SECURE: "true"
+      FRONTEND_ORIGIN: https://app.passform.kr
+      # 정한 값은 .passform.kr이지만 Tomcat이 앞의 점을 거부해 모든 요청이 500이 된다.
+      # RFC 6265에서 Domain=passform.kr은 하위 도메인(app., api.)을 포함하므로 같은 뜻이다.
+      CSRF_COOKIE_DOMAIN: passform.kr
+      # Caddy가 보낸 X-Forwarded-Proto를 믿어야 Google 콜백 주소가 https로 만들어진다.
+      SERVER_FORWARD_HEADERS_STRATEGY: native
+      # t3.small(2 GiB)에 DB·Caddy와 함께 둔다.
+      JAVA_TOOL_OPTIONS: -Xmx768m
+    # ports를 두지 않는다. 밖에서는 Caddy를 거쳐서만 들어온다.
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:

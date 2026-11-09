@@ -8,7 +8,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -35,6 +41,7 @@ import com.opinio.passform.support.SeedForms.Seeded;
 import com.opinio.passform.support.TestData;
 
 import jakarta.persistence.EntityManager;
+import tools.jackson.databind.json.JsonMapper;
 
 // GET /forms/{form_id}/results, GET /forms/{form_id}/responses/{response_id}를 실제 Postgres와 data/seed의 form_b로 시험한다.
 // 인증은 모의 인증이고 이름은 users ID다(T2의 CurrentUserService가 읽는다). 기대값은 fixture를 손으로 센 값이다.
@@ -73,26 +80,60 @@ class ResultApiTest extends DatabaseTest {
 			   {"label":"4학년","count":3,"form_versions":[2,3]}]},
 			  {"question_id":"q7","question_note":"희망 학과","question_type":"dropdown","form_versions":[3],"options":[
 			   {"label":"데이터사이언스학과","count":1,"form_versions":[3]},
-			   {"label":"경영학과","count":2,"form_versions":[3]}]}]},
+			   {"label":"경영학과","count":2,"form_versions":[3]}]}],
+			 "text_questions":[{"question_id":"q4","question_note":"자기소개","question_type":"long_answer","form_versions":[1,2,3],"answers":%1$s}],
+			 "question_order":[
+			  {"question_id":"q1","question_note":"소속 학과","question_type":"dropdown"},
+			  {"question_id":"q2","question_note":"학년","question_type":"multiple_choice"},
+			  {"question_id":"q5","question_note":"프로젝트 경험이 있나요?","question_type":"multiple_choice"},
+			  {"question_id":"q6","question_note":"프로젝트에서 맡은 역할","question_type":"multiple_choice"},
+			  {"question_id":"q3","question_note":"관심 분야","question_type":"checkbox"},
+			  {"question_id":"q4","question_note":"자기소개","question_type":"long_answer"},
+			  {"question_id":"q2","question_note":"현재 학년","question_type":"multiple_choice"},
+			  {"question_id":"q7","question_note":"희망 학과","question_type":"dropdown"}]},
 			 "versions":[
 			  {"form_version":1,"response_count":6,"questions":[
 			   {"question_id":"q1","question_note":"소속 학과","counts":{"소프트웨어학과":2,"컴퓨터공학과":2,"경영학과":2}},
 			   {"question_id":"q2","question_note":"학년","counts":{"1학년":1,"2학년":2,"3학년":2,"4학년":1}},
 			   {"question_id":"q5","question_note":"프로젝트 경험이 있나요?","counts":{"예":5,"아니요":1}},
 			   {"question_id":"q6","question_note":"프로젝트에서 맡은 역할","counts":{"팀장":2,"팀원":2}},
-			   {"question_id":"q3","question_note":"관심 분야","counts":{"기획":4,"디자인":2,"개발":1}}]},
+			   {"question_id":"q3","question_note":"관심 분야","counts":{"기획":4,"디자인":2,"개발":1}}],
+			   "text_questions":[{"question_id":"q4","question_note":"자기소개","question_type":"long_answer","answers":%2$s}],
+			   "question_order":[
+			    {"question_id":"q1","question_note":"소속 학과","question_type":"dropdown"},
+			    {"question_id":"q2","question_note":"학년","question_type":"multiple_choice"},
+			    {"question_id":"q5","question_note":"프로젝트 경험이 있나요?","question_type":"multiple_choice"},
+			    {"question_id":"q6","question_note":"프로젝트에서 맡은 역할","question_type":"multiple_choice"},
+			    {"question_id":"q3","question_note":"관심 분야","question_type":"checkbox"},
+			    {"question_id":"q4","question_note":"자기소개","question_type":"long_answer"}]},
 			  {"form_version":2,"response_count":5,"questions":[
 			   {"question_id":"q1","question_note":"소속 학과","counts":{"소프트웨어학과":2,"컴퓨터공학부":1,"경영학과":2}},
 			   {"question_id":"q2","question_note":"현재 학년","counts":{"1학년":1,"2학년":0,"3학년":2,"4학년":2}},
 			   {"question_id":"q5","question_note":"프로젝트 경험이 있나요?","counts":{"예":4,"아니요":1}},
 			   {"question_id":"q6","question_note":"프로젝트에서 맡은 역할","counts":{"팀장":2,"팀원":2}},
-			   {"question_id":"q3","question_note":"관심 분야","counts":{"기획":1,"디자인":1,"개발":2,"데이터 분석":1}}]},
+			   {"question_id":"q3","question_note":"관심 분야","counts":{"기획":1,"디자인":1,"개발":2,"데이터 분석":1}}],
+			   "text_questions":[{"question_id":"q4","question_note":"자기소개","question_type":"long_answer","answers":%3$s}],
+			   "question_order":[
+			    {"question_id":"q1","question_note":"소속 학과","question_type":"dropdown"},
+			    {"question_id":"q2","question_note":"현재 학년","question_type":"multiple_choice"},
+			    {"question_id":"q5","question_note":"프로젝트 경험이 있나요?","question_type":"multiple_choice"},
+			    {"question_id":"q6","question_note":"프로젝트에서 맡은 역할","question_type":"multiple_choice"},
+			    {"question_id":"q3","question_note":"관심 분야","question_type":"checkbox"},
+			    {"question_id":"q4","question_note":"자기소개","question_type":"long_answer"}]},
 			  {"form_version":3,"response_count":3,"questions":[
 			   {"question_id":"q7","question_note":"희망 학과","counts":{"데이터사이언스학과":1,"경영학과":2}},
 			   {"question_id":"q2","question_note":"현재 학년","counts":{"1학년":1,"2학년":1,"3학년":0,"4학년":1}},
 			   {"question_id":"q5","question_note":"프로젝트 경험이 있나요?","counts":{"예":2,"아니요":1}},
 			   {"question_id":"q6","question_note":"프로젝트에서 맡은 역할","counts":{"팀장":0,"팀원":2}},
-			   {"question_id":"q3","question_note":"관심 분야","counts":{"기획":1,"디자인":1,"개발":1,"데이터 분석":1}}]}]}
+			   {"question_id":"q3","question_note":"관심 분야","counts":{"기획":1,"디자인":1,"개발":1,"데이터 분석":1}}],
+			   "text_questions":[{"question_id":"q4","question_note":"자기소개","question_type":"long_answer","answers":%4$s}],
+			   "question_order":[
+			    {"question_id":"q7","question_note":"희망 학과","question_type":"dropdown"},
+			    {"question_id":"q2","question_note":"현재 학년","question_type":"multiple_choice"},
+			    {"question_id":"q5","question_note":"프로젝트 경험이 있나요?","question_type":"multiple_choice"},
+			    {"question_id":"q6","question_note":"프로젝트에서 맡은 역할","question_type":"multiple_choice"},
+			    {"question_id":"q3","question_note":"관심 분야","question_type":"checkbox"},
+			    {"question_id":"q4","question_note":"자기소개","question_type":"long_answer"}]}]}
 			""";
 
 	@Autowired
@@ -148,7 +189,45 @@ class ResultApiTest extends DatabaseTest {
 	@Test
 	void form_b_결과는_통합과_버전별_통계를_돌려준다() throws Exception {
 		getAs(ownerId, resultsPath(formB.formId())).andExpect(status().isOk())
-			.andExpect(content().json(FORM_B_RESULTS, JsonCompareMode.STRICT));
+			.andExpect(content().json(FORM_B_RESULTS.formatted(
+					textAnswers("rb04", "rb12", "rb13", "rb08", "rb11", "rb01", "rb07", "rb10", "rb09", "rb05", "rb02",
+							"rb14", "rb06", "rb03"),
+					textAnswers("rb09", "rb05", "rb02", "rb14", "rb06", "rb03"),
+					textAnswers("rb08", "rb11", "rb01", "rb07", "rb10"), textAnswers("rb04", "rb12", "rb13")),
+					JsonCompareMode.STRICT));
+	}
+
+	// 새 필드(사람 결정 2026-11-09) 기대값: q4 자기소개 답. 순서는 fixture의 submitted_at을 손으로 내림차순 정렬한 것이고,
+	// response_id·form_version·답·submitted_at은 fixture에서 읽는다.
+	@SuppressWarnings("unchecked")
+	private String textAnswers(String... seedIds) {
+		Map<String, Object> seed;
+		try {
+			seed = JsonMapper.builder().build().readValue(Files.readString(Path.of("data/seed/forms/form_b_mixed.json")),
+					Map.class);
+		}
+		catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
+		List<Map<String, Object>> answers = new ArrayList<>();
+		for (String seedId : seedIds) {
+			Map<String, Object> response = ((List<Map<String, Object>>) seed.get("responses")).stream()
+				.filter(candidate -> seedId.equals(candidate.get("response_id")))
+				.findFirst()
+				.orElseThrow();
+			Object value = ((List<Map<String, Object>>) response.get("answers")).stream()
+				.filter(answer -> "q4".equals(answer.get("question_id")))
+				.findFirst()
+				.orElseThrow()
+				.get("value");
+			Map<String, Object> answer = new LinkedHashMap<>();
+			answer.put("response_id", formB.response(seedId).toString());
+			answer.put("form_version", response.get("form_version"));
+			answer.put("value", value);
+			answer.put("submitted_at", response.get("submitted_at"));
+			answers.add(answer);
+		}
+		return JsonMapper.builder().build().writeValueAsString(answers);
 	}
 
 	// AC20: in_progress(rb15)·abandoned(rb16)·제작자 삭제 응답은 빠지고, 전체 수는 버전별 남은 submitted 수의 합이다.
@@ -169,7 +248,7 @@ class ResultApiTest extends DatabaseTest {
 
 		getAs(ownerId, resultsPath(draft)).andExpect(status().isOk())
 			.andExpect(content().json("""
-					{"response_count":0,"combined":{"questions":[]},"versions":[]}
+					{"response_count":0,"combined":{"questions":[],"text_questions":[],"question_order":[]},"versions":[]}
 					""", JsonCompareMode.STRICT));
 	}
 

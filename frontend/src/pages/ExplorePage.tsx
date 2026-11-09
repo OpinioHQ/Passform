@@ -24,10 +24,15 @@ import { versionLabel, type DashboardSlots } from './ResultsPage';
 /** 목록은 이만큼씩 상세를 읽는다. 순서는 result.response_ids 그대로다(AC62). */
 const LIST_PAGE = 20;
 
-type Turn =
-  | { id: number; state: 'loading'; asked: string }
-  | { id: number; state: 'done'; asked: string; response: AnalyzeResponse }
-  | { id: number; state: 'failed'; asked: string; message: string };
+/**
+ * asked는 말풍선에 보일 글자(입력한 질문이나 누른 버튼 라벨)다.
+ * typed는 이 흐름을 시작한 질문이다. 되묻기 버튼("응답 수" 등)을 눌러도 바뀌지 않고, 후보 선택지를 붙이는 바탕이 된다.
+ */
+type Turn = { id: number; asked: string; typed: string } & (
+  | { state: 'loading' }
+  | { state: 'done'; response: AnalyzeResponse }
+  | { state: 'failed'; message: string }
+);
 
 function CoverageBox({ response }: { response: AnalyzeOkResponse }) {
   const [open, setOpen] = React.useState(false);
@@ -301,9 +306,12 @@ function OkResult({
 function ClarifyResult({
   response,
   onChoose,
+  onPickOption,
 }: {
   response: AnalyzeClarifyResponse;
   onChoose: (choice: Choice) => void;
+  /** 후보 선택지를 입력창에 붙인다. 보내지는 않는다(analyze_api.md A7: 다시 입력은 사람이 한다). */
+  onPickOption: (option: string) => void;
 }) {
   const view = clarifyView(response);
   return (
@@ -324,11 +332,26 @@ function ClarifyResult({
             {view.questions.map((q) => (
               <li key={q.note}>
                 <b>{q.note}</b> <span className="muted small">{versionLabel(q.versions)}</span>
-                {q.options.length > 0 && <div className="small">{q.options.join(' · ')}</div>}
+                {q.options.length > 0 && (
+                  <div className="button-row">
+                    {q.options.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        className="filter-chip"
+                        onClick={() => onPickOption(option)}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
-          <p className="muted small">위 문항이나 선택지 표현으로 다시 물어봐 주세요.</p>
+          <p className="muted small">
+            위 문항이나 선택지 표현으로 다시 물어봐 주세요. 선택지를 누르면 질문 끝에 붙어요.
+          </p>
         </>
       )}
       {view.toResults && (
@@ -370,6 +393,7 @@ export function ExplorePage({
     response: AnalyzeOkResponse;
   } | null>(null);
   const seq = React.useRef(0);
+  const input = React.useRef<HTMLInputElement>(null);
   const presets = React.useMemo(
     () => (definition ? presetGroups(definition, results) : []),
     [definition, results],
@@ -378,24 +402,28 @@ export function ExplorePage({
   const mainPresets = presets.filter((g) => g.kind === 'main');
   const loading = turn?.state === 'loading';
 
-  function send(body: AnalyzeRequest, asked: string) {
+  function send(body: AnalyzeRequest, asked: string, typed: string) {
     const id = ++seq.current;
-    setTurn({ id, state: 'loading', asked });
+    setTurn({ id, state: 'loading', asked, typed });
     analyze(body).then(
       (response) => {
         if (id !== seq.current) return;
-        setTurn({ id, state: 'done', asked, response });
+        setTurn({ id, state: 'done', asked, typed, response });
         if (response.status === 'ok') setShown({ id, asked, response });
       },
       (error: unknown) => {
         if (id !== seq.current) return;
         const status = error instanceof ApiError ? error.status : null;
-        setTurn({ id, state: 'failed', asked, message: analyzeErrorMessage(status) });
+        setTurn({ id, state: 'failed', asked, typed, message: analyzeErrorMessage(status) });
       },
     );
   }
 
-  const choose = (choice: Choice) => send({ context: choice.context }, choice.label);
+  /** 묻기 밑 버튼은 새 흐름을 시작하므로 라벨이 바탕이 된다. */
+  const choose = (choice: Choice) => send({ context: choice.context }, choice.label, choice.label);
+  /** 되묻기 버튼은 같은 흐름이라 처음 질문을 바탕으로 이어 간다. */
+  const answer = (choice: Choice) =>
+    send({ context: choice.context }, choice.label, turn?.typed ?? choice.label);
 
   const presetGroup = (group: PresetGroup) => (
     <div key={group.title} className="explore-preset-group">
@@ -485,7 +513,14 @@ export function ExplorePage({
                       <p>{okMessage(turn.response)}</p>
                     )}
                     {turn.state === 'done' && turn.response.status === 'clarify' && (
-                      <ClarifyResult response={turn.response} onChoose={choose} />
+                      <ClarifyResult
+                        response={turn.response}
+                        onChoose={answer}
+                        onPickOption={(option) => {
+                          setQuery(`${turn.typed} ${option}`);
+                          input.current?.focus();
+                        }}
+                      />
                     )}
                   </div>
                 </>
@@ -497,10 +532,11 @@ export function ExplorePage({
                 e.preventDefault();
                 const text = query.trim();
                 if (!text || loading) return;
-                send({ query: text }, text);
+                send({ query: text }, text, text);
               }}
             >
               <input
+                ref={input}
                 aria-label="응답에 대해 묻기"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}

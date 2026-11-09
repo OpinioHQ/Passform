@@ -1,5 +1,6 @@
 import React from 'react';
 import { Badge } from '../components/UI';
+import { QUESTION_TYPE_LABELS } from '../components/questionTypeLabels';
 import type { FormDefinition, InputFormatKind, Question, QuestionType } from '../types/api';
 import { BranchRulesEditor } from './BranchRulesEditor';
 import { renameOption } from './branchRules';
@@ -14,14 +15,6 @@ import {
   setQuestionNote,
   setQuestionType,
 } from './formDefinition';
-
-export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
-  short_answer: '단답형',
-  long_answer: '장문형',
-  multiple_choice: '단일 선택',
-  dropdown: '드롭다운',
-  checkbox: '복수 선택',
-};
 
 const INPUT_FORMAT_LABELS: Record<InputFormatKind, string> = {
   name: '이름',

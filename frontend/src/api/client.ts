@@ -8,6 +8,8 @@ import type {
   CreatorFormDefinition,
   CreatorFormSummary,
   EditedResponse,
+  ExportRequest,
+  ExportResult,
   FormDefinition,
   FormResults,
   FormStateView,
@@ -79,6 +81,31 @@ const json = (data: unknown): RequestInit => ({
 
 const segment = encodeURIComponent;
 
+/**
+ * 파일은 바이트 그대로 받는다. `text()`로 읽으면 CSV의 BOM이 사라진다.
+ * 되묻기와 JSON 파일은 Content-Type이 같아서 본문의 `status`로 구분한다. 파일의 최상위에는 `status`가 없다.
+ */
+async function exportForm(formId: string, body: ExportRequest): Promise<ExportResult> {
+  const init = json(body);
+  const res = await fetch(`${baseUrl}/forms/${segment(formId)}/export`, {
+    ...init,
+    credentials: 'include',
+    headers: { ...csrfHeaders(), ...init.headers },
+  });
+  if (!res.ok) throw new ApiError(res.status, parseErrorBody(await res.text()));
+  const bytes = await res.arrayBuffer();
+  const contentType = res.headers.get('Content-Type') ?? '';
+  if (contentType.includes('application/json')) {
+    const parsed = JSON.parse(new TextDecoder().decode(bytes)) as Partial<
+      Extract<ExportResult, { status: 'clarify' }>
+    >;
+    if (parsed.status === 'clarify' && parsed.clarify) {
+      return { status: 'clarify', clarify: parsed.clarify };
+    }
+  }
+  return { status: 'file', file: new Blob([bytes], { type: contentType }) };
+}
+
 // 로그인 상태는 한 페이지에서 한 번만 묻는다. 헤더와 응답 화면이 같은 결과를 쓴다. 로그인은 전체 페이지 이동이라 새로 읽힌다.
 let mePromise: Promise<MeResponse> | null = null;
 function me(): Promise<MeResponse> {
@@ -140,4 +167,5 @@ export const api = {
   results: (formId: string) => request<FormResults>(`/forms/${segment(formId)}/results`),
   responseDetail: (formId: string, responseId: string) =>
     request<ResponseDetail>(`/forms/${segment(formId)}/responses/${segment(responseId)}`),
+  exportForm,
 };

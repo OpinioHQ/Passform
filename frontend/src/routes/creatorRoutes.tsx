@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { api, ApiError, useLiveApi } from '../api/client';
 import { DEFAULT_CONSENT_TEMPLATE_ID } from '../builder/FormSettingsPanel';
 import { newFormDefinition } from '../builder/formDefinition';
@@ -7,12 +7,14 @@ import { Button, Heading, Panel } from '../components/UI';
 import { useDemoData } from '../demo/DemoDataContext';
 import { DemoBuilderPage } from '../demo/DemoBuilderPage';
 import { DemoCreatedPage } from '../demo/DemoCreatedPage';
+import { DemoExplorePage } from '../demo/DemoExplorePage';
 import { demoBlankForm, demoForm } from '../demo/data';
 import { BuilderPage } from '../pages/BuilderPage';
 import { CreatedPage, type CreatedFormsLoad } from '../pages/CreatedPage';
 import { ExplorePage } from '../pages/ExplorePage';
 import { ResponseDetailPage } from '../pages/ResponseDetailPage';
-import { ResultsPage } from '../pages/ResultsPage';
+import { ResultsDashboard } from '../pages/ResultsPage';
+import type { AnalyzeRequest } from '../types/analyze';
 import type { ConsentTemplate, CreatorFormDefinition, CreatorFormSummary } from '../types/api';
 import { paths } from './paths';
 
@@ -111,15 +113,36 @@ const demoOnly = '이 화면은 서버에 연결했을 때 실제 응답으로�
 
 export function FormResultsRoute() {
   const { formId = '' } = useParams();
+  const navigate = useNavigate();
   const load = React.useCallback(() => api.results(formId), [formId]);
   const result = useServerData(load, '폼을 찾을 수 없어요.');
-  const eyebrow = '제작자 워크스페이스 / 결과';
-  if (!useLiveApi) return <Waiting eyebrow={eyebrow} title="결과" message={demoOnly} />;
-  if (result.state === 'ready') return <ResultsPage key={formId} results={result.data} />;
+  // 묻기 밑 버튼용. 못 읽어도 대시보드와 도우미는 그대로 쓴다(버튼만 빠진다).
+  const loadDefinition = React.useCallback(() => api.formDefinition(formId), [formId]);
+  const definition = useServerData(loadDefinition, '폼을 찾을 수 없어요.');
+  const analyze = React.useCallback((body: AnalyzeRequest) => api.analyze(formId, body), [formId]);
+  const loadResponse = React.useCallback(
+    (responseId: string) => api.responseDetail(formId, responseId),
+    [formId],
+  );
+  const eyebrow = '제작자 워크스페이스 / 결과 대시보드';
+  if (!useLiveApi) return <Waiting eyebrow={eyebrow} title="결과 대시보드" message={demoOnly} />;
+  if (result.state === 'ready') {
+    return (
+      <ExplorePage
+        key={formId}
+        definition={definition.state === 'ready' ? definition.data : null}
+        analyze={analyze}
+        loadResponse={loadResponse}
+        onBuilder={() => navigate(paths.editForm(formId))}
+        results={result.data}
+        renderDashboard={(slots) => <ResultsDashboard results={result.data} {...slots} />}
+      />
+    );
+  }
   return (
     <Waiting
       eyebrow={eyebrow}
-      title="결과"
+      title="결과 대시보드"
       message={result.state === 'failed' ? result.message : '결과를 불러오는 중이에요.'}
     />
   );
@@ -258,6 +281,7 @@ function LiveEditForm({ formId }: { formId: string }) {
       formId={formId}
       initial={load.definition}
       templates={load.templates}
+      onResults={() => navigate(paths.formResults(formId))}
     />
   );
 }
@@ -275,9 +299,16 @@ export function EditFormRoute() {
   );
 }
 
+/**
+ * 실제 모드의 탐색은 결과 화면 오른쪽 답변 도우미로 합쳤다(E8 #46). 옛 주소는 결과 화면으로 보낸다.
+ * 가짜 데이터 모드는 시험 데모 화면을 그대로 쓴다.
+ */
 export function FormExploreRoute() {
   const { formId = '' } = useParams();
   const navigate = useNavigate();
   const { responses } = useDemoData();
-  return <ExplorePage responses={responses} onBuilder={() => navigate(paths.editForm(formId))} />;
+  if (useLiveApi) return <Navigate to={paths.formResults(formId)} replace />;
+  return (
+    <DemoExplorePage responses={responses} onBuilder={() => navigate(paths.editForm(formId))} />
+  );
 }

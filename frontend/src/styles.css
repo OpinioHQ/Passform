@@ -1641,3 +1641,203 @@ h3 {
 .autofill-suggested {
   color: #3158d5;
 }
+
+/* 탐색 화면(E8 #46). 360px에서도 가로로 넘치지 않게 줄바꿈하고 최소 폭을 둔다(AC68). */
+.explore-page .heading-row {
+  flex-wrap: wrap;
+}
+.explore-page .heading-row h1,
+.explore-page .page-desc {
+  overflow-wrap: anywhere;
+}
+.explore-page .panel {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.explore-presets {
+  display: grid;
+  gap: 10px;
+  padding: 0 12px 14px;
+}
+/* 결과 대시보드: 탭 → 고른 보기의 응답 수 → (문항 카드 | 탐색 도우미). */
+.results-dashboard .tab-bar {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+.results-count {
+  margin: 14px 0 0;
+  font-size: 14px;
+  color: #73776f;
+}
+.results-dashboard .explore-grid {
+  margin-top: 16px;
+}
+/* 도우미 윗선을 첫 카드에 맞추고, 높이는 카드 영역과 같게(화면보다 길면 화면 높이까지, 스크롤해도 따라온다). */
+.results-dashboard .explore-grid.with-assistant {
+  align-items: stretch;
+}
+.results-dashboard .explore-left {
+  gap: 16px;
+}
+.results-dashboard .explore-left > .result-card {
+  margin-top: 0;
+}
+.assistant-col {
+  min-width: 0;
+}
+.assistant-col .assistant-panel {
+  position: sticky;
+  top: 16px;
+  height: min(100%, calc(100vh - 32px));
+  min-height: 420px;
+}
+.assistant-col .chat-body {
+  min-height: 0;
+  overflow-y: auto;
+}
+/* 높이가 정해진 패널 안에서 묻기 밑 버튼을 펼치면 이 칸만 스크롤한다(입력창은 그대로 보인다). */
+.assistant-col .explore-presets {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 45%;
+  overflow-y: auto;
+}
+/* 폼 편집 오른쪽 칸의 아래쪽 작업 버튼은 같은 폭 2열로 맞춘다(버튼이 4개여도 크기가 같다). */
+.builder-side .builder-add-section > .button-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.builder-side .builder-add-section > .button-row .btn {
+  width: 100%;
+}
+.builder-results-hint {
+  margin: 8px 0 0;
+}
+.explore-more {
+  justify-self: stretch;
+  text-align: left;
+  border: 0;
+  background: #fff;
+  color: #3158d5;
+  font-size: 12px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+/* 펼친 목록을 스크롤해도 접기 버튼은 위에 붙어 보인다. */
+.assistant-col .explore-more {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+/* 말풍선 아이콘과 제목을 한 줄에, 설명은 제목 글자와 같은 왼쪽 선에 맞춘다. */
+.assistant-head > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 8px;
+  align-items: center;
+}
+.assistant-head > div .assistant-symbol {
+  display: flex;
+  margin-right: 0;
+}
+.assistant-head > div p {
+  grid-column: 2;
+}
+/* 한 줄로 접히면 답변 도우미를 결과 위에 둔다. */
+@media (max-width: 1130px) {
+  .assistant-col {
+    order: -1;
+  }
+  .assistant-col .assistant-panel {
+    position: static;
+    height: auto;
+    min-height: 350px;
+  }
+  .assistant-col .explore-presets {
+    max-height: none;
+  }
+}
+.explore-preset-group .button-row {
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.explore-preset-group .filter-chip {
+  cursor: pointer;
+  text-align: left;
+}
+.explore-count strong {
+  font-size: 22px;
+  margin: 0 2px;
+}
+.explore-coverage {
+  background: #fff8e8;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+.explore-why {
+  border: 1px solid #c9a03b;
+  background: #fff;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  margin-top: 6px;
+  cursor: pointer;
+}
+.explore-reasons,
+.explore-matched ul,
+.explore-hints,
+.explore-evidence {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+.explore-matched {
+  margin: 10px 0;
+}
+.explore-choices {
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+.explore-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.explore-response {
+  border: 1px solid #e3e5dd;
+  border-radius: 8px;
+  padding: 12px;
+}
+.explore-response-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.explore-response dl {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.explore-response dt {
+  color: #73776f;
+}
+.explore-response dd {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.explore-themes {
+  padding-left: 18px;
+  display: grid;
+  gap: 14px;
+}
+.explore-result .result-card-head h3 {
+  font-size: 15px;
+  margin: 0;
+}

@@ -225,6 +225,34 @@ describe('배포', () => {
   });
 });
 
+describe('결과 보기 (팀원 리뷰 반영)', () => {
+  it('저장하지 않은 편집이 있으면 비활성이고 안내를 보이며, 저장하면 다시 활성이다', async () => {
+    const state = { status: 'open', share_url: 'https://app.test/f/abc', definition_version: 1 };
+    stubApi((method, path) => {
+      if (method === 'GET' && path === '/forms/f1/definition') {
+        return { status: 200, body: { ...draft(), ...state } };
+      }
+      if (method === 'GET' && path === '/consent-templates')
+        return { status: 200, body: templates };
+      if (method === 'PATCH' && path === '/forms/f1') return { status: 200, body: state };
+      return undefined;
+    });
+    await openLive(editPath);
+    const title = (await screen.findByLabelText('폼 제목')) as HTMLInputElement;
+    const results = () => button('결과 보기') as HTMLButtonElement;
+    expect(results().disabled).toBe(false);
+    expect(screen.queryByText('변경을 저장한 뒤 결과를 볼 수 있어요.')).toBeNull();
+
+    fireEvent.change(title, { target: { value: '고친 제목' } });
+    expect(results().disabled).toBe(true);
+    expect(screen.getAllByText('변경을 저장한 뒤 결과를 볼 수 있어요.').length).toBeGreaterThan(0);
+
+    fireEvent.click(button('변경 저장'));
+    await waitFor(() => expect(results().disabled).toBe(false));
+    expect(screen.queryByText('변경을 저장한 뒤 결과를 볼 수 있어요.')).toBeNull();
+  });
+});
+
 describe('미리보기 (AC81)', () => {
   it('저장 전 내용을 보여 주고 제출해도 API를 부르지 않으며 돌아오면 그대로다', async () => {
     const { fetchMock } = stubApi(definitionHandler());

@@ -14,7 +14,9 @@ public enum ErrorCode {
 	// 제출 후 수정·취소(SPEC 5절 194~195행).
 	HISTORY_ONLY, NOT_EDITABLE, NOT_CANCELLABLE,
 	// 분석 API(SPEC 5절 235행).
-	INVALID_CONTEXT, LLM_UNAVAILABLE;
+	INVALID_CONTEXT, LLM_UNAVAILABLE,
+	// QR은 공유 링크가 생긴 뒤에만 만든다(SPEC 5절 126행).
+	NOT_OPEN;
 
 	// 응답의 error 값이다(예: not_found).
 	public String code() {

@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.opinio.passform.service.CurrentUserService;
+import com.opinio.passform.service.FormQrService;
 import com.opinio.passform.service.FormService;
 import com.opinio.passform.service.FormService.BranchGraphView;
 import com.opinio.passform.service.FormService.CreateCommand;
@@ -27,10 +30,13 @@ public class FormController {
 
 	private final FormService forms;
 
+	private final FormQrService qrCodes;
+
 	private final CurrentUserService currentUser;
 
-	public FormController(FormService forms, CurrentUserService currentUser) {
+	public FormController(FormService forms, FormQrService qrCodes, CurrentUserService currentUser) {
 		this.forms = forms;
+		this.qrCodes = qrCodes;
 		this.currentUser = currentUser;
 	}
 
@@ -53,6 +59,13 @@ public class FormController {
 	@GetMapping("/forms/{formId}/branch-graph")
 	public BranchGraphView branchGraph(@PathVariable String formId) {
 		return forms.branchGraph(currentUser.requireUserId(), formId);
+	}
+
+	@GetMapping("/forms/{formId}/qr")
+	public ResponseEntity<byte[]> qr(@PathVariable String formId) {
+		return ResponseEntity.ok()
+			.contentType(MediaType.IMAGE_PNG)
+			.body(qrCodes.png(currentUser.requireUserId(), formId));
 	}
 
 	@GetMapping("/me/created-forms")

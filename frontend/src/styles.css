@@ -1922,3 +1922,14 @@ h3 {
 .branch-flow-default {
   color: #73776f;
 }
+.share-qr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.share-qr img {
+  background: #fff;
+  border-radius: 8px;
+}

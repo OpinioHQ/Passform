@@ -189,7 +189,8 @@ public class FormService {
 		return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 	}
 
-	private static void requireOwner(Form form, UUID userId) {
+	// 같은 패키지의 제작자 전용 서비스(FormQrService)도 같은 판정을 쓴다.
+	static void requireOwner(Form form, UUID userId) {
 		if (form.isDeleted()) {
 			throw notFound();
 		}
@@ -236,7 +237,7 @@ public class FormService {
 		}
 	}
 
-	private static DomainException notFound() {
+	static DomainException notFound() {
 		return new DomainException(ErrorCode.NOT_FOUND);
 	}
 

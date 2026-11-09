@@ -107,6 +107,16 @@ async function exportForm(formId: string, body: ExportRequest): Promise<ExportRe
   return { status: 'file', file: new Blob([bytes], { type: contentType }) };
 }
 
+/** 공유 링크 QR PNG(SPEC 126행). 이미지라 바이트 그대로 받는다. 오류(401·403·409)는 JSON 본문이다. */
+async function formQr(formId: string): Promise<Blob> {
+  const res = await fetch(`${baseUrl}/forms/${segment(formId)}/qr`, {
+    credentials: 'include',
+    headers: csrfHeaders(),
+  });
+  if (!res.ok) throw new ApiError(res.status, parseErrorBody(await res.text()));
+  return res.blob();
+}
+
 // 로그인 상태는 한 페이지에서 한 번만 묻는다. 헤더와 응답 화면이 같은 결과를 쓴다. 로그인은 전체 페이지 이동이라 새로 읽힌다.
 let mePromise: Promise<MeResponse> | null = null;
 function me(): Promise<MeResponse> {
@@ -140,6 +150,7 @@ export const api = {
   updateForm: (formId: string, body: Partial<FormDefinition> & { status?: FormStatus }) =>
     request<FormStateView>(`/forms/${segment(formId)}`, { ...json(body), method: 'PATCH' }),
   branchGraph: (formId: string) => request<BranchGraph>(`/forms/${segment(formId)}/branch-graph`),
+  formQr,
   formBySlug: (slug: string) => request<PublicForm>(`/f/${segment(slug)}`),
   formById: (formId: string) => request<PublicForm>(`/forms/${segment(formId)}`),
   responseDraft: (formId: string) =>

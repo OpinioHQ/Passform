@@ -105,6 +105,7 @@ function LiveCreatedForms() {
       onCreate={() => navigate(paths.newForm)}
       onEdit={(id) => navigate(paths.editForm(id))}
       onResults={(id) => navigate(paths.formResults(id))}
+      loadQr={api.formQr}
     />
   );
 }

@@ -1,4 +1,6 @@
+import React from 'react';
 import { formatKst } from '../builder/deadline';
+import { ShareQr } from '../builder/ShareQr';
 import { statusLabel } from '../builder/messages';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
 import type { CreatorFormSummary } from '../types/api';
@@ -12,14 +14,23 @@ export function CreatedPage({
   onCreate,
   onEdit,
   onResults,
+  loadQr,
 }: {
   forms: CreatorFormSummary[];
   load: CreatedFormsLoad;
   onCreate: () => void;
   onEdit: (formId: string) => void;
   onResults: (formId: string) => void;
+  /** 공유 링크가 있는 폼의 QR PNG(AC10). 없으면 QR 버튼을 보이지 않는다. */
+  loadQr?: (formId: string) => Promise<Blob>;
 }) {
   const now = Date.now();
+  const [qrFor, setQrFor] = React.useState<string | null>(null);
+  // ShareQr는 load가 바뀔 때만 다시 받는다. 열린 카드 하나의 함수만 만든다.
+  const loadOpenQr = React.useCallback(
+    () => (qrFor && loadQr ? loadQr(qrFor) : Promise.reject(new Error('QR 없음'))),
+    [qrFor, loadQr],
+  );
   return (
     <div className="page-shell">
       <Heading
@@ -44,6 +55,8 @@ export function CreatedPage({
       <div className="creator-grid">
         {forms.map((form) => {
           const label = statusLabel(form.status, form.deadline, now);
+          const name = form.title.trim() || '제목 없는 폼';
+          const showingQr = qrFor === form.form_id;
           return (
             <Panel className="creator-card" key={form.form_id}>
               <div className="creator-title">
@@ -86,7 +99,19 @@ export function CreatedPage({
                 >
                   결과 보기 <Icon name="arrow" size={16} />
                 </button>
+                {form.share_url && loadQr && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    aria-label={`${name} QR ${showingQr ? '닫기' : '보기'}`}
+                    aria-expanded={showingQr}
+                    onClick={() => setQrFor(showingQr ? null : form.form_id)}
+                  >
+                    {showingQr ? 'QR 닫기' : 'QR 보기'}
+                  </button>
+                )}
               </div>
+              {showingQr && <ShareQr load={loadOpenQr} label={name} />}
             </Panel>
           );
         })}

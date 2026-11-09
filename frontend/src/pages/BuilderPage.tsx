@@ -21,6 +21,7 @@ import {
 } from '../builder/formDefinition';
 import { friendlyError, statusLabel } from '../builder/messages';
 import { QuestionEditor, RowButton } from '../builder/QuestionEditor';
+import { ShareQr } from '../builder/ShareQr';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
 import type {
   ConsentTemplate,
@@ -71,6 +72,8 @@ export function BuilderPage({
   const [copyNote, setCopyNote] = React.useState('');
   const [previewing, setPreviewing] = React.useState(false);
   const [showingFlow, setShowingFlow] = React.useState(false);
+  const [showingQr, setShowingQr] = React.useState(false);
+  const loadQr = React.useCallback(() => api.formQr(formId), [formId]);
   // 분기 흐름은 저장된 정의로 만든다(SPEC 125행). 문구를 보이려고 같은 때 저장된 정의도 읽는다.
   const loadFlow = React.useCallback(
     () =>
@@ -312,7 +315,16 @@ export function BuilderPage({
           <Button variant="secondary" onClick={copyShareUrl}>
             링크 복사
           </Button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            aria-expanded={showingQr}
+            onClick={() => setShowingQr((open) => !open)}
+          >
+            {showingQr ? 'QR 닫기' : 'QR 보기'}
+          </button>
           {copyNote && <small className="muted">{copyNote}</small>}
+          {showingQr && <ShareQr load={loadQr} label={definition.title.trim() || '제목 없는 폼'} />}
         </Panel>
       )}
       <fieldset className="builder-fieldset" disabled={busy}>

@@ -1,5 +1,6 @@
 package com.opinio.passform.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -9,11 +10,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import javax.imageio.ImageIO;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +35,10 @@ import org.springframework.web.context.WebApplicationContext;
 
 import tools.jackson.databind.json.JsonMapper;
 
+import com.google.zxing.BinaryBitmap;
+import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
+import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.qrcode.QRCodeReader;
 import com.opinio.passform.repository.UserRepository;
 import com.opinio.passform.support.DatabaseTest;
 import com.opinio.passform.support.SampleForms;
@@ -182,6 +192,68 @@ class CreatorToolsApiDatabaseTest extends DatabaseTest {
 		mockMvc.perform(get("/forms/" + formId + "/branch-graph")).andExpect(status().isUnauthorized());
 		expectForbiddenWithoutContent(branchGraph(other, formId));
 		branchGraph(owner, UUID.randomUUID().toString()).andExpect(status().isNotFound());
+	}
+
+	private ResultActions qr(UUID user, String formId) throws Exception {
+		return mockMvc.perform(get("/forms/" + formId + "/qr").with(user(user.toString())));
+	}
+
+	private String shareUrlOf(String formId) throws Exception {
+		String body = mockMvc.perform(get("/forms/" + formId + "/definition").with(user(owner.toString())))
+			.andExpect(status().isOk())
+			.andReturn()
+			.getResponse()
+			.getContentAsString(StandardCharsets.UTF_8);
+		return JSON.readTree(body).get("share_url").asString();
+	}
+
+	private static String decodeQr(byte[] png) throws Exception {
+		BufferedImage image = ImageIO.read(new ByteArrayInputStream(png));
+		BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(image)));
+		return new QRCodeReader().decode(bitmap).getText();
+	}
+
+	@Test
+	void qr_decodes_to_share_url() throws Exception {
+		String formId = createDraft(SampleForms.unbranched());
+		patchForm(owner, formId, Map.of("status", "open")).andExpect(status().isOk());
+		String shareUrl = shareUrlOf(formId);
+
+		byte[] png = qr(owner, formId).andExpect(status().isOk())
+			.andExpect(content().contentType(MediaType.IMAGE_PNG))
+			.andReturn()
+			.getResponse()
+			.getContentAsByteArray();
+
+		assertThat(shareUrl).contains("/f/");
+		assertThat(decodeQr(png)).isEqualTo(shareUrl);
+	}
+
+	@Test
+	void qr_draft_409() throws Exception {
+		String formId = createDraft(SampleForms.unbranched());
+
+		qr(owner, formId).andExpect(status().isConflict())
+			.andExpect(content().json("{\"error\":\"not_open\"}", JsonCompareMode.STRICT));
+	}
+
+	@Test
+	void qr_decodes_to_share_url_draft로_되돌려도_공유_링크가_있으면_같은_링크다() throws Exception {
+		String formId = createDraft(SampleForms.unbranched());
+		patchForm(owner, formId, Map.of("status", "open")).andExpect(status().isOk());
+		patchForm(owner, formId, Map.of("status", "draft")).andExpect(status().isOk());
+
+		byte[] png = qr(owner, formId).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+		assertThat(decodeQr(png)).isEqualTo(shareUrlOf(formId));
+	}
+
+	@Test
+	void AC2_QR은_로그인이_없으면_401_제작자가_아니면_403이고_내용을_주지_않는다() throws Exception {
+		String formId = createDraft(SampleForms.unbranched());
+		patchForm(owner, formId, Map.of("status", "open")).andExpect(status().isOk());
+
+		mockMvc.perform(get("/forms/" + formId + "/qr")).andExpect(status().isUnauthorized());
+		expectForbiddenWithoutContent(qr(other, formId));
 	}
 
 }

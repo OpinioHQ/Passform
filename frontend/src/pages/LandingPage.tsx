@@ -72,6 +72,11 @@ export function LandingPage({
           </Button>
         </Panel>
       </div>
+      {/* 정적 파일(frontend/public/privacy.html)로 가야 하므로 라우터 Link가 아닌 일반 링크를 쓴다. */}
+      {/* 공통 레이아웃에 이미 footer가 있어 여기서는 div를 쓴다(contentinfo가 둘이 되지 않게). */}
+      <div className="muted small">
+        <a href="/privacy.html">개인정보처리방침</a>
+      </div>
     </div>
   );
 }

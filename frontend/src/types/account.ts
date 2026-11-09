@@ -9,6 +9,12 @@ export interface MeResponse {
   deadline_reminder: boolean;
 }
 
+/** `GET /me/storage` (SPEC 100행) */
+export interface StorageUsage {
+  used_bytes: number;
+  limit_bytes: number;
+}
+
 export type PersonalInfo = Partial<Record<ProfileKey, string>>;
 
 /** `GET /me/profiles`의 항목(SPEC 102행). */

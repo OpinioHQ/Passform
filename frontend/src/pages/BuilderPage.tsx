@@ -197,14 +197,14 @@ export function BuilderPage({
 
   /**
    * 첨부 API는 서버에 바로 반영되므로 "저장하지 않은 변경"으로 치지 않는다.
-   * 배포된 폼이면 서버가 새 버전을 만들었으니 표시할 버전 번호를 다시 읽는다. 못 읽어도 첨부는 이미 성공했다.
+   * 배포된 폼이면 서버가 새 버전을 만들었을 수 있어 표시할 버전 번호를 다시 읽는다. 못 읽어도 첨부는 이미 성공했다.
+   * 업로드 중에 배포될 수 있으므로 시작 때의 상태로 건너뛰지 않고 항상 읽는다.
    */
   function attachmentsChanged(
     questionId: string | null,
     change: (files: Attachment[]) => Attachment[],
   ) {
     setDefinition((d) => withAttachments(d, questionId, change));
-    if (status === 'draft') return;
     api
       .formDefinition(formId)
       .then((latest) =>

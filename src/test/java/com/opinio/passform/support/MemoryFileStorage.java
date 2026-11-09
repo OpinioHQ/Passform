@@ -43,6 +43,8 @@ public class MemoryFileStorage implements FileStorage {
 
 	private volatile boolean failPuts;
 
+	private volatile boolean failAfterStoring;
+
 	private volatile CyclicBarrier putBarrier;
 
 	public void reset() {
@@ -50,11 +52,17 @@ public class MemoryFileStorage implements FileStorage {
 		puts.set(0);
 		deletes.set(0);
 		failPuts = false;
+		failAfterStoring = false;
 		putBarrier = null;
 	}
 
 	public void failPuts() {
 		failPuts = true;
+	}
+
+	// S3가 객체를 저장한 뒤 응답이 끊긴 경우. 호출은 실패하지만 객체는 남는다.
+	public void failAfterStoring() {
+		failAfterStoring = true;
 	}
 
 	// 동시 요청이 모두 사전 검사를 지나 업로드 단계에 도달할 때까지 기다리게 한다.
@@ -111,6 +119,9 @@ public class MemoryFileStorage implements FileStorage {
 		catch (IOException exception) {
 			throw new UncheckedIOException(exception);
 		}
+		if (failAfterStoring) {
+			throw new DomainException(ErrorCode.STORAGE_UNAVAILABLE);
+		}
 	}
 
 	@Override
@@ -126,6 +137,9 @@ public class MemoryFileStorage implements FileStorage {
 			throw new DomainException(ErrorCode.STORAGE_UNAVAILABLE);
 		}
 		objects.put(targetKey, source);
+		if (failAfterStoring) {
+			throw new DomainException(ErrorCode.STORAGE_UNAVAILABLE);
+		}
 	}
 
 	@Override

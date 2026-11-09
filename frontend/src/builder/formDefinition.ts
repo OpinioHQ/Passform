@@ -1,4 +1,5 @@
 import type {
+  Attachment,
   CreatorFormDefinition,
   FormDefinition,
   FormSection,
@@ -102,6 +103,8 @@ function cloneQuestion(question: Question): Question {
     question_id: newId('q'),
     branch_rules: [],
     profile_key: null,
+    // 첨부는 첨부 API로만 붙는다. 복제본에 남기면 저장할 때 서버가 비워 화면과 달라진다.
+    attachments: [],
   };
 }
 
@@ -157,6 +160,26 @@ export function duplicateQuestion(
     const index = questions.findIndex((q) => q.question_id === questionId);
     return index < 0 ? questions : insertedAfter(questions, index, cloneQuestion(questions[index]));
   });
+}
+
+/** 첨부 API가 성공한 뒤 화면의 목록만 맞춘다. `questionId`가 null이면 폼 설명란이다. */
+export function withAttachments(
+  def: FormDefinition,
+  questionId: string | null,
+  change: (files: Attachment[]) => Attachment[],
+): FormDefinition {
+  if (questionId === null) return { ...def, note_attachments: change(def.note_attachments) };
+  return {
+    ...def,
+    sections: def.sections.map((section) => ({
+      ...section,
+      questions: section.questions.map((question) =>
+        question.question_id === questionId
+          ? { ...question, attachments: change(question.attachments) }
+          : question,
+      ),
+    })),
+  };
 }
 
 export function moveQuestion(

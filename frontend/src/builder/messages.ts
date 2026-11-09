@@ -13,6 +13,10 @@ const BY_CODE: Record<string, string> = {
   response_limit_reached:
     '선착순 인원이 이미 받은 응답 수보다 많아야 해요. 인원을 늘린 뒤 다시 시도해 주세요.',
   schema_invalid: '입력한 내용 중 저장할 수 없는 값이 있어요. 문항과 설정을 확인해 주세요.',
+  invalid_file_type: '이미지(jpg, png, gif, webp), PDF, MP4 파일만 첨부할 수 있어요.',
+  storage_quota_exceeded:
+    '저장 공간 500MB를 넘어요. 내가 만든 폼 화면에서 사용량을 확인하고 공간을 비워 주세요.',
+  storage_unavailable: '파일 저장소에 연결하지 못했어요. 잠시 뒤 다시 시도해 주세요.',
 };
 
 function errorCode(error: unknown): string | null {

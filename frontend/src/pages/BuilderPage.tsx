@@ -1,5 +1,6 @@
 import React from 'react';
 import { api } from '../api/client';
+import { AttachmentEditor } from '../builder/AttachmentEditor';
 import { branchPublishProblems } from '../builder/branchRules';
 import { FormSettingsPanel } from '../builder/FormSettingsPanel';
 import {
@@ -17,11 +18,13 @@ import {
   toDefinition,
   toPreviewForm,
   updateSectionTitle,
+  withAttachments,
 } from '../builder/formDefinition';
 import { friendlyError, statusLabel } from '../builder/messages';
 import { QuestionEditor, RowButton } from '../builder/QuestionEditor';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
 import type {
+  Attachment,
   ConsentTemplate,
   CreatorFormDefinition,
   FormDefinition,
@@ -156,6 +159,24 @@ export function BuilderPage({
     );
   }
 
+  /**
+   * 첨부 API는 서버에 바로 반영되므로 "저장하지 않은 변경"으로 치지 않는다.
+   * 배포된 폼이면 서버가 새 버전을 만들었으니 표시할 버전 번호를 다시 읽는다. 못 읽어도 첨부는 이미 성공했다.
+   */
+  function attachmentsChanged(
+    questionId: string | null,
+    change: (files: Attachment[]) => Attachment[],
+  ) {
+    setDefinition((d) => withAttachments(d, questionId, change));
+    if (status === 'draft') return;
+    api
+      .formDefinition(formId)
+      .then((latest) =>
+        setFormState((state) => ({ ...state, definition_version: latest.definition_version })),
+      )
+      .catch(() => undefined);
+  }
+
   async function copyShareUrl() {
     try {
       await navigator.clipboard.writeText(shareUrl ?? '');
@@ -229,7 +250,7 @@ export function BuilderPage({
     return (
       <ResponsePage
         preview
-        form={toPreviewForm(definition, consent)}
+        form={{ ...toPreviewForm(definition, consent), form_id: formId }}
         onBack={() => setPreviewing(false)}
         onSubmit={() => Promise.resolve()}
         saving={false}
@@ -318,6 +339,14 @@ export function BuilderPage({
                 edit((d) => ({ ...d, note }));
               }}
             />
+            <AttachmentEditor
+              formId={formId}
+              questionId={null}
+              label="폼 설명"
+              files={definition.note_attachments}
+              locked={dirty}
+              onChange={(change) => attachmentsChanged(null, change)}
+            />
           </Panel>
           {definition.sections.map((section, sectionIndex) => {
             const sectionId = section.section_id;
@@ -375,6 +404,16 @@ export function BuilderPage({
                       onMove={(delta) => edit((d) => moveQuestion(d, sectionId, questionId, delta))}
                       onDuplicate={() => edit((d) => duplicateQuestion(d, sectionId, questionId))}
                       onRemove={() => edit((d) => removeQuestion(d, sectionId, questionId))}
+                      attachments={
+                        <AttachmentEditor
+                          formId={formId}
+                          questionId={questionId}
+                          label={`질문 ${questionsBefore(sectionIndex) + questionIndex + 1}`}
+                          files={question.attachments}
+                          locked={dirty}
+                          onChange={(change) => attachmentsChanged(questionId, change)}
+                        />
+                      }
                     />
                   );
                 })}

@@ -15,7 +15,12 @@ import { ExplorePage } from '../pages/ExplorePage';
 import { ResponseDetailPage } from '../pages/ResponseDetailPage';
 import { ResultsDashboard } from '../pages/ResultsPage';
 import type { AnalyzeRequest } from '../types/analyze';
-import type { ConsentTemplate, CreatorFormDefinition, CreatorFormSummary } from '../types/api';
+import type {
+  ConsentTemplate,
+  CreatorFormDefinition,
+  CreatorFormSummary,
+  StorageUsage,
+} from '../types/api';
 import { paths } from './paths';
 
 const isUnauthorized = (error: unknown) => error instanceof ApiError && error.status === 401;
@@ -80,8 +85,15 @@ function LiveCreatedForms() {
   const navigate = useNavigate();
   const [forms, setForms] = React.useState<CreatorFormSummary[]>([]);
   const [load, setLoad] = React.useState<CreatedFormsLoad>('loading');
+  const [storage, setStorage] = React.useState<StorageUsage | null>(null);
   React.useEffect(() => {
     let active = true;
+    api
+      .storage()
+      .then((usage) => {
+        if (active) setStorage(usage);
+      })
+      .catch(() => undefined);
     api
       .createdForms()
       .then((next) => {
@@ -102,6 +114,7 @@ function LiveCreatedForms() {
     <CreatedPage
       forms={forms}
       load={load}
+      storage={storage}
       onCreate={() => navigate(paths.newForm)}
       onEdit={(id) => navigate(paths.editForm(id))}
       onResults={(id) => navigate(paths.formResults(id))}

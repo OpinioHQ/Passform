@@ -11,6 +11,7 @@ import {
 import { AutofillLoginHint, AutofillPanel } from '../response/AutofillPanel';
 import { changeErrorText } from '../response/changeErrors';
 import { type AutosaveStatus, type DraftSink, useAutosave } from '../response/draftSync';
+import { FormAttachmentList } from '../response/FormAttachmentList';
 import {
   type AnswerMap,
   calculateResponsePath,
@@ -613,13 +614,11 @@ function ResponseForm({
             {question.question_description}
           </p>
         )}
-        {question.attachments.length > 0 && (
-          <ul className="attachment-list">
-            {question.attachments.map((file) => (
-              <li key={file.attachment_id}>{file.filename}</li>
-            ))}
-          </ul>
-        )}
+        <FormAttachmentList
+          formId={form.form_id}
+          questionId={question.question_id}
+          files={question.attachments}
+        />
         <div className="question-input">{renderInput(question)}</div>
         {id in suggested && (
           <p className="field-hint autofill-suggested" data-testid={`suggested-${id}`}>
@@ -811,13 +810,11 @@ function ResponseForm({
           <h2>{form.title}</h2>
           {form.note.trim() && <p className="form-note">{form.note}</p>}
           <p className="muted">{deadlineText(form.deadline)}</p>
-          {form.note_attachments.length > 0 && (
-            <ul className="attachment-list">
-              {form.note_attachments.map((file) => (
-                <li key={file.attachment_id}>{file.filename}</li>
-              ))}
-            </ul>
-          )}
+          <FormAttachmentList
+            formId={form.form_id}
+            questionId={null}
+            files={form.note_attachments}
+          />
         </div>
         <div className="completion" aria-label="작성 진행">
           <span>작성 진행</span>

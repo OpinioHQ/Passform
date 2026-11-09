@@ -69,6 +69,7 @@ export function QuestionEditor({
   onMove,
   onDuplicate,
   onRemove,
+  attachments,
 }: {
   definition: FormDefinition;
   question: Question;
@@ -81,6 +82,8 @@ export function QuestionEditor({
   onMove: (delta: -1 | 1) => void;
   onDuplicate: () => void;
   onRemove: () => void;
+  /** 문항 첨부 칸. 서버에 연결된 빌더만 넣는다. */
+  attachments?: React.ReactNode;
 }) {
   const [ownInfoCleared, setOwnInfoCleared] = React.useState(false);
   const name = `질문 ${number}`;
@@ -254,6 +257,8 @@ export function QuestionEditor({
         />{' '}
         필수 문항
       </label>
+
+      {attachments}
 
       <BranchRulesEditor
         definition={definition}

@@ -173,6 +173,19 @@ export function CreatedPage({
             </Panel>
           );
         })}
+        {/* 새 폼 상자: 가상 데이터 화면(demo/DemoCreatedPage.tsx)과 같은 모양이다(사람 결정). */}
+        {load === 'ready' && (
+          <Panel className="creator-card dashed-card">
+            <div className="create-icon">
+              <Icon name="plus" size={26} />
+            </div>
+            <h2>새로운 폼을 만들어보세요</h2>
+            <p className="muted">기본 편집 화면에서 문항을 구성할 수 있어요.</p>
+            <Button variant="secondary" onClick={onCreate}>
+              폼 제작 시작
+            </Button>
+          </Panel>
+        )}
       </div>
     </div>
   );

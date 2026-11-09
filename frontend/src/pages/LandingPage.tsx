@@ -60,7 +60,7 @@ export function LandingPage({
           </Button>
         </Panel>
         <Panel>
-          <div className="overline">03 · 답변 도우미</div>
+          <div className="overline">03 · 탐색 도우미</div>
           <h2>
             필터 대신,
             <br />

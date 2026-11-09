@@ -14,7 +14,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.opinio.passform.domain.error.DomainException;
@@ -39,9 +41,25 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 					AI_SUMMARY_LOCKED -> HttpStatus.BAD_REQUEST;
 			case INVALID_TRANSITION, RESPONSE_LIMIT_REACHED, FORM_CLOSED, HISTORY_ONLY, NOT_EDITABLE, NOT_CANCELLABLE -> HttpStatus.CONFLICT;
 			case INVALID_CONTEXT -> HttpStatus.BAD_REQUEST;
-			case LLM_UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;
+			case LLM_UNAVAILABLE, STORAGE_UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;
+			case INVALID_FILE_TYPE -> HttpStatus.BAD_REQUEST;
+			case FILE_TOO_LARGE -> HttpStatus.CONTENT_TOO_LARGE;
+			case STORAGE_QUOTA_EXCEEDED -> HttpStatus.CONFLICT;
+			case ATTACHMENT_REMOVED -> HttpStatus.GONE;
 			case NOT_OPEN -> HttpStatus.CONFLICT;
 		};
+	}
+
+	// multipart 전체 한도(500MB에 여유를 둔 값)를 넘은 요청이다. 제작자 첨부는 용량 초과, 응답 제출은 파일 크기 초과로 낸다.
+	@Override
+	protected ResponseEntity<Object> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException exception,
+			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		boolean creatorUpload = request instanceof ServletWebRequest servlet
+				&& servlet.getRequest().getRequestURI().contains("/attachments");
+		ErrorCode code = creatorUpload ? ErrorCode.STORAGE_QUOTA_EXCEEDED : ErrorCode.FILE_TOO_LARGE;
+		return ResponseEntity.status(statusOf(code))
+			.contentType(MediaType.APPLICATION_JSON)
+			.body(body(code, Map.of()));
 	}
 
 	@ExceptionHandler(DomainException.class)

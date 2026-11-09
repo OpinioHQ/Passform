@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.opinio.passform.service.CurrentUserService;
 import com.opinio.passform.service.FormQrService;
 import com.opinio.passform.service.FormService;
+import com.opinio.passform.service.AttachmentService;
 import com.opinio.passform.service.FormService.BranchGraphView;
 import com.opinio.passform.service.FormService.CreateCommand;
 import com.opinio.passform.service.FormService.CreatedForm;
@@ -30,12 +31,16 @@ public class FormController {
 
 	private final FormService forms;
 
+	private final AttachmentService attachments;
+
 	private final FormQrService qrCodes;
 
 	private final CurrentUserService currentUser;
 
-	public FormController(FormService forms, FormQrService qrCodes, CurrentUserService currentUser) {
+	public FormController(FormService forms, AttachmentService attachments, FormQrService qrCodes,
+			CurrentUserService currentUser) {
 		this.forms = forms;
+		this.attachments = attachments;
 		this.qrCodes = qrCodes;
 		this.currentUser = currentUser;
 	}
@@ -49,7 +54,7 @@ public class FormController {
 	@PostMapping("/forms/{formId}/copy")
 	@ResponseStatus(HttpStatus.CREATED)
 	public CreatedForm copy(@PathVariable String formId) {
-		return forms.copy(currentUser.requireUserId(), formId);
+		return attachments.copyForm(currentUser.requireUserId(), formId);
 	}
 
 	@GetMapping("/forms/{formId}/definition")

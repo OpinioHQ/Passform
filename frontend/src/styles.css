@@ -1568,6 +1568,26 @@ h3 {
   font-size: 12px;
   overflow-wrap: anywhere;
 }
+.attachment-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+.attachment-editor input[type='file'] {
+  max-width: 100%;
+}
+.storage-meter {
+  margin-bottom: 18px;
+}
+.storage-meter-text {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
 .payment-link {
   margin-bottom: 16px;
   padding: 18px 22px;

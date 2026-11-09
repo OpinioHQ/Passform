@@ -124,6 +124,17 @@ public interface ResponseRepository extends JpaRepository<Response, UUID> {
 			""")
 	List<LatestSubmission> findLatestSubmissions(@Param("userId") UUID userId);
 
+	// 과거·마감 버전의 폼 첨부를 볼 수 있는지 판정한다(SPEC 5절 196~197행). 그 버전에 제출한 본인 응답이 있어야 한다.
+	@Query("""
+			select count(r) > 0 from Response r
+			where r.userId = :userId
+			  and r.formId = :formId
+			  and r.formVersion in :versions
+			  and r.status = com.opinio.passform.domain.analysis.ResponseStatus.SUBMITTED
+			""")
+	boolean existsSubmittedInVersions(@Param("userId") UUID userId, @Param("formId") UUID formId,
+			@Param("versions") Collection<Integer> versions);
+
 	interface LatestSubmission {
 
 		UUID getFormId();

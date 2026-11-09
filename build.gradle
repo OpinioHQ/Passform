@@ -34,6 +34,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'com.networknt:json-schema-validator:3.0.8'
+	// 첨부 원본 저장과 Presigned URL(SPEC 5절, AGENTS 7절). 사람 승인(#63).
+	implementation platform('software.amazon.awssdk:bom:2.57.11')
+	implementation 'software.amazon.awssdk:s3'
 	// 공유 링크 QR PNG(SPEC 5절 126행, AC10). core와 javase는 같은 버전을 쓴다.
 	implementation 'com.google.zxing:core:3.5.4'
 	implementation 'com.google.zxing:javase:3.5.4'

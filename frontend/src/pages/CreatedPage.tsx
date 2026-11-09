@@ -3,9 +3,29 @@ import { formatKst } from '../builder/deadline';
 import { ShareQr } from '../builder/ShareQr';
 import { statusLabel } from '../builder/messages';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
-import type { CreatorFormSummary } from '../types/api';
+import type { CreatorFormSummary, StorageUsage } from '../types/api';
 
 export type CreatedFormsLoad = 'loading' | 'failed' | 'ready';
+
+/** 한도가 500,000,000바이트라 화면도 1MB를 1,000,000바이트로 쓴다. */
+const megabytes = (bytes: number) => `${Math.round(bytes / 100_000) / 10}MB`;
+
+function StorageMeter({ usage }: { usage: StorageUsage }) {
+  const percent = Math.min(100, Math.round((usage.used_bytes / usage.limit_bytes) * 100));
+  return (
+    <Panel className="storage-meter">
+      <div className="storage-meter-text">
+        <strong>저장 공간</strong>
+        <span>
+          {megabytes(usage.used_bytes)} / {megabytes(usage.limit_bytes)} 사용 중
+        </span>
+      </div>
+      <div className="track" aria-hidden="true">
+        <div style={{ width: `${percent}%` }} />
+      </div>
+    </Panel>
+  );
+}
 
 /** 응답 탐색(E8 #46)은 결과 화면 상단 버튼으로 들어간다. */
 export function CreatedPage({
@@ -14,11 +34,14 @@ export function CreatedPage({
   onCreate,
   onEdit,
   onResults,
+  storage,
   loadQr,
   onCopy,
 }: {
   forms: CreatorFormSummary[];
   load: CreatedFormsLoad;
+  /** 못 읽었으면 `null`이고 칸을 보이지 않는다. 폼 목록은 그대로 쓴다. */
+  storage?: StorageUsage | null;
   onCreate: () => void;
   onEdit: (formId: string) => void;
   onResults: (formId: string) => void;
@@ -60,6 +83,7 @@ export function CreatedPage({
           </Button>
         }
       />
+      {storage && <StorageMeter usage={storage} />}
       {load === 'loading' && <p className="muted">목록을 불러오는 중이에요.</p>}
       {load === 'failed' && (
         <p className="error" role="alert">

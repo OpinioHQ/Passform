@@ -1,6 +1,7 @@
 import type {
   AnalyzeRequest,
   AnalyzeResponse,
+  Attachment,
   AutofillResult,
   BranchGraph,
   ConsentTemplate,
@@ -28,6 +29,7 @@ import type {
   SaveResponseDraftInput,
   SavedFormSummary,
   SavedResponseDraft,
+  StorageUsage,
   SubmitResponseInput,
   SubmittedResponse,
 } from '../types/api';
@@ -81,6 +83,24 @@ const json = (data: unknown): RequestInit => ({
 });
 
 const segment = encodeURIComponent;
+
+/** 폼 설명란(`questionId`가 null)이나 문항의 첨부 경로. 받는 주소와 지우는 주소가 같다. */
+function attachmentPath(formId: string, questionId: string | null): string {
+  const question = questionId === null ? '' : `/questions/${segment(questionId)}`;
+  return `/forms/${segment(formId)}${question}/attachments`;
+}
+
+/** 서버가 권한을 확인한 뒤 잠깐 유효한 주소로 보낸다. `img`와 링크에 그대로 쓴다. */
+export function attachmentUrl(formId: string, questionId: string | null, attachmentId: string) {
+  return `${baseUrl}${attachmentPath(formId, questionId)}/${segment(attachmentId)}`;
+}
+
+/** 브라우저가 multipart 경계를 정하도록 Content-Type을 넣지 않는다. */
+function uploadAttachment(formId: string, questionId: string | null, file: File) {
+  const body = new FormData();
+  body.append('file', file);
+  return request<Attachment>(attachmentPath(formId, questionId), { method: 'POST', body });
+}
 
 /**
  * 파일은 바이트 그대로 받는다. `text()`로 읽으면 CSV의 BOM이 사라진다.
@@ -149,6 +169,12 @@ export const api = {
     request<CreatorFormDefinition>(`/forms/${segment(formId)}/definition`),
   updateForm: (formId: string, body: Partial<FormDefinition> & { status?: FormStatus }) =>
     request<FormStateView>(`/forms/${segment(formId)}`, { ...json(body), method: 'PATCH' }),
+  uploadAttachment,
+  deleteAttachment: (formId: string, questionId: string | null, attachmentId: string) =>
+    request<void>(`${attachmentPath(formId, questionId)}/${segment(attachmentId)}`, {
+      method: 'DELETE',
+    }),
+  storage: () => request<StorageUsage>('/me/storage'),
   copyForm: (formId: string) =>
     request<CreatedForm>(`/forms/${segment(formId)}/copy`, { method: 'POST' }),
   branchGraph: (formId: string) => request<BranchGraph>(`/forms/${segment(formId)}/branch-graph`),

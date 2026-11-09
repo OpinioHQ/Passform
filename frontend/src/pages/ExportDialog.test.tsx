@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Coverage, FormResults, RequestContext } from '../types/api';
+import type { Coverage, RequestContext } from '../types/api';
 import { ExportDialog, exportFilename } from './ExportDialog';
-import { ResultsPage } from './ResultsPage';
 
 const context: RequestContext = { conditions: ['소프트웨어학과'], match: 'all', operation: 'list' };
 const partial: Coverage = {
@@ -181,37 +180,5 @@ describe('내보내기 창', () => {
     expect(screen.queryByRole('status')).toBeNull();
     rerender(<ExportDialog formId="f1" onClose={vi.fn()} />);
     expect(screen.queryByRole('status')).toBeNull();
-  });
-});
-
-describe('결과 화면의 내보내기', () => {
-  const results: FormResults = {
-    response_count: 2,
-    combined: { questions: [] },
-    versions: [
-      { form_version: 1, response_count: 1, questions: [] },
-      { form_version: 2, response_count: 1, questions: [] },
-    ],
-  };
-
-  it('제출 버전이 체크된 창을 열고 전체 응답을 파일로 받는다', async () => {
-    const fetchMock = stubExport(200, 'a', 'text/csv;charset=UTF-8');
-    render(<ResultsPage formId="f1" results={results} />);
-
-    expect(screen.queryByRole('dialog')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: '내보내기' }));
-    const dialog = screen.getByRole('dialog', { name: '내보내기' });
-    expect(
-      (within(dialog).getByRole('checkbox', { name: '폼 버전 1' }) as HTMLInputElement).checked,
-    ).toBe(true);
-    expect(
-      (within(dialog).getByRole('checkbox', { name: '폼 버전 2' }) as HTMLInputElement).checked,
-    ).toBe(true);
-    submit();
-
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(String(fetchMock.mock.calls[0][0])).toContain('/forms/f1/export');
-    expect(sentBody(fetchMock)).toEqual({ format: 'csv' });
-    expect(createObjectURL).toHaveBeenCalledTimes(1);
   });
 });

@@ -48,10 +48,13 @@ export function BuilderPage({
   formId,
   initial,
   templates,
+  onResults,
 }: {
   formId: string;
   initial: CreatorFormDefinition;
   templates: ConsentTemplate[] | null;
+  /** 배포된 폼(응답 받는 중·마감)에서 결과 대시보드로 간다(E8 #46). */
+  onResults?: () => void;
 }) {
   const [definition, setDefinition] = React.useState<FormDefinition>(() => toDefinition(initial));
   const [formState, setFormState] = React.useState<FormStateView>({
@@ -180,25 +183,43 @@ export function BuilderPage({
    */
   function actions(placement: 'top' | 'bottom') {
     // 공통 Button은 이름을 따로 받지 않아 같은 클래스의 버튼을 쓴다.
-    const action = (text: string, onClick: () => void, primary = false) => (
+    const action = (text: string, onClick: () => void, primary = false, blocked = false) => (
       <button
         type="button"
         className={`btn btn-${primary ? 'primary' : 'secondary'}`}
         onClick={onClick}
-        disabled={busy}
+        disabled={busy || blocked}
         aria-label={placement === 'bottom' ? `${text} (아래)` : undefined}
       >
         {text}
       </button>
     );
-    return (
+    // 저장하지 않은 편집이 있으면 결과로 가지 않게 막는다(나가면 편집이 사라진다). 저장하면 다시 열린다.
+    const showResults = status !== 'draft' && onResults;
+    const row = (
       <div className="button-row">
         {action('미리보기', openPreview)}
         {action(status === 'draft' ? '초안 저장' : '변경 저장', save)}
         {status === 'draft' && action('배포', publish, true)}
         {status === 'open' && action('응답 받기 끄기', () => changeStatus('closed'))}
         {status === 'closed' && action('다시 열기', () => changeStatus('open'), true)}
+        {showResults && action('결과 보기', onResults, true, dirty)}
       </div>
+    );
+    const hint = showResults && dirty && (
+      <p className="muted small builder-results-hint">변경을 저장한 뒤 결과를 볼 수 있어요.</p>
+    );
+    // 위쪽은 제목 줄의 한 칸이라 묶고, 아래쪽은 오른쪽 칸 격자(.builder-add-section > .button-row)를 그대로 쓴다.
+    return placement === 'top' ? (
+      <div>
+        {row}
+        {hint}
+      </div>
+    ) : (
+      <>
+        {row}
+        {hint}
+      </>
     );
   }
 

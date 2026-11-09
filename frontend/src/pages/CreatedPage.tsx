@@ -5,7 +5,7 @@ import type { CreatorFormSummary } from '../types/api';
 
 export type CreatedFormsLoad = 'loading' | 'failed' | 'ready';
 
-/** 탐색 버튼은 E8이 실제 화면을 연결할 때 더한다. */
+/** 응답 탐색(E8 #46)은 결과 화면 상단 버튼으로 들어간다. */
 export function CreatedPage({
   forms,
   load,

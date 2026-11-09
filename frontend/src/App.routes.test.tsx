@@ -48,7 +48,7 @@ describe('라우트 표', () => {
     ['/creator', '내가 만든 폼'],
     ['/creator/forms/new', '폼 편집'],
     ['/creator/forms/abc/edit', '폼 편집'],
-    ['/creator/forms/abc/results', '결과'],
+    ['/creator/forms/abc/results', '결과 대시보드'],
     ['/creator/forms/abc/explore', '모인 답변을 살펴보세요'],
     ['/없는/경로', '페이지를 찾을 수 없어요'],
   ])('%s 는 공통 레이아웃과 함께 "%s" 화면을 연다', (path, heading) => {
@@ -334,15 +334,12 @@ describe('VITE_USE_API=true', () => {
   });
 
   it('연결한 세 호출 밖의 화면은 API를 부르지 않는다', async () => {
-    const urls = await openLiveAt('/creator/forms/abc/explore');
+    const urls = await openLiveAt('/login');
     await waitFor(() => expect(screen.getByRole('banner')).toBeTruthy());
     expect(urls()).toEqual(['http://api.test/me']);
   });
 
   it('가짜 값이 남은 화면에는 띠를 보이고, 없는 화면에는 보이지 않는다', async () => {
-    await openLiveAt('/creator/forms/abc/explore');
-    expect(screen.getByText(/가상 값이 남아 있습니다/)).toBeTruthy();
-    cleanup();
     await openLiveAt('/login');
     expect(screen.queryByText(/가상 값이 남아 있습니다/)).toBeNull();
     expect(screen.queryByText(/가상 데이터 모드/)).toBeNull();

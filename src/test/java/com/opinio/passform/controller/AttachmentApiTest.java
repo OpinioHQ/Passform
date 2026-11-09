@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -111,6 +112,13 @@ class AttachmentApiTest extends DatabaseTest {
 		storage.reset();
 		owner = users.save(TestData.newUser()).getId();
 		other = users.save(TestData.newUser()).getId();
+	}
+
+	// 커밋을 보는 테스트라 행이 남는다. DB 전체 행 수를 세는 다른 테스트에 영향을 주지 않게 지운다.
+	@AfterEach
+	void removeCommittedRows() {
+		jdbc.update("delete from attachments");
+		jdbc.update("delete from responses");
 	}
 
 	private static byte[] png(int size) {

@@ -13,6 +13,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.opinio.passform.domain.analysis.ResponseStatus;
 import com.opinio.passform.domain.attachment.Attachment;
 import com.opinio.passform.domain.error.DomainException;
 import com.opinio.passform.domain.error.ErrorCode;
@@ -20,6 +21,7 @@ import com.opinio.passform.domain.form.Form;
 import com.opinio.passform.domain.form.FormAttachments;
 import com.opinio.passform.domain.form.FormStatus;
 import com.opinio.passform.domain.form.FormVersion;
+import com.opinio.passform.domain.response.Response;
 import com.opinio.passform.repository.AttachmentRepository;
 import com.opinio.passform.repository.FormRepository;
 import com.opinio.passform.repository.FormVersionRepository;
@@ -124,6 +126,28 @@ public class AttachmentTransactions {
 			throw notFound();
 		}
 		requireReadable(form, holding, command.userId());
+		return attachment;
+	}
+
+	// 응답 첨부는 그 폼의 제작자와 제출한 로그인 사용자만 받는다(SPEC 5절 198행, AC64). 그 밖의 사람에게는 있는지도 알리지 않는다.
+	@Transactional(readOnly = true)
+	public Attachment readableResponseFile(UUID userId, String formId, String responseId, String attachmentId) {
+		UUID parsedForm = FormService.parseId(formId);
+		UUID parsedResponse = parseAttachmentId(responseId);
+		Form form = forms.findById(parsedForm).filter(found -> !found.isDeleted()).orElseThrow(AttachmentTransactions::notFound);
+		Response response = responses.findById(parsedResponse)
+			.filter(found -> found.getFormId().equals(parsedForm))
+			.filter(found -> found.getStatus() == ResponseStatus.SUBMITTED)
+			.orElseThrow(AttachmentTransactions::notFound);
+		if (!form.isOwnedBy(userId) && !userId.equals(response.getUserId())) {
+			throw notFound();
+		}
+		Attachment attachment = attachments.findById(parseAttachmentId(attachmentId))
+			.filter(found -> parsedResponse.equals(found.getResponseId()))
+			.orElseThrow(AttachmentTransactions::notFound);
+		if (!attachment.isAvailable()) {
+			throw new DomainException(ErrorCode.ATTACHMENT_REMOVED);
+		}
 		return attachment;
 	}
 

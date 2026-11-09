@@ -38,10 +38,13 @@ public class DraftService {
 
 	private final PublicFormService publicForms;
 
+	private final FormStorageRules storageRules;
+
 	private final Clock clock;
 
 	public DraftService(FormRepository forms, ResponseRepository responses, SavedFormRepository savedForms,
-			UserRepository users, PublicFormService publicForms, Clock clock) {
+			UserRepository users, PublicFormService publicForms, FormStorageRules storageRules, Clock clock) {
+		this.storageRules = storageRules;
 		this.forms = forms;
 		this.responses = responses;
 		this.savedForms = savedForms;
@@ -65,6 +68,8 @@ public class DraftService {
 	public SaveResult save(UUID userId, UUID formId, int formVersion, List<Answer> answers) {
 		// 같은 사용자의 요청을 한 번에 하나씩 처리한다. 동시 첫 저장에서도 초안은 한 건이고 유일 제약 위반(500)이 나지 않는다.
 		users.findByIdForUpdate(userId).orElseThrow(CurrentUserService::noLogin);
+		// 계정 초안의 답은 응답자 자신의 사용량이다(SPEC 5절 172행).
+		long usedBefore = storageRules.lockAndMeasure(userId);
 		Form form = visibleForm(formId);
 		Instant now = clock.instant();
 		// 제출과 같은 순서로 본다: 버전 → 닫힘.
@@ -88,6 +93,7 @@ public class DraftService {
 		if (!savedForms.existsById(new SavedFormId(userId, formId))) {
 			savedForms.save(SavedForm.saved(userId, formId, now));
 		}
+		storageRules.requireWithinLimit(userId, usedBefore);
 		return new SaveResult(draft.getId(), now, created);
 	}
 

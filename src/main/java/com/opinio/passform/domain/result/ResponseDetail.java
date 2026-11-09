@@ -13,7 +13,7 @@ import com.opinio.passform.domain.response.Answer;
 import com.opinio.passform.domain.response.Response;
 
 // GET /forms/{form_id}/responses/{response_id}의 출력(SPEC 5절 236행, AC62).
-// attachments는 첨부 기능(T12 등) 전까지 빈 배열이다.
+// attachments의 항목은 question_id, attachment_id, filename, content_type, size_bytes, available이다(SPEC 5절 222행).
 public record ResponseDetail(UUID responseId, int formVersion, Instant submittedAt, Instant updatedAt,
 		List<ResponseContentItem> content, List<Map<String, Object>> attachments) {
 
@@ -29,6 +29,11 @@ public record ResponseDetail(UUID responseId, int formVersion, Instant submitted
 	// questions는 그 응답의 제출 버전 정의여야 한다(문구도 그 버전 것).
 	// 사람이 정한 것(2026-11-07): 답한 문항만, 정의 순서로 넣는다. 정의에 없는 question_id의 답은 뺀다.
 	public static ResponseDetail of(Response response, List<DefinitionQuestion> questions) {
+		return of(response, questions, List.of());
+	}
+
+	public static ResponseDetail of(Response response, List<DefinitionQuestion> questions,
+			List<Map<String, Object>> attachments) {
 		Map<String, Answer> answers = new HashMap<>();
 		for (Answer answer : response.getContent()) {
 			if (!answer.values().isEmpty()) {
@@ -44,7 +49,7 @@ public record ResponseDetail(UUID responseId, int formVersion, Instant submitted
 			}
 		}
 		return new ResponseDetail(response.getId(), response.getFormVersion(), response.getSubmittedAt(),
-				response.getUpdatedAt(), content, List.of());
+				response.getUpdatedAt(), content, attachments);
 	}
 
 }

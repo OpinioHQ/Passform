@@ -38,15 +38,12 @@ public class ResponseChangeController {
 
 	@PatchMapping("/me/responses/{responseId}")
 	public EditedResponse edit(@PathVariable String responseId, @Valid @RequestBody EditRequest request) {
-		// 사람이 정한 것(2026-11-08): 파일 교체는 T12 범위다. 처리하지 못하는 입력을 성공한 척하지 않는다.
-		if (request.attachments() != null) {
-			throw new DomainException(ErrorCode.INVALID_REQUEST);
-		}
 		List<Answer> answers = request.answers()
 			.stream()
 			.map(answer -> new Answer(answer.questionId(), answer.value()))
 			.toList();
-		return changes.edit(new EditCommand(currentUser.requireUserId(), parseId(responseId), answers));
+		return changes.edit(new EditCommand(currentUser.requireUserId(), parseId(responseId), answers,
+				request.attachments(), List.of()));
 	}
 
 	@DeleteMapping("/me/responses/{responseId}")
@@ -65,7 +62,8 @@ public class ResponseChangeController {
 		}
 	}
 
-	public record EditRequest(@NotNull List<@NotNull @Valid AnswerRequest> answers, Object attachments) {
+	// attachments는 남길 attachment_id 목록이다. 생략하면 기존 파일을 모두 유지한다(SPEC 5절 222행).
+	public record EditRequest(@NotNull List<@NotNull @Valid AnswerRequest> answers, List<@NotNull String> attachments) {
 	}
 
 }

@@ -57,6 +57,39 @@ class DroppedConditionRevivalTest {
 			.hasValueSatisfying(clarify -> assertThat(clarify.reason()).isEqualTo("unknown_condition"));
 	}
 
+	// 코덱스 검토 반영 1: 끝말을 떼면 빈 낱말이 되는 "있어"는 그대로 둔다(선택지일 수 있다).
+	@Test
+	void 낱말_자체가_있어면_떼지_않고_되살린다() {
+		List<VersionQuestions> versions = List.of(VersionQuestions.of(1, Map.of("sections", List.of(Map.of("section_id",
+				"s1", "questions", List.of(Map.of("question_id", "q1", "question_note", "자차 여부", "question_type",
+						"multiple_choice", "options", List.of("있어", "없어"))))))));
+		RequestContext parsed = new RequestContext(List.of(), null, "count", null, null, null);
+
+		assertThat(QueryText.reviveDroppedConditions("있어 몇 명?", parsed, versions).conditions()).containsExactly("있어");
+	}
+
+	// 코덱스 검토 반영 2: 부정이 있으면 선택지만 되살리지 않고 예전처럼 한 덩어리로 되살려 되묻는다.
+	@Test
+	void 요약이어도_부정이_있으면_선택지만_되살리지_않는다() {
+		RequestContext parsed = new RequestContext(List.of(), null, "summarize", null, "걱정되는 점", null);
+
+		RequestContext revived = QueryText.reviveDroppedConditions("3학년 아닌 학생들의 걱정되는 점 요약해줘", parsed, VERSIONS);
+
+		assertThat(revived.conditions()).containsExactly("3학년 아닌");
+	}
+
+	// 코덱스 검토 반영 2: 선택지로 설명되지 않는 조건 낱말("3학년생")이 남으면 전체 요약으로 가지 않고 예전처럼 되살린다.
+	@Test
+	void 요약이어도_선택지로_설명되지_않는_낱말이_남으면_예전처럼_되살린다() {
+		RequestContext parsed = new RequestContext(List.of(), null, "summarize", null, "걱정되는 점", null);
+
+		RequestContext revived = QueryText.reviveDroppedConditions("3학년생 걱정되는 점 요약해줘", parsed, VERSIONS);
+
+		assertThat(revived.conditions()).containsExactly("3학년생");
+		assertThat(ClarifyRules.afterMatching(revived, List.of(), VERSIONS, null))
+			.hasValueSatisfying(clarify -> assertThat(clarify.reason()).isEqualTo("unknown_condition"));
+	}
+
 	@Test
 	void target_요약에서도_원문의_선택지_문구는_되살린다() {
 		RequestContext parsed = new RequestContext(List.of(), null, "summarize", null, "걱정되는 점", null);

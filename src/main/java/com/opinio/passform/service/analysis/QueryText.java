@@ -111,7 +111,9 @@ final class QueryText {
 
 	// SPEC 334행: 파서가 조건을 버린 출력을 전체 건수로 내보내지 않는다. 남는 표현을 되살려 매칭으로 보낸다.
 	// 부정 표현이 있으면 낱말로 쪼개지 않고 한 덩어리로 둔다. 매칭되지 않아 되묻게 된다.
-	// target·topic이 있는 요약은 남은 낱말이 대개 의견 표현의 일부다("의견있어"). 원문에 글자 그대로 있는 선택지 문구만 되살린다.
+	// target·topic이 있는 요약은 남은 낱말이 대개 의견 표현의 일부다("의견있어"). 부정 표현이 없고, 남는 조건 낱말이 모두
+	// 원문에 글자 그대로 있는 선택지 문구로 설명될 때만 그 선택지 문구만 되살린다("3학년 학생들의 걱정되는 점").
+	// 하나라도 설명되지 않으면("3학년생", "3학년 아닌") 예전대로 낱말을 되살려 되묻는다. 조건 빠진 요약을 만들지 않는다.
 	// count·list·동작 없음은 그대로 낱말을 되살린다(조건 빠진 숫자를 내보내지 않는다).
 	static RequestContext reviveDroppedConditions(String query, RequestContext parsed) {
 		return reviveDroppedConditions(query, parsed, List.of());
@@ -121,17 +123,35 @@ final class QueryText {
 		if (!parsed.conditions().isEmpty()) {
 			return parsed;
 		}
-		if (RequestContext.SUMMARIZE.equals(parsed.operation()) && usedPhrases(parsed).anyMatch(phrase -> !phrase.isBlank())) {
-			List<String> options = droppedOptions(query, parsed, versions);
-			return options.isEmpty() ? parsed : parsed.withRevivedConditions(options);
-		}
 		List<String> allWords = wordsWithoutAction(query);
 		List<String> words = allWords.stream().filter(word -> isConditionWord(word, parsed)).toList();
 		if (words.isEmpty()) {
 			return parsed;
 		}
 		boolean negated = allWords.stream().anyMatch(QueryText::isNegation);
+		if (!negated && RequestContext.SUMMARIZE.equals(parsed.operation())
+				&& usedPhrases(parsed).anyMatch(phrase -> !phrase.isBlank())) {
+			List<String> options = droppedOptions(query, parsed, versions);
+			if (!options.isEmpty() && conditionWordsOutside(query, options, parsed).isEmpty()) {
+				return parsed.withRevivedConditions(options);
+			}
+		}
 		return parsed.withRevivedConditions(negated ? List.of(String.join(" ", words)) : words);
+	}
+
+	// 선택지 문구가 낱말 경계로 나온 자리를 지운 뒤에도 남는 조건 낱말. 선택지 바로 뒤에 붙었던 조사("3학년인"의 "인")는 뺀다.
+	private static List<String> conditionWordsOutside(String query, List<String> options, RequestContext parsed) {
+		StringBuilder rest = new StringBuilder(query);
+		for (String option : options) {
+			for (int[] span : spans(query, option, true)) {
+				for (int index = span[0]; index < span[1]; index++) {
+					rest.setCharAt(index, ' ');
+				}
+			}
+		}
+		return wordsWithoutAction(rest.toString()).stream()
+			.filter(word -> !OPTION_PARTICLES.contains(word) && isConditionWord(word, parsed))
+			.toList();
 	}
 
 	// SPEC 334행: 파서가 조건 일부를 버렸으면 원문에 글자 그대로 있는 선택지 문구를 되살린다. 조건이 하나라도 있을 때만 본다.
@@ -233,9 +253,15 @@ final class QueryText {
 	private static List<String> wordsWithoutAction(String query) {
 		return tokens(query).stream()
 			.map(token -> ACTION_TAIL.matcher(token).replaceFirst(""))
-			.map(token -> EXIST_TAIL.matcher(token).replaceFirst(""))
+			.map(QueryText::withoutExistTail)
 			.filter(word -> !word.isEmpty())
 			.toList();
+	}
+
+	// 낱말 자체가 "있어"·"있나요"면(선택지일 수 있다) 떼지 않는다.
+	private static String withoutExistTail(String token) {
+		String stripped = EXIST_TAIL.matcher(token).replaceFirst("");
+		return stripped.isEmpty() ? token : stripped;
 	}
 
 	private static boolean isConditionWord(String token, RequestContext context) {

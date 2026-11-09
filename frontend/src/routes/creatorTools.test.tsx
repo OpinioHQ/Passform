@@ -294,11 +294,11 @@ describe('폼 복사 (AC40)', () => {
     });
     await openLive('/creator');
     await screen.findByText('서버 폼');
-    // 카드 버튼 순서: 폼 편집, 복제, QR 보기, 결과 보기(사람 결정).
+    // 카드 버튼 순서: 폼 편집, 복제, 결과 보기. QR 보기는 공유 링크 오른쪽에 있다(사람 결정).
     const card = screen.getByRole('button', { name: '서버 폼 복제' }).closest('.button-row');
     expect(
       Array.from(card?.querySelectorAll('button') ?? []).map((b) => b.textContent?.trim()),
-    ).toEqual(['폼 편집', '복제', 'QR 보기', '결과 보기']);
+    ).toEqual(['폼 편집', '복제', '결과 보기']);
 
     fireEvent.click(screen.getByRole('button', { name: '서버 폼 복제' }));
     expect((await screen.findByRole('alert')).textContent).toContain('복제하지 못했어요');
@@ -333,7 +333,11 @@ describe('QR (AC10)', () => {
     await screen.findByText('서버 폼');
     expect(screen.queryByRole('button', { name: '초안 폼 QR 보기' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: '서버 폼 QR 보기' }));
+    // 공유 링크 줄 안, 링크 바로 오른쪽의 글자 버튼이다. 공유 링크가 없는 초안에는 없다.
+    const qrButton = screen.getByRole('button', { name: '서버 폼 QR 보기' });
+    expect(qrButton.className).toBe('text-button');
+    expect(qrButton.previousElementSibling?.textContent).toBe('https://app.test/f/abc');
+    fireEvent.click(qrButton);
     const image = (await screen.findByAltText('서버 폼 공유 링크 QR')) as HTMLImageElement;
     expect(image.getAttribute('src')).toBe('blob:qr');
     const download = screen.getByRole('link', { name: 'PNG 내려받기' });

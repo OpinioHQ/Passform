@@ -97,6 +97,18 @@ export function CreatedPage({
               {form.share_url && (
                 <p className="small muted builder-share-url">
                   공유 링크: <a href={form.share_url}>{form.share_url}</a>
+                  {loadQr && (
+                    // 공유 링크가 있을 때만 링크 오른쪽에 둔다(사람 결정). 이동이 아니라 펼치기라 button이다.
+                    <button
+                      type="button"
+                      className="text-button"
+                      aria-label={`${name} QR ${showingQr ? '닫기' : '보기'}`}
+                      aria-expanded={showingQr}
+                      onClick={() => setQrFor(showingQr ? null : form.form_id)}
+                    >
+                      {showingQr ? 'QR 닫기' : 'QR 보기'}
+                    </button>
+                  )}
                 </p>
               )}
               <div className="button-row">
@@ -117,17 +129,6 @@ export function CreatedPage({
                     onClick={() => void copy(form.form_id)}
                   >
                     {copying === form.form_id ? '복제 중…' : '복제'}
-                  </button>
-                )}
-                {form.share_url && loadQr && (
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    aria-label={`${name} QR ${showingQr ? '닫기' : '보기'}`}
-                    aria-expanded={showingQr}
-                    onClick={() => setQrFor(showingQr ? null : form.form_id)}
-                  >
-                    {showingQr ? 'QR 닫기' : 'QR 보기'}
                   </button>
                 )}
                 <button

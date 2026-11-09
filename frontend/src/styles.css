@@ -1933,3 +1933,14 @@ h3 {
   background: #fff;
   border-radius: 8px;
 }
+/* 글자에 밑줄만 있는 버튼. 내가 만든 폼의 공유 링크 오른쪽 "QR 보기"에 쓴다. */
+.text-button {
+  margin-left: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

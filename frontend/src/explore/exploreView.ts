@@ -307,7 +307,8 @@ export function presetGroups(
 
   const groups: PresetGroup[] = [
     {
-      title: '전체',
+      // 버튼 글자에 이미 "전체"가 있어 묶음 제목을 두지 않는다. 도우미 세로 길이를 줄인다(사람 요청).
+      title: '',
       kind: 'main',
       choices: [{ label: '전체 응답 목록', context: { conditions: [], operation: 'list' } }],
     },

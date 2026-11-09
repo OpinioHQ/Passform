@@ -681,7 +681,7 @@ class FormApiDatabaseTest extends DatabaseTest {
 		String expected = JSON.writeValueAsString(ConsentNotices.aiSummaryNotice());
 
 		publicById(formId).andExpect(MockMvcResultMatchers.jsonPath("$.consent.ai_summary.provider").value("OpenAI"))
-			.andExpect(jsonPath("$.consent.ai_summary.checked_on").value("2026-10-28"))
+			.andExpect(jsonPath("$.consent.ai_summary.checked_on").value("2026-11-09"))
 			.andExpect(MockMvcResultMatchers.content()
 				.json("{\"consent\":{\"ai_summary\":" + expected + "}}", JsonCompareMode.LENIENT));
 

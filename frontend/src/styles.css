@@ -1453,6 +1453,52 @@ h3 {
   font-size: 14px;
   overflow-wrap: anywhere;
 }
+/* 단답·장문 카드: 답마다 한 줄 말줄임, 펼치면 전체. 목록은 카드 안에서 스크롤한다. */
+.result-text-count {
+  margin: 0 0 8px;
+}
+.result-texts {
+  list-style: none;
+  margin: 0;
+  padding: 0 4px 0 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.result-text {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px 0;
+  border-top: 1px solid #eef1f7;
+}
+.result-text:first-child {
+  border-top: 0;
+}
+.result-text p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+}
+.result-text-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.result-text-full {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.result-text-toggle {
+  flex: none;
+  border: 0;
+  background: none;
+  color: #3158d5;
+  font-size: 12px;
+  padding: 2px 0;
+  cursor: pointer;
+}
 
 /* 응답 화면(T4 #52). 360px에서도 가로 스크롤이 생기지 않게 줄바꿈과 최소 폭을 둔다. */
 .response-page .panel,

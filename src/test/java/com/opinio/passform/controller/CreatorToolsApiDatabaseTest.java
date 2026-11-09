@@ -38,6 +38,7 @@ import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ObjectNode;
 
 import com.google.zxing.BinaryBitmap;
+import com.google.zxing.DecodeHintType;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeReader;
@@ -216,7 +217,9 @@ class CreatorToolsApiDatabaseTest extends DatabaseTest {
 	private static String decodeQr(byte[] png) throws Exception {
 		BufferedImage image = ImageIO.read(new ByteArrayInputStream(png));
 		BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(image)));
-		return new QRCodeReader().decode(bitmap).getText();
+		// 서버가 만든 기울지 않은 깨끗한 이미지라 PURE_BARCODE로 읽는다. 기본 판독은 위치 찾기를 가끔 틀려
+		// 무작위 링크 1000개 중 4개꼴로 ChecksumException을 냈다(PURE_BARCODE는 0개, 원문과 모두 같음).
+		return new QRCodeReader().decode(bitmap, Map.of(DecodeHintType.PURE_BARCODE, Boolean.TRUE)).getText();
 	}
 
 	@Test

@@ -101,7 +101,8 @@ public class AnalysisService {
 			statistics = QueryText.asksStatistics(query, versions);
 			// 스키마 재검증 뒤, 표 3행 전에 보정한다(SPEC 334행). 조건이 있으면 선택지 문구를, 없으면 남는 낱말을 되살린다.
 			context = statistics ? parsed.get()
-					: QueryText.reviveDroppedConditions(query, QueryText.reviveDroppedOptions(query, parsed.get(), versions));
+					: QueryText.reviveDroppedConditions(query, QueryText.reviveDroppedOptions(query, parsed.get(), versions),
+							versions);
 		}
 		else {
 			context = RequestContextSchema.toContext(request.get("context"));

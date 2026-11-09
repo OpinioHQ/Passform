@@ -39,6 +39,9 @@ final class QueryText {
 	// 알려진 동작어만 꼬리에서 뗀다. 모르는 "~줘"는 조건으로 남겨 되묻는다(SPEC 334행).
 	private static final Pattern ACTION_TAIL = Pattern.compile("(알려|보여|세어|정리해|요약해|나열해|찾아|뽑아)(줘|주세요|줄래요|줄래|주라)$");
 
+	// 묻는 끝말("의견있어", "있나요")도 동작어처럼 떼어 남는 낱말만 본다.
+	private static final Pattern EXIST_TAIL = Pattern.compile("있(어요|어|나요|나|니|는지|을까요|을까)$");
+
 	// 선택지 문구 바로 뒤에 붙어도 낱말 경계로 보는 조사·어미("3학년인", "팀장이고").
 	private static final Set<String> OPTION_PARTICLES = Set.of("이", "가", "은", "는", "을", "를", "인", "의", "만", "도", "와", "과",
 			"랑", "이랑", "에", "로", "으로", "에서", "라고", "이라고", "인데", "이고", "고", "이며", "이거나", "거나", "이나", "나", "인지", "이면",
@@ -108,9 +111,19 @@ final class QueryText {
 
 	// SPEC 334행: 파서가 조건을 버린 출력을 전체 건수로 내보내지 않는다. 남는 표현을 되살려 매칭으로 보낸다.
 	// 부정 표현이 있으면 낱말로 쪼개지 않고 한 덩어리로 둔다. 매칭되지 않아 되묻게 된다.
+	// target·topic이 있는 요약은 남은 낱말이 대개 의견 표현의 일부다("의견있어"). 원문에 글자 그대로 있는 선택지 문구만 되살린다.
+	// count·list·동작 없음은 그대로 낱말을 되살린다(조건 빠진 숫자를 내보내지 않는다).
 	static RequestContext reviveDroppedConditions(String query, RequestContext parsed) {
+		return reviveDroppedConditions(query, parsed, List.of());
+	}
+
+	static RequestContext reviveDroppedConditions(String query, RequestContext parsed, List<VersionQuestions> versions) {
 		if (!parsed.conditions().isEmpty()) {
 			return parsed;
+		}
+		if (RequestContext.SUMMARIZE.equals(parsed.operation()) && usedPhrases(parsed).anyMatch(phrase -> !phrase.isBlank())) {
+			List<String> options = droppedOptions(query, parsed, versions);
+			return options.isEmpty() ? parsed : parsed.withRevivedConditions(options);
 		}
 		List<String> allWords = wordsWithoutAction(query);
 		List<String> words = allWords.stream().filter(word -> isConditionWord(word, parsed)).toList();
@@ -129,6 +142,12 @@ final class QueryText {
 		if (parsed.conditions().isEmpty()) {
 			return parsed;
 		}
+		List<String> revived = droppedOptions(query, parsed, versions);
+		return revived.isEmpty() ? parsed : parsed.withAddedConditions(revived);
+	}
+
+	// 원문에 낱말 경계로 나오는데 이미 든 조건·쓰이는 키·문항 문구 자리 밖에 있는 선택지 문구. 원문 순서대로.
+	private static List<String> droppedOptions(String query, RequestContext parsed, List<VersionQuestions> versions) {
 		// "문항 - 값" 조건은 원문에 그 글자로 나오지 않으므로 문항 부분과 값 부분이 나온 자리도 쓰인 자리다.
 		List<int[]> used = new ArrayList<>();
 		Stream.concat(parsed.conditions().stream(), usedPhrases(parsed))
@@ -173,7 +192,7 @@ final class QueryText {
 				revived.add(entry.getValue());
 			}
 		}
-		return revived.isEmpty() ? parsed : parsed.withAddedConditions(revived);
+		return revived;
 	}
 
 	private static Stream<String> usedPhrases(RequestContext context) {
@@ -214,6 +233,7 @@ final class QueryText {
 	private static List<String> wordsWithoutAction(String query) {
 		return tokens(query).stream()
 			.map(token -> ACTION_TAIL.matcher(token).replaceFirst(""))
+			.map(token -> EXIST_TAIL.matcher(token).replaceFirst(""))
 			.filter(word -> !word.isEmpty())
 			.toList();
 	}

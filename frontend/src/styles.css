@@ -954,23 +954,22 @@ textarea::placeholder {
 .creator-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: var(--space-4);
 }
 .creator-card {
-  min-height: 275px;
-  padding: 26px;
+  padding: var(--space-6);
 }
 .creator-title h2 {
-  font-size: 22px;
-  margin: 14px 0 6px;
+  font-size: 20px;
+  margin: var(--space-3) 0 var(--space-1);
 }
 .creator-metrics {
-  border-top: 1px solid var(--color-hairline);
-  border-bottom: 1px solid var(--color-hairline);
-  margin: 22px 0;
-  padding: 15px 0;
+  border-top: 1px solid var(--color-hairline-soft);
+  border-bottom: 1px solid var(--color-hairline-soft);
+  margin: var(--space-4) 0;
+  padding: var(--space-4) 0;
   display: flex;
-  gap: 50px;
+  gap: var(--space-8);
 }
 .creator-metrics div {
   display: flex;
@@ -981,7 +980,9 @@ textarea::placeholder {
   color: var(--color-muted);
 }
 .creator-metrics strong {
-  font-size: 22px;
+  font-size: 18px;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
 }
 .dashed-card {
   display: flex;
@@ -1036,7 +1037,7 @@ textarea::placeholder {
   font-weight: 600;
 }
 .builder-intro {
-  padding: 30px;
+  padding: var(--space-8);
 }
 .builder-intro input,
 .builder-intro textarea {
@@ -1059,14 +1060,14 @@ textarea::placeholder {
   margin-top: 10px;
 }
 .builder-section {
-  margin-top: 20px;
-  padding: 30px;
+  margin-top: var(--space-6);
+  padding: var(--space-8);
 }
 .builder-question {
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-lg);
-  padding: 23px 26px;
-  margin: 16px 0;
+  padding: var(--space-6);
+  margin: var(--space-4) 0;
 }
 .question-top {
   display: flex;
@@ -1123,8 +1124,8 @@ textarea::placeholder {
 .builder-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 14px;
+  gap: 6px;
+  margin-top: var(--space-4);
   font-size: 14px;
 }
 .builder-question .builder-field input,
@@ -2156,7 +2157,12 @@ textarea::placeholder {
 }
 .share-qr img {
   background: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
   border-radius: var(--radius-md);
+  padding: var(--space-2);
+}
+.builder-section.branch-flow {
+  margin-bottom: var(--space-4);
 }
 /* 글자에 밑줄만 있는 버튼. 내가 만든 폼의 공유 링크 오른쪽 "QR 보기"에 쓴다. */
 .text-button {
@@ -2178,4 +2184,43 @@ textarea::placeholder {
   .page-shell.response-page {
     max-width: calc(720px + 2 * 36px);
   }
+}
+
+/* 공유 링크 칸: 입력과 버튼을 한 줄에 두고, 안내·QR은 다음 줄로 내린다. */
+.builder-share {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+.builder-share > .builder-field {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.builder-share > :not(.builder-field):not(.btn) {
+  flex-basis: 100%;
+}
+.panel.builder-share {
+  margin: var(--space-4) 0 var(--space-6);
+  padding: var(--space-6);
+}
+.panel.builder-share > .builder-field {
+  margin-top: 0;
+}
+/* 파일 선택 버튼을 보조 버튼 모양으로 맞춘다. */
+input[type='file'] {
+  font-size: 14px;
+  color: var(--color-muted);
+}
+input[type='file']::file-selector-button {
+  margin-right: var(--space-3);
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }

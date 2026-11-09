@@ -13,16 +13,16 @@ public final class ConsentNotices {
 	private ConsentNotices() {
 	}
 
-	// AI 요약 외부 전송 고지(SPEC 5절 211행 그대로, 확인일 2026-10-28). 폼의 첫 배포 때 이 값을 기록해 고정한다(158행).
+	// AI 요약 외부 전송 고지(SPEC 5절 211행 그대로, 확인일 2026-11-09). 폼의 첫 배포 때 이 값을 기록해 고정한다(158행).
 	public static Map<String, Object> aiSummaryNotice() {
 		Map<String, Object> notice = new LinkedHashMap<>();
 		notice.put("provider", "OpenAI");
-		notice.put("processing_country", "미국(프로젝트 데이터 저장 위치 설정 확인 후 확정)");
+		notice.put("processing_country", "OpenAI가 정하는 국외 지역(이 서비스에서 처리 국가를 지정하지 않음)");
 		notice.put("items", List.of("AI 요약 대상 주관식 응답 내용(개인정보 문항 제외, 연락처 마스킹)"));
 		notice.put("purpose", "제작자의 응답 요약·주제 분류");
 		notice.put("retention", "제공사 정책상 남용 감시 로그를 최대 30일 보관(법적 요구가 있으면 더 길어질 수 있음). 기본 설정에서 학습에 사용하지 않음");
 		notice.put("refusal_effect", "제출할 수 있으며, 내 응답은 AI 요약에서만 제외된다");
-		notice.put("checked_on", "2026-10-28");
+		notice.put("checked_on", "2026-11-09");
 		return notice;
 	}
 

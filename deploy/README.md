@@ -79,4 +79,11 @@ docker compose logs --tail 100 app
   ```
 
 - 백업은 같은 서버에 있으므로 서버를 잃으면 함께 잃는다. 필요하면 EBS 스냅샷을 콘솔에서 따로 건다.
-- 복원: `docker compose exec -T db sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists' < 백업파일.dump`
+- 복원: app을 멈추고 한 트랜잭션으로 복원한 뒤 다시 띄운다. 복원 중에는 서비스가 멈추고, 실패하면 트랜잭션이 되돌려져 원래 데이터가 남는다.
+
+  ```sh
+  cd ~/Passform/deploy
+  docker compose stop app
+  docker compose exec -T db sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --single-transaction' < 백업파일.dump
+  docker compose start app
+  ```

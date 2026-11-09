@@ -260,6 +260,15 @@ class Aggregate(unittest.TestCase):
         self.assertFalse(summary["passed"]["no_drop"])
         self.assertFalse(summary["passed"]["all"])
 
+    def test_조건을_일부만_버려도_합격하지_못한다(self):
+        questions = [question("q1", conditions=["경영학과", "3학년"], match="all", text="경영학과 3학년 몇 명")]
+        partial = {"conditions": ["경영학과"], "operation": "count"}
+        rows = [result(prompt, number, "q1", partial) for prompt in ("v2", "v3") for number in range(1, 6)]
+        summary = rm.aggregate(rows, questions)
+        self.assertEqual(5, summary["v3"]["tags"]["drop_some"])
+        self.assertFalse(summary["passed"]["no_drop"])
+        self.assertFalse(summary["passed"]["all"])
+
     def test_재호출로_성공한_것도_일치로_센다(self):
         good = {"conditions": ["경영학과"], "operation": "count"}
         rows = [result("v2", 1, "q1", good, attempts=2), result("v3", 1, "q1", good)]
@@ -383,10 +392,16 @@ class ExtraSets(unittest.TestCase):
         second = {"conditions": ["나", "가"], "operation": "count"}
         self.assertEqual(rm.canonical_output(first), rm.canonical_output(second))
 
-    def run_folder(self, folder, model, question_set):
+    def complete_rows(self, question_set):
+        path, count = rm.QUESTION_SETS[question_set]
+        identifiers = [item["id"] for item in rm.load_questions(path, count=count)]
+        return [result(prompt, number, identifier, None) for prompt in rm.PROMPT_IDS for number in range(1, rm.ROUNDS + 1) for identifier in identifiers]
+
+    def run_folder(self, folder, model, question_set, rows=None):
         path = Path(folder)
         (path / "manifest.json").write_text(json.dumps({"model_requested": model, "question_set": question_set}), encoding="utf-8")
-        (path / "calls.jsonl").write_text("", encoding="utf-8")
+        rows = self.complete_rows(question_set) if rows is None else rows
+        (path / "calls.jsonl").write_text("".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows), encoding="utf-8")
         return path
 
     def test_합격선은_luna의_30문항에만_낸다(self):
@@ -394,6 +409,38 @@ class ExtraSets(unittest.TestCase):
             self.assertIn("passed", rm.summarize_run(self.run_folder(folder, rm.MODEL, "main")))
             self.assertNotIn("passed", rm.summarize_run(self.run_folder(folder, "gpt-6.1-terra", "main")))
             self.assertNotIn("passed", rm.summarize_run(self.run_folder(folder, rm.MODEL, "e8")))
+
+    def assert_incomplete(self, rows, expected_problem):
+        with tempfile.TemporaryDirectory() as folder:
+            run_dir = self.run_folder(folder, rm.MODEL, "main", rows)
+            summary = rm.summarize_run(run_dir)
+            self.assertEqual("미완결", summary["completeness"])
+            self.assertNotIn("passed", summary)
+            self.assertTrue(any(item.startswith(expected_problem) for item in summary["completeness_problems"]), summary["completeness_problems"])
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                code = rm.command_report(argparse.Namespace(run=str(run_dir)))
+            self.assertEqual(4, code)
+            self.assertIn("미완결", stderr.getvalue())
+
+    def test_중단되어_v3가_한_건뿐이면_100퍼센트여도_미완결이고_합격을_내지_않는다(self):
+        first = rm.load_questions()[0]
+        rows = [row for row in self.complete_rows("main") if row["prompt"] == "v2" and row["round"] == 1]
+        rows.append(result("v3", 1, first["id"], first["expected"]))
+        with tempfile.TemporaryDirectory() as folder:
+            self.assertEqual(1.0, rm.summarize_run(self.run_folder(folder, rm.MODEL, "main", rows))["v3"]["rate"])
+        self.assert_incomplete(rows, "빠짐")
+
+    def test_겹친_호출이_있으면_미완결이다(self):
+        rows = self.complete_rows("main")
+        self.assert_incomplete(rows + [rows[0]], "겹침")
+
+    def test_계획_밖_호출이_있어도_미완결이다(self):
+        self.assert_incomplete(self.complete_rows("main") + [result("v2", 1, "q99", None)], "계획 밖")
+
+    def test_다_있으면_완결이다(self):
+        with tempfile.TemporaryDirectory() as folder:
+            self.assertEqual("완결", rm.summarize_run(self.run_folder(folder, rm.MODEL, "main"))["completeness"])
 
 
 def http_error(status, code="", headers=None):

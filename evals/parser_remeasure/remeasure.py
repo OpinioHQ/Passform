@@ -380,7 +380,7 @@ def aggregate(results: list[dict[str, Any]], questions: list[dict[str, Any]]) ->
     summary["v3_only"] = [qid for qid in v2_counts if v3_counts[qid] >= majority and v2_counts[qid] < majority]
     summary["passed"] = {
         "rate": summary["v3"]["rate"] >= PASS_RATE,
-        "no_drop": summary["v3"]["tags"].get("drop_all", 0) == 0,
+        "no_drop": summary["v3"]["tags"].get("drop_all", 0) == 0 and summary["v3"]["tags"].get("drop_some", 0) == 0,
         "above_v2": summary["v3"]["rate"] > summary["v2"]["rate"],
     }
     summary["passed"]["all"] = all(summary["passed"].values())
@@ -571,21 +571,43 @@ def command_check(_: argparse.Namespace) -> int:
     return status
 
 
+def run_problems(results: list[dict[str, Any]], questions: list[dict[str, Any]]) -> list[str]:
+    """프롬프트마다 (회차 × 문항)이 한 건씩 있는지 본다. 집계의 분모는 있는 행뿐이라 빠지면 일치율이 부풀 수 있다."""
+    wanted = {(prompt_id, number, item["id"]) for prompt_id in PROMPT_IDS for number in range(1, ROUNDS + 1) for item in questions}
+    counts = Counter((row["prompt"], row["round"], row["question_id"]) for row in results)
+    groups = [
+        ("빠짐", sorted(wanted - counts.keys())),
+        ("겹침", sorted(key for key, value in counts.items() if key in wanted and value > 1)),
+        ("계획 밖", sorted(counts.keys() - wanted, key=str)),
+    ]
+    return [f"{name} {len(keys)}건 (첫 항목: {keys[0]})" for name, keys in groups if keys]
+
+
 def summarize_run(run_dir: Path) -> dict[str, Any]:
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     question_set = manifest.get("question_set", "main")
     path, count = QUESTION_SETS[question_set]
-    summary = aggregate(load_results(run_dir), load_questions(path, count=count))
+    questions = load_questions(path, count=count)
+    results = load_results(run_dir)
+    problems = run_problems(results, questions)
+    known = {item["id"] for item in questions}
+    summary = aggregate([row for row in results if row["question_id"] in known], questions)
     summary["model_requested"] = manifest["model_requested"]
     summary["question_set"] = question_set
-    if question_set != "main" or manifest["model_requested"] != MODEL:
-        del summary["passed"]  # 합격선은 사람이 gpt-6-luna의 30문항에 정한 것이다.
+    summary["completeness"] = "미완결" if problems else "완결"
+    if problems:
+        summary["completeness_problems"] = problems
+    if problems or question_set != "main" or manifest["model_requested"] != MODEL:
+        summary.pop("passed", None)  # 합격선은 사람이 gpt-6-luna의 30문항에 정한 것이고, 미완결 측정에는 내지 않는다.
     return summary
 
 
 def command_report(arguments: argparse.Namespace) -> int:
     summary = summarize_run(Path(arguments.run))
     print(json.dumps(summary, ensure_ascii=False, indent=2))
+    if summary["completeness"] != "완결":
+        print("미완결: 빠지거나 겹친 호출이 있어 합격 판정을 내지 않았다. " + "; ".join(summary["completeness_problems"]), file=sys.stderr)
+        return 4
     return 0
 
 

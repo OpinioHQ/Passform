@@ -19,6 +19,7 @@ import type {
   SummaryEvidence,
 } from '../types/analyze';
 import type { CreatorFormDefinition, FormResults, ResponseDetail } from '../types/api';
+import { ExportDialog } from './ExportDialog';
 import { versionLabel, type DashboardSlots } from './ResultsPage';
 
 /** 목록은 이만큼씩 상세를 읽는다. 순서는 result.response_ids 그대로다(AC62). */
@@ -342,8 +343,10 @@ function ClarifyResult({
  * 결과 대시보드 + 탐색 도우미(E8 #46). 이 컴포넌트는 묻기 상태만 갖고,
  * AI 탐색 결과 카드와 도우미 패널을 대시보드의 두 자리(aiResult, aside)에 넘긴다.
  * 대시보드 숫자(폼 전체 기준)는 바꾸지 않는다. definition을 못 읽으면(null) 묻기 밑 버튼만 빠진다.
+ * 내보내기(T11 #62): 머리글은 전체·버전 범위, AI 탐색 결과 카드는 그 결과의 context를 보낸다. formId가 없으면 버튼이 빠진다.
  */
 export function ExplorePage({
+  formId,
   definition,
   analyze,
   loadResponse,
@@ -351,6 +354,7 @@ export function ExplorePage({
   renderDashboard,
   results,
 }: {
+  formId?: string;
   definition: CreatorFormDefinition | null;
   /** 결과 API 응답. 선택지 버튼을 제출 응답이 있는 버전의 문항으로만 만든다. */
   results: FormResults;
@@ -369,6 +373,7 @@ export function ExplorePage({
     asked: string;
     response: AnalyzeOkResponse;
   } | null>(null);
+  const [exporting, setExporting] = React.useState<'all' | AnalyzeOkResponse | null>(null);
   const seq = React.useRef(0);
   const presets = React.useMemo(
     () => (definition ? presetGroups(definition, results) : []),
@@ -399,7 +404,7 @@ export function ExplorePage({
 
   const presetGroup = (group: PresetGroup) => (
     <div key={group.title} className="explore-preset-group">
-      <span className="muted small">{group.title}</span>
+      {group.title && <span className="muted small">{group.title}</span>}
       <div className="button-row">
         {group.choices.map((choice) => (
           <button
@@ -426,6 +431,11 @@ export function ExplorePage({
             <Button variant="secondary" onClick={onBuilder}>
               폼 편집
             </Button>
+            {formId && (
+              <Button variant="secondary" onClick={() => setExporting('all')}>
+                내보내기
+              </Button>
+            )}
             <Button variant="secondary" onClick={() => setAssistantOpen(!assistantOpen)}>
               <Icon name="message" size={16} /> 탐색 도우미 {assistantOpen ? '끄기' : '켜기'}
             </Button>
@@ -440,9 +450,16 @@ export function ExplorePage({
                 <h2>AI 탐색 결과</h2>
                 <p className="muted small explore-asked">{shown.asked}</p>
               </div>
-              <Button variant="secondary" onClick={() => setShown(null)}>
-                지우기
-              </Button>
+              <div className="button-row">
+                {formId && (
+                  <Button variant="secondary" onClick={() => setExporting(shown.response)}>
+                    이 결과 내보내기
+                  </Button>
+                )}
+                <Button variant="secondary" onClick={() => setShown(null)}>
+                  지우기
+                </Button>
+              </div>
             </div>
             <OkResult response={shown.response} loadResponse={loadResponse} />
           </Panel>
@@ -530,6 +547,15 @@ export function ExplorePage({
           </Panel>
         ),
       })}
+      {formId && exporting && (
+        <ExportDialog
+          formId={formId}
+          {...(exporting === 'all'
+            ? { versions: results.versions.map((v) => v.form_version) }
+            : { context: exporting.context, coverage: exporting.coverage })}
+          onClose={() => setExporting(null)}
+        />
+      )}
     </div>
   );
 }

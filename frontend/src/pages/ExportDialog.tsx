@@ -48,9 +48,7 @@ function CoverageNotice({ coverage }: { coverage: Coverage }) {
   const checked = coverage.total_submitted_count - missing;
   return (
     <div className="export-coverage" role="status">
-      <p className="small">
-        전체 응답 {coverage.total_submitted_count}건 중 {checked}건만 확인했어요. 확인하지 못한{' '}
-        {missing}건은 파일에 들어가지 않아요.{' '}
+      <div className="export-coverage-line">
         <button
           type="button"
           className="icon-btn"
@@ -60,7 +58,11 @@ function CoverageNotice({ coverage }: { coverage: Coverage }) {
         >
           ?
         </button>
-      </p>
+        <p className="small">
+          전체 응답 {coverage.total_submitted_count}건 중 {checked}건만 확인했어요. 확인하지 못한{' '}
+          {missing}건은 파일에 들어가지 않아요.
+        </p>
+      </div>
       {open && (
         <ul className="small muted">
           {coverage.not_evaluable_by_version.map((version) => (

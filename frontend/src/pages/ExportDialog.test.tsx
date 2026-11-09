@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Coverage, RequestContext } from '../types/api';
+import type { AnalyzeOkResponse, AnalyzeResponse } from '../types/analyze';
+import type { Coverage, FormResults, RequestContext } from '../types/api';
+import { ExplorePage } from './ExplorePage';
 import { ExportDialog, exportFilename } from './ExportDialog';
 
 const context: RequestContext = { conditions: ['소프트웨어학과'], match: 'all', operation: 'list' };
@@ -160,6 +162,7 @@ describe('내보내기 창', () => {
     render(<ExportDialog formId="f1" context={context} coverage={partial} onClose={vi.fn()} />);
 
     const notice = screen.getByRole('status');
+    expect(notice.textContent?.startsWith('?전체 응답')).toBe(true);
     expect(notice.textContent).toContain('전체 응답 14건 중 11건만 확인했어요');
     expect(notice.textContent).toContain('확인하지 못한 3건은 파일에 들어가지 않아요');
     expect(notice.textContent).not.toContain('폼 버전 3');
@@ -180,5 +183,107 @@ describe('내보내기 창', () => {
     expect(screen.queryByRole('status')).toBeNull();
     rerender(<ExportDialog formId="f1" onClose={vi.fn()} />);
     expect(screen.queryByRole('status')).toBeNull();
+  });
+});
+
+describe('결과 대시보드의 내보내기', () => {
+  // 분석 API 예시(docs/api/analyze_examples.json)를 그대로 서버 응답으로 쓴다. 이 예시는 판정 불가 응답이 있다.
+  const files = import.meta.glob<Record<string, { response: unknown }>>(
+    '../../../docs/api/analyze_examples.json',
+    { eager: true, import: 'default' },
+  );
+  const notEvaluable = () =>
+    structuredClone(Object.values(files)[0].ok_count_not_evaluable.response) as AnalyzeOkResponse;
+
+  const results: FormResults = {
+    response_count: 2,
+    combined: { questions: [] },
+    versions: [
+      { form_version: 1, response_count: 1, questions: [] },
+      { form_version: 2, response_count: 1, questions: [] },
+    ],
+  };
+
+  function renderPage(response: AnalyzeResponse = notEvaluable()) {
+    render(
+      <ExplorePage
+        formId="f1"
+        definition={null}
+        results={results}
+        analyze={() => Promise.resolve(response)}
+        loadResponse={() => Promise.reject(new Error('부르지 않는다'))}
+        onBuilder={() => {}}
+        renderDashboard={({ aiResult, aside }) => (
+          <>
+            {aiResult}
+            {aside}
+          </>
+        )}
+      />,
+    );
+  }
+
+  async function openFilterExport() {
+    fireEvent.change(screen.getByLabelText('응답에 대해 묻기'), { target: { value: '몇 건이야' } });
+    fireEvent.click(screen.getByRole('button', { name: '질문 보내기' }));
+    fireEvent.click(await screen.findByRole('button', { name: '이 결과 내보내기' }));
+    return screen.getByRole('dialog', { name: '내보내기' });
+  }
+
+  it('머리글 내보내기는 제출 버전이 체크된 창을 열고 전체 응답을 받는다', async () => {
+    const fetchMock = stubExport(200, 'a', 'text/csv;charset=UTF-8');
+    renderPage();
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '내보내기' }));
+    const dialog = screen.getByRole('dialog', { name: '내보내기' });
+    expect(
+      (within(dialog).getByRole('checkbox', { name: '폼 버전 1' }) as HTMLInputElement).checked,
+    ).toBe(true);
+    expect(
+      (within(dialog).getByRole('checkbox', { name: '폼 버전 2' }) as HTMLInputElement).checked,
+    ).toBe(true);
+    submit();
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/forms/f1/export');
+    expect(sentBody(fetchMock)).toEqual({ format: 'csv' });
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+  });
+
+  it('AI 결과 내보내기는 분석 응답의 context만 보내고 버전을 고르지 않는다', async () => {
+    const fetchMock = stubExport(200, 'a', 'text/csv;charset=UTF-8');
+    renderPage();
+
+    const dialog = await openFilterExport();
+    expect(within(dialog).queryByRole('checkbox')).toBeNull();
+    submit();
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(sentBody(fetchMock)).toEqual({ format: 'csv', context: notEvaluable().context });
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+  });
+
+  it('AI 결과 내보내기 창은 분석의 coverage로 일부만 확인했음을 알린다', async () => {
+    const { coverage } = notEvaluable();
+    expect(coverage.not_evaluable_count).toBeGreaterThan(0);
+    renderPage();
+
+    const dialog = await openFilterExport();
+    const checked = coverage.total_submitted_count - coverage.not_evaluable_count;
+    expect(within(dialog).getByRole('status').textContent).toContain(
+      `전체 응답 ${coverage.total_submitted_count}건 중 ${checked}건만 확인했어요`,
+    );
+  });
+
+  it('AI 결과 내보내기가 되물으면 파일을 저장하지 않고 창에 질문을 보여 준다', async () => {
+    stubExport(200, clarifyBody, 'application/json');
+    renderPage();
+
+    const dialog = await openFilterExport();
+    submit();
+
+    expect((await within(dialog).findByRole('alert')).textContent).toContain('무엇을 할까요?');
+    expect(createObjectURL).not.toHaveBeenCalled();
   });
 });

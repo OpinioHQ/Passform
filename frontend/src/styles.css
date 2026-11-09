@@ -1131,6 +1131,20 @@ h3 {
 .export-formats {
   margin: 18px 0 10px;
 }
+/* 물음표는 안내 문구 왼쪽에 고정한다. 문구가 길어져도 물음표 아래로 내려가지 않는다. */
+.export-coverage-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+.export-coverage-line .icon-btn {
+  flex: none;
+  padding: 0 4px;
+  cursor: pointer;
+}
+.export-coverage-line p {
+  margin: 0;
+}
 .option.disabled {
   color: #73776f;
   background: #f8f9f7;

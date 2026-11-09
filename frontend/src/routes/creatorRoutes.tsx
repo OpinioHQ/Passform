@@ -130,6 +130,7 @@ export function FormResultsRoute() {
     return (
       <ExplorePage
         key={formId}
+        formId={formId}
         definition={definition.state === 'ready' ? definition.data : null}
         analyze={analyze}
         loadResponse={loadResponse}

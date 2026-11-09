@@ -2232,3 +2232,25 @@ input[type='file']::file-selector-button {
   font-weight: 600;
   cursor: pointer;
 }
+/* 로그인: 가운데 놓인 카드 하나. 글자와 순서는 그대로다. */
+.page-shell.login-page {
+  width: auto;
+  max-width: 440px;
+  margin: var(--space-12) auto;
+  padding: var(--space-8);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.login-page .heading-row {
+  margin-bottom: var(--space-6);
+}
+.login-page > .btn {
+  width: 100%;
+}
+@media (max-width: 760px) {
+  .page-shell.login-page {
+    margin: var(--space-6) var(--space-4);
+    padding: var(--space-6);
+  }
+}

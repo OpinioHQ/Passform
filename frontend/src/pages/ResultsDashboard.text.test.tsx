@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FormResults, TextAnswer } from '../types/api';
 import { ResultsDashboard } from './ResultsPage';
 
@@ -93,9 +93,34 @@ const card = (note: string) =>
   screen.getByRole('heading', { level: 2, name: note }).closest('section')!;
 const headings = () => screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
 
-afterEach(cleanup);
+/** jsdom은 글자 폭을 재지 않는다. 한 줄 폭을 200, 글자 하나를 10으로 두어 20자를 넘으면 잘린 것으로 본다. */
+beforeEach(() => {
+  Object.defineProperty(HTMLParagraphElement.prototype, 'clientWidth', {
+    configurable: true,
+    get: () => 200,
+  });
+  Object.defineProperty(HTMLParagraphElement.prototype, 'scrollWidth', {
+    configurable: true,
+    get(this: HTMLParagraphElement) {
+      return (this.textContent ?? '').length * 10;
+    },
+  });
+});
+
+afterEach(() => {
+  cleanup();
+  Reflect.deleteProperty(HTMLParagraphElement.prototype, 'clientWidth');
+  Reflect.deleteProperty(HTMLParagraphElement.prototype, 'scrollWidth');
+});
 
 describe('결과 대시보드 단답·장문 카드', () => {
+  it('한 줄에 다 보이는 답에는 자세히 보기가 없다', () => {
+    render(<ResultsDashboard results={results} />);
+    const age = card('나이');
+    expect(within(age).getByText('23')).toBeTruthy();
+    expect(within(age).queryByRole('button')).toBeNull();
+  });
+
   it('question_order대로 섞어 놓고, 긴 답은 한 줄로 접혀 있다가 자세히 보기로 전부 보인다', () => {
     render(<ResultsDashboard results={results} />);
     expect(headings()).toEqual(['지원 동기', '참석하나요?', '나이']);
@@ -126,6 +151,11 @@ describe('결과 대시보드 단답·장문 카드', () => {
     fireEvent.click(screen.getByRole('tab', { name: '폼 버전 2' }));
     expect(headings()).toEqual(['참석하나요?', '나이']);
     expect(within(card('나이')).getByText('23')).toBeTruthy();
+    // 버전 탭에서도 통합 보기처럼 유형과 폼 버전을 붙인다.
+    expect(within(card('참석하나요?')).getByText('단일 선택')).toBeTruthy();
+    expect(within(card('참석하나요?')).getByText('폼 버전 2')).toBeTruthy();
+    expect(within(card('나이')).getByText('단답형')).toBeTruthy();
+    expect(within(card('나이')).getByText('폼 버전 2')).toBeTruthy();
     expect(screen.queryByText('<script>alert(1)</script>')).toBeNull();
     expect(screen.queryByText(/\br\d\b/)).toBeNull();
   });

@@ -56,20 +56,39 @@ function OptionRow({
 
 const maxOf = (counts: number[]) => counts.reduce((a, b) => Math.max(a, b), 0);
 
-/** 답 한 줄. 접혀 있으면 한 줄 말줄임, 펼치면 줄바꿈을 살린 전체 답. 텍스트로만 그린다. */
+/**
+ * 답 한 줄. 접혀 있으면 한 줄 말줄임, 펼치면 줄바꿈을 살린 전체 답. 텍스트로만 그린다.
+ * "자세히 보기"는 한 줄에서 실제로 잘릴 때만 보인다. 폭이 바뀌면(화면 회전·창 크기) 다시 잰다.
+ */
 function TextAnswerRow({ value }: { value: string }) {
   const [open, setOpen] = React.useState(false);
+  const [clipped, setClipped] = React.useState(false);
+  const line = React.useRef<HTMLParagraphElement>(null);
+  React.useLayoutEffect(() => {
+    const el = line.current;
+    if (!el || open) return;
+    const measure = () => setClipped(el.scrollWidth > el.clientWidth);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [value, open]);
   return (
     <li className="result-text">
-      <p className={open ? 'result-text-full' : 'result-text-line'}>{value}</p>
-      <button
-        type="button"
-        className="result-text-toggle"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-      >
-        {open ? '접기' : '자세히 보기'}
-      </button>
+      <p ref={line} className={open ? 'result-text-full' : 'result-text-line'}>
+        {value}
+      </p>
+      {(open || clipped) && (
+        <button
+          type="button"
+          className="result-text-toggle"
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+        >
+          {open ? '접기' : '자세히 보기'}
+        </button>
+      )}
     </li>
   );
 }
@@ -133,8 +152,10 @@ function combinedCards(combined: FormResults['combined']): CombinedCard[] {
   });
 }
 
+/** 선택형 문항의 유형은 question_order에서 읽는다(versions[].questions에는 유형이 없다). 없으면 배지를 뺀다. */
 type VersionCard =
-  { kind: 'choice'; question: VersionQuestion } | { kind: 'text'; question: VersionTextQuestion };
+  | { kind: 'choice'; question: VersionQuestion; type?: QuestionType }
+  | { kind: 'text'; question: VersionTextQuestion };
 
 /** 한 버전 안에서 question_id는 겹치지 않는다. */
 function versionCards(version: VersionResults): VersionCard[] {
@@ -148,7 +169,7 @@ function versionCards(version: VersionResults): VersionCard[] {
   }
   return version.question_order.flatMap((ref): VersionCard[] => {
     const choice = choices.find((q) => q.question_id === ref.question_id);
-    if (choice) return [{ kind: 'choice', question: choice }];
+    if (choice) return [{ kind: 'choice', question: choice, type: ref.question_type }];
     const text = texts.find((q) => q.question_id === ref.question_id);
     return text ? [{ kind: 'text', question: text }] : [];
   });
@@ -281,6 +302,7 @@ export function ResultsDashboard({
                     key={`text|${q.question_id}`}
                     note={q.question_note}
                     type={q.question_type}
+                    versions={[selected.form_version]}
                     answers={q.answers}
                   />
                 );
@@ -291,6 +313,10 @@ export function ResultsDashboard({
                 <Panel className="result-card" key={q.question_id}>
                   <div className="result-card-head">
                     <h2>{q.question_note}</h2>
+                    <div className="button-row">
+                      {card.type && <Badge>{QUESTION_TYPE_LABELS[card.type]}</Badge>}
+                      <Badge tone="blue">{versionLabel([selected.form_version])}</Badge>
+                    </div>
                   </div>
                   <ul className="result-options">
                     {entries.map(([label, count]) => (

@@ -41,17 +41,17 @@ final class ClarifyRules {
 				: List.of(RequestContext.COUNT, RequestContext.LIST);
 		if (statistics) {
 			return Optional.of(new ClarifyView("missing_operation",
-					"평균·비율·그룹별 집계·문항별 통계는 AI 분석에서 지원하지 않아요. 통계는 결과 대시보드에서 볼 수 있어요. 인원 수, 응답 목록"
+					"평균·비율·그룹별 집계·문항별 통계는 AI 분석에서 지원하지 않아요. 통계는 결과 대시보드에서 볼 수 있어요. 응답 수, 응답 목록"
 							+ (aiSummaryEnabled ? ", 요약" : "") + " 중 무엇을 볼까요?",
 					operations));
 		}
 		if (context.operation() == null) {
 			return Optional.of(new ClarifyView("missing_operation",
-					"인원 수, 응답 목록" + (aiSummaryEnabled ? ", 요약" : "") + " 중 무엇을 볼까요? 문항별 통계는 결과 대시보드에서 볼 수 있어요.", operations));
+					"응답 수, 응답 목록" + (aiSummaryEnabled ? ", 요약" : "") + " 중 무엇을 볼까요? 문항별 통계는 결과 대시보드에서 볼 수 있어요.", operations));
 		}
 		if (RequestContext.SUMMARIZE.equals(context.operation()) && !aiSummaryEnabled) {
 			return Optional.of(new ClarifyView("summary_disabled",
-					"이 폼은 배포할 때 AI 요약을 켜지 않아 요약할 수 없어요. 배포 후에는 바꿀 수 없으니, 필요하면 폼을 복사해 새로 정해 주세요. 인원 수나 응답 목록은 볼 수 있어요.",
+					"이 폼은 배포할 때 AI 요약을 켜지 않아 요약할 수 없어요. 배포 후에는 바꿀 수 없으니, 필요하면 폼을 복사해 새로 정해 주세요. 응답 수나 응답 목록은 볼 수 있어요.",
 					List.of(RequestContext.COUNT, RequestContext.LIST)));
 		}
 		if (query != null && QueryText.mixesNegation(query, context, versions)) {

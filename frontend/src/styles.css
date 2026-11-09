@@ -334,10 +334,13 @@ h3 {
   font-size: 14px;
 }
 .footer {
-  padding: 24px 96px;
+  padding: var(--space-6) 96px;
+  border-top: 1px solid var(--color-hairline-soft);
   color: var(--color-muted);
   font-size: 12px;
   display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
   justify-content: space-between;
 }
 .footer button {
@@ -647,6 +650,8 @@ h3 {
   margin-bottom: 25px;
 }
 .overline {
+  /* Tailwind의 같은 이름 유틸리티(윗줄 긋기)를 끈다. */
+  text-decoration: none;
   font-size: 12px;
   letter-spacing: 0.04em;
   color: var(--color-ink);
@@ -1349,47 +1354,99 @@ textarea::placeholder {
   align-items: center;
   justify-content: center;
 }
+/* 홈: 마케팅 띠(96px 간격)는 이 화면에만 쓴다. 흰 hero → 연회색 기능 카드 → 어두운 하단. */
+.app:has(.landing-page),
 .landing-page {
-  max-width: 1440px;
-  margin: auto;
+  --landing-gutter: max(var(--space-6), calc((100vw - 1200px) / 2));
 }
 .landing-hero {
-  padding: 100px 96px 112px;
+  padding: var(--space-section) var(--landing-gutter);
   background: var(--color-canvas);
 }
+.landing-hero .overline {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-card);
+  color: var(--color-ink);
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
 .landing-hero h1 {
-  font-size: 58px;
-  letter-spacing: -2.2px;
-  line-height: 1.4;
-  margin: 20px 0;
+  font-size: 56px;
+  letter-spacing: -1px;
+  line-height: 1.2;
+  margin: var(--space-6) 0;
 }
 .landing-hero p {
-  font-size: 17px;
+  max-width: 560px;
+  font-size: 18px;
   color: var(--color-muted);
-  line-height: 1.85;
-  margin-bottom: 28px;
+  line-height: 1.6;
+  margin-bottom: var(--space-8);
 }
 .landing-feature-grid {
-  padding: 45px 96px 90px;
+  padding: 0 var(--landing-gutter) var(--space-section);
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-6);
 }
+/* feature-card: 연회색 바탕, 경계선 없음, 버튼은 카드 바닥에 맞춘다. */
 .landing-feature-grid .panel {
-  padding: 28px;
-  min-height: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--space-8);
+  background: var(--color-surface-card);
+  border: 0;
+}
+.landing-feature-grid .overline {
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 500;
 }
 .landing-feature-grid h2 {
-  font-size: 23px;
-  margin: 22px 0 15px;
+  font-size: 22px;
+  line-height: 1.35;
+  letter-spacing: -0.5px;
+  margin: var(--space-3) 0 var(--space-3);
 }
 .landing-feature-grid .panel p {
-  line-height: 1.8;
-  font-size: 14px;
-  min-height: 105px;
+  line-height: 1.6;
+  font-size: 15px;
+  color: var(--color-body);
+  flex: 1;
 }
 .landing-feature-grid button {
-  margin-top: 15px;
+  margin-top: var(--space-6);
+}
+/* 어두운 하단: 홈의 개인정보처리방침 줄과 공통 footer를 한 덩어리로 잇는다. */
+.landing-page > .muted.small {
+  background: var(--color-surface-dark);
+  color: var(--color-on-dark-soft);
+  padding: var(--space-12) var(--landing-gutter) var(--space-2);
+  font-size: 14px;
+}
+.landing-page > .muted.small a {
+  color: var(--color-on-dark);
+  text-decoration: none;
+  font-weight: 500;
+}
+.landing-page > .muted.small a:hover {
+  text-decoration: underline;
+}
+.app:has(.landing-page) .footer {
+  background: var(--color-surface-dark);
+  color: var(--color-on-dark-soft);
+  border-top: 0;
+  padding-left: var(--landing-gutter);
+  padding-right: var(--landing-gutter);
+  padding-bottom: var(--space-12);
+}
+.app:has(.landing-page) .footer button {
+  color: var(--color-on-dark-soft);
 }
 @media (max-width: 1130px) {
   .page-shell {
@@ -1422,10 +1479,11 @@ textarea::placeholder {
     padding: 20px 36px;
   }
   .landing-hero {
-    padding: 70px 36px;
+    padding-top: 72px;
+    padding-bottom: 72px;
   }
-  .landing-feature-grid {
-    padding: 35px 36px;
+  .landing-hero h1 {
+    font-size: 48px;
   }
 }
 @media (max-width: 760px) {
@@ -1533,15 +1591,28 @@ textarea::placeholder {
   .footer {
     padding: 18px;
   }
+  .app:has(.landing-page),
+  .landing-page {
+    --landing-gutter: var(--space-4);
+  }
   .landing-hero {
-    padding: 66px 22px;
+    padding-top: var(--space-12);
+    padding-bottom: var(--space-12);
   }
   .landing-hero h1 {
-    font-size: 38px;
+    font-size: 34px;
+    letter-spacing: -0.5px;
+  }
+  .landing-hero p {
+    font-size: 16px;
   }
   .landing-feature-grid {
-    padding: 20px;
-    grid-template-columns: 1fr;
+    padding-bottom: var(--space-12);
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+  .landing-feature-grid .panel {
+    padding: var(--space-6);
   }
   .form-footer {
     flex-wrap: wrap;

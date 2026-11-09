@@ -23,6 +23,16 @@ export interface SubmitResponseInput {
   ai_summary_agreed?: boolean;
   draft_response_id?: string;
 }
+/** 문항에 붙일 파일 하나. 제출 전까지 브라우저에만 있다(SPEC 205행). */
+export interface FileToSend {
+  question_id: string;
+  file: File;
+}
+/** 제출·수정에 함께 보낼 파일. `keep`은 수정에서 남길 `attachment_id`이고, 없으면 기존 파일을 모두 유지한다. */
+export interface SubmitFiles {
+  files: FileToSend[];
+  keep?: string[];
+}
 /** `PUT /me/forms/{form_id}/response-draft`의 입력(SPEC 190행). 미완성 답을 받는다. */
 export interface SaveResponseDraftInput {
   form_version: number;

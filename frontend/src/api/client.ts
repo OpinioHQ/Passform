@@ -11,6 +11,7 @@ import type {
   EditedResponse,
   ExportRequest,
   ExportResult,
+  FileToSend,
   FormDefinition,
   FormResults,
   FormStateView,
@@ -29,6 +30,7 @@ import type {
   SavedFormSummary,
   SavedResponseDraft,
   StorageUsage,
+  SubmitFiles,
   SubmitResponseInput,
   SubmittedResponse,
 } from '../types/api';
@@ -99,6 +101,34 @@ function uploadAttachment(formId: string, questionId: string | null, file: File)
   const body = new FormData();
   body.append('file', file);
   return request<Attachment>(attachmentPath(formId, questionId), { method: 'POST', body });
+}
+
+/** 응답에 붙은 파일. 제작자와 제출한 본인만 받는다(SPEC 198행). */
+export function responseAttachmentUrl(formId: string, responseId: string, attachmentId: string) {
+  return `${baseUrl}/forms/${segment(formId)}/responses/${segment(responseId)}/attachments/${segment(attachmentId)}`;
+}
+
+/** 답은 `data` JSON 부분으로, 파일과 문항 ID는 같은 순서로 보낸다. Content-Type은 브라우저가 정한다. */
+function multipartBody(data: unknown, files: FileToSend[]): FormData {
+  const body = new FormData();
+  body.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+  files.forEach(({ question_id, file }) => {
+    body.append('files', file);
+    body.append('file_question_ids', question_id);
+  });
+  return body;
+}
+
+function editResponse(responseId: string, answers: ResponseAnswer[], change?: SubmitFiles) {
+  const path = `/me/responses/${segment(responseId)}`;
+  const data = { answers, ...(change?.keep ? { attachments: change.keep } : {}) };
+  if (change && change.files.length > 0) {
+    return request<EditedResponse>(path, {
+      method: 'PATCH',
+      body: multipartBody(data, change.files),
+    });
+  }
+  return request<EditedResponse>(path, { ...json(data), method: 'PATCH' });
 }
 
 /**
@@ -177,17 +207,18 @@ export const api = {
     request<void>(`/me/forms/${segment(formId)}/response-draft`, { method: 'DELETE' }),
   submit: (formId: string, body: SubmitResponseInput) =>
     request<SubmittedResponse>(`/forms/${segment(formId)}/responses`, json(body)),
+  submitWithFiles: (formId: string, body: SubmitResponseInput, files: FileToSend[]) =>
+    request<SubmittedResponse>(`/forms/${segment(formId)}/responses`, {
+      method: 'POST',
+      body: multipartBody(body, files),
+    }),
   analyze: (formId: string, body: AnalyzeRequest) =>
     request<AnalyzeResponse>(`/forms/${segment(formId)}/analyze`, json(body)),
   saveForm: (body: SaveFormInput) => request<void>('/me/saved-forms', json(body)),
   myResponses: () => request<ResponseHistoryItem[]>('/me/responses'),
   myResponse: (responseId: string) =>
     request<ResponseHistoryDetail>(`/me/responses/${segment(responseId)}`),
-  editResponse: (responseId: string, answers: ResponseAnswer[]) =>
-    request<EditedResponse>(`/me/responses/${segment(responseId)}`, {
-      ...json({ answers }),
-      method: 'PATCH',
-    }),
+  editResponse,
   cancelResponse: (responseId: string) =>
     request<void>(`/me/responses/${segment(responseId)}`, { method: 'DELETE' }),
   results: (formId: string) => request<FormResults>(`/forms/${segment(formId)}/results`),

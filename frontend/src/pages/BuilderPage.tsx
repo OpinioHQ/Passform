@@ -1,5 +1,6 @@
 import React from 'react';
 import { api } from '../api/client';
+import { BranchFlowView } from '../builder/BranchFlowView';
 import { branchPublishProblems } from '../builder/branchRules';
 import { FormSettingsPanel } from '../builder/FormSettingsPanel';
 import {
@@ -69,6 +70,16 @@ export function BuilderPage({
   const [problems, setProblems] = React.useState<string[]>([]);
   const [copyNote, setCopyNote] = React.useState('');
   const [previewing, setPreviewing] = React.useState(false);
+  const [showingFlow, setShowingFlow] = React.useState(false);
+  // 분기 흐름은 저장된 정의로 만든다(SPEC 125행). 문구를 보이려고 같은 때 저장된 정의도 읽는다.
+  const loadFlow = React.useCallback(
+    () =>
+      Promise.all([api.branchGraph(formId), api.formDefinition(formId)]).then(([graph, saved]) => ({
+        graph,
+        definition: toDefinition(saved),
+      })),
+    [formId],
+  );
 
   const { status, share_url: shareUrl, definition_version: version } = formState;
   const busy = pending !== '';
@@ -262,6 +273,14 @@ export function BuilderPage({
                 !failure &&
                 (outcome ? ' · ' : '') + '저장하지 않은 변경이 있어요.'}
             </span>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              aria-expanded={showingFlow}
+              onClick={() => setShowingFlow((open) => !open)}
+            >
+              분기 흐름 보기
+            </button>
           </div>
         </div>
         {failure && (
@@ -277,6 +296,7 @@ export function BuilderPage({
           </div>
         )}
       </div>
+      {showingFlow && <BranchFlowView load={loadFlow} onClose={() => setShowingFlow(false)} />}
       {status !== 'draft' && (
         <p className="small muted">
           변경은 저장해야 반영돼요. 응답자가 보는 내용이 바뀌면 새 폼 버전이 되고, 공유 링크는

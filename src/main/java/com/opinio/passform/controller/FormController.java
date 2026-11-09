@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.opinio.passform.service.CurrentUserService;
 import com.opinio.passform.service.FormService;
+import com.opinio.passform.service.FormService.BranchGraphView;
 import com.opinio.passform.service.FormService.CreateCommand;
 import com.opinio.passform.service.FormService.CreatedForm;
 import com.opinio.passform.service.FormService.CreatedFormView;
@@ -47,6 +48,11 @@ public class FormController {
 	@PatchMapping("/forms/{formId}")
 	public StateView update(@PathVariable String formId, @RequestBody Object body) {
 		return forms.update(new UpdateCommand(currentUser.requireUserId(), formId, body));
+	}
+
+	@GetMapping("/forms/{formId}/branch-graph")
+	public BranchGraphView branchGraph(@PathVariable String formId) {
+		return forms.branchGraph(currentUser.requireUserId(), formId);
 	}
 
 	@GetMapping("/me/created-forms")

@@ -15,9 +15,13 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.opinio.passform.domain.error.DomainException;
 import com.opinio.passform.domain.error.ErrorCode;
+import com.opinio.passform.domain.form.BranchGraph;
 import com.opinio.passform.domain.form.Form;
+import com.opinio.passform.domain.form.FormDefinition;
 import com.opinio.passform.domain.form.FormPublishValidator;
 import com.opinio.passform.domain.form.FormStatus;
 import com.opinio.passform.domain.form.FormVersion;
@@ -140,6 +144,19 @@ public class FormService {
 			.toList();
 	}
 
+	// 현재 저장된 정의(초안이면 저장된 초안)로 분기 흐름을 만든다(AC45). 화면의 저장 전 편집은 반영하지 않는다.
+	@Transactional(readOnly = true)
+	public BranchGraphView branchGraph(UUID userId, String formId) {
+		Form form = forms.findById(parseId(formId)).orElseThrow(FormService::notFound);
+		requireOwner(form, userId);
+		BranchGraph graph = BranchGraph.of(FormDefinition.from(form.getWorkingDefinition()));
+		return new BranchGraphView(graph.nodes().stream().map(node -> new NodeView(node.id(), node.type())).toList(),
+				graph.edges()
+					.stream()
+					.map(edge -> new EdgeView(edge.from(), edge.to(), edge.kind(), edge.ruleIndex()))
+					.toList());
+	}
+
 	// 버전 대상 정의가 마지막 배포본과 다를 때만 다음 번호로 저장한다(SPEC 5절 155~156행, AC56, AC58).
 	private void publishIfChanged(Form form, ValidatedDefinition next, Instant now) {
 		Integer current = form.getDefinitionVersion();
@@ -251,6 +268,17 @@ public class FormService {
 
 	public record CreatedFormView(UUID formId, String title, String status, Instant deadline, String shareUrl,
 			long responseCount) {
+	}
+
+	public record BranchGraphView(List<NodeView> nodes, List<EdgeView> edges) {
+	}
+
+	public record NodeView(String id, String type) {
+	}
+
+	// rule_index는 rule 엣지에만 나간다(SPEC 5절 125행).
+	@JsonInclude(Include.NON_NULL)
+	public record EdgeView(String from, String to, String kind, Integer ruleIndex) {
 	}
 
 }

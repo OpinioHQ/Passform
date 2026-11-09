@@ -127,3 +127,19 @@ export interface CreatorFormSummary {
   share_url: string | null;
   response_count: number;
 }
+/** `GET /forms/{form_id}/branch-graph`(SPEC 125행). 노드 id는 섹션·문항 ID이거나 `submit`이다. */
+export interface BranchGraphNode {
+  id: string;
+  type: 'section' | 'question' | 'submit';
+}
+export interface BranchGraphEdge {
+  from: string;
+  to: string;
+  kind: 'rule' | 'default';
+  /** rule 엣지에만 있다. 그 문항 `branch_rules`의 위치(0부터). */
+  rule_index?: number;
+}
+export interface BranchGraph {
+  nodes: BranchGraphNode[];
+  edges: BranchGraphEdge[];
+}

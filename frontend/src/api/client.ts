@@ -2,6 +2,7 @@ import type {
   AnalyzeRequest,
   AnalyzeResponse,
   AutofillResult,
+  BranchGraph,
   ConsentTemplate,
   CreatedForm,
   CreatedProfile,
@@ -138,6 +139,7 @@ export const api = {
     request<CreatorFormDefinition>(`/forms/${segment(formId)}/definition`),
   updateForm: (formId: string, body: Partial<FormDefinition> & { status?: FormStatus }) =>
     request<FormStateView>(`/forms/${segment(formId)}`, { ...json(body), method: 'PATCH' }),
+  branchGraph: (formId: string) => request<BranchGraph>(`/forms/${segment(formId)}/branch-graph`),
   formBySlug: (slug: string) => request<PublicForm>(`/f/${segment(slug)}`),
   formById: (formId: string) => request<PublicForm>(`/forms/${segment(formId)}`),
   responseDraft: (formId: string) =>

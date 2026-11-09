@@ -323,6 +323,23 @@ class ExportApiTest extends DatabaseTest {
 	}
 
 	@Test
+	void 제어문자가_든_답은_YAML을_읽어도_JSON과_같은_문자열이다() throws Exception {
+		String escape = "앞\u001B뒤";
+		String others = "\u0007종\u007F\u0080";
+		UUID id = addSubmitted(formB.formId(), 1, List.of(new Answer("q1", escape), new Answer("q4", others)),
+				Instant.parse("2026-10-11T00:00:00Z"));
+
+		String raw = utf8(exportB("{\"format\":\"yaml\"}"));
+		JsonNode json = json("{\"format\":\"json\"}");
+		JsonNode yaml = yaml("{\"format\":\"yaml\"}");
+
+		assertThat(raw).doesNotContain("!!binary");
+		assertThat(yaml).isEqualTo(json);
+		assertThat(answerOf(yaml, id.toString(), "q1")).isEqualTo(escape);
+		assertThat(answerOf(yaml, id.toString(), "q4")).isEqualTo(others);
+	}
+
+	@Test
 	void 값처럼_보이는_문자열_답과_시각은_YAML에서도_문자열이다() throws Exception {
 		UUID id = addSubmitted(formB.formId(), 1,
 				List.of(new Answer("q1", "0123"), new Answer("q2", "true"), new Answer("q5", "null"),

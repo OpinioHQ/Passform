@@ -81,11 +81,13 @@ public final class ExportWriter {
 	}
 
 	// 문자열처럼 보이는 숫자·날짜·true·null은 SnakeYAML이 따옴표로 감싸 문자열로 남긴다.
+	// 제어문자가 든 답은 기본값이면 !!binary가 되어 JSON과 달라지므로 이스케이프한다(AC48).
 	private static String yaml(Map<String, Object> document) {
 		DumperOptions options = new DumperOptions();
 		options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
 		options.setAllowUnicode(true);
 		options.setSplitLines(false);
+		options.setNonPrintableStyle(DumperOptions.NonPrintableStyle.ESCAPE);
 		return new Yaml(options).dump(document);
 	}
 

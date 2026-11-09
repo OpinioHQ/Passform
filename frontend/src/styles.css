@@ -1354,19 +1354,16 @@ textarea::placeholder {
 .landing-page {
   --landing-gutter: max(var(--space-6), calc((100vw - 1200px) / 2));
 }
-/* hero는 연회색 큰 면(16px 모서리)으로 감싸 띠가 비어 보이지 않게 한다. */
 .landing-hero {
-  margin: var(--space-6) var(--landing-gutter) var(--space-12);
-  padding: 80px 64px;
-  background: var(--color-surface-card);
-  border-radius: var(--radius-xl);
+  padding: var(--space-section) var(--landing-gutter);
+  background: var(--color-canvas);
 }
 .landing-hero .overline {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   border-radius: var(--radius-pill);
-  background: var(--color-canvas);
+  background: var(--color-surface-card);
   color: var(--color-accent-ink);
   padding: 4px 12px;
   font-size: 13px;
@@ -1400,13 +1397,14 @@ textarea::placeholder {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-6);
 }
-/* 기능 카드: 연회색 hero 아래라 흰 바탕+경계선으로 면을 번갈아 둔다. 버튼은 카드 바닥에 맞춘다. */
+/* feature-card: 연회색 바탕, 경계선 없음, 버튼은 카드 바닥에 맞춘다. */
 .landing-feature-grid .panel {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   padding: var(--space-8);
-  background: var(--color-canvas);
+  background: var(--color-surface-card);
+  border: 0;
 }
 .landing-feature-grid .overline {
   color: var(--color-muted);
@@ -1485,7 +1483,8 @@ textarea::placeholder {
     padding: 20px 36px;
   }
   .landing-hero {
-    padding: 64px 48px;
+    padding-top: 72px;
+    padding-bottom: 72px;
   }
   .landing-hero h1 {
     font-size: 48px;
@@ -1602,9 +1601,8 @@ textarea::placeholder {
     --landing-gutter: var(--space-4);
   }
   .landing-hero {
-    margin-top: var(--space-4);
-    margin-bottom: var(--space-8);
-    padding: var(--space-12) var(--space-6);
+    padding-top: var(--space-12);
+    padding-bottom: var(--space-12);
   }
   .landing-hero h1 {
     font-size: 34px;

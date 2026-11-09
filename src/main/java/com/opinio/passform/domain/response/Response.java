@@ -132,6 +132,13 @@ public class Response {
 		this.updatedAt = now;
 	}
 
+	// 제작자의 전체 삭제. 결과·분석·내보내기에서 빠지고, 제출 버전의 문구를 복사해 조회 전용 이력으로 남긴다(SPEC 5절 224행).
+	public void markCreatorDeleted(Instant now, String formTitle, List<Map<String, Object>> questions) {
+		this.creatorDeletedAt = now;
+		this.historyFormTitle = formTitle;
+		this.historyQuestions = questions;
+	}
+
 	private void requireInProgress() {
 		if (status != ResponseStatus.IN_PROGRESS) {
 			throw new IllegalStateException("작성 중 응답이 아니다");

@@ -2,6 +2,7 @@ package com.opinio.passform.service;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -112,13 +113,7 @@ public class StorageQuotaService implements FormStorageRules {
 			return;
 		}
 		attachments.deleteAllInBatch(files);
-		attachments.flush();
-		List<String> keys = files.stream()
-			.map(Attachment::getS3Key)
-			.distinct()
-			.filter(key -> !attachments.existsByS3Key(key))
-			.toList();
-		cleanup.deleteAfterCommit(formId, keys);
+		releaseKeys(formId, files.stream().map(Attachment::getS3Key).toList());
 	}
 
 	@Override
@@ -131,6 +126,14 @@ public class StorageQuotaService implements FormStorageRules {
 			newIds.put(file.sourceAttachmentId(), saved.getId().toString());
 		}
 		return newIds;
+	}
+
+	// 커밋 뒤에 원본을 지운다. 사용 중인 다른 행이 같은 키를 쓰면 남긴다.
+	@Transactional
+	public void releaseKeys(UUID formId, Collection<String> keys) {
+		attachments.flush();
+		cleanup.deleteAfterCommit(formId,
+				keys.stream().distinct().filter(key -> !attachments.existsByS3KeyAndAvailableTrue(key)).toList());
 	}
 
 	// 첨부 API가 만든 ID는 UUID다. 그 밖의 값에는 지울 행이 없다.

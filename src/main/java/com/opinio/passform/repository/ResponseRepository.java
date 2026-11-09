@@ -135,6 +135,14 @@ public interface ResponseRepository extends JpaRepository<Response, UUID> {
 	boolean existsSubmittedInVersions(@Param("userId") UUID userId, @Param("formId") UUID formId,
 			@Param("versions") Collection<Integer> versions);
 
+	// 폼 삭제 때 함께 지우는 제출되지 않은 응답이다(SPEC 5절 208행).
+	@Query("""
+			select r from Response r
+			where r.formId = :formId
+			  and r.status <> com.opinio.passform.domain.analysis.ResponseStatus.SUBMITTED
+			""")
+	List<Response> findNotSubmittedByFormId(@Param("formId") UUID formId);
+
 	interface LatestSubmission {
 
 		UUID getFormId();

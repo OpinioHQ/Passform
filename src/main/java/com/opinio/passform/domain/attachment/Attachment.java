@@ -63,6 +63,11 @@ public class Attachment {
 		this.createdAt = createdAt;
 	}
 
+	// 원본을 지웠다. 행은 남아 이력에 available: false로 보이고 다운로드는 410이다(SPEC 5절 224행).
+	public void markRemoved() {
+		this.available = false;
+	}
+
 	public UUID getId() {
 		return id;
 	}

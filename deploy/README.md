@@ -10,9 +10,10 @@
 
 ## 1. EC2 준비 (한 번)
 
-1. 보안 그룹 인바운드는 22(내 IP만), 80, 443(TCP·UDP)만 연다. 5432는 열지 않는다.
-2. DNS `api.passform.kr` A 레코드가 이 서버의 고정 IP를 가리키는지 확인한다(Caddy 인증서 발급 조건).
-3. Docker와 스왑(t3.small에서 이미지 빌드 중 메모리 부족 방지)을 준비한다.
+1. 루트 볼륨은 20GB 이상으로 만든다(이 서버는 30GB gp3). Ubuntu AMI 기본 8GB면 스왑, 이미지, DB, 백업으로 디스크가 차서 Postgres 쓰기와 백업이 함께 실패한다.
+2. 보안 그룹 인바운드는 22(내 IP만), 80, 443(TCP·UDP)만 연다. 5432는 열지 않는다.
+3. DNS `api.passform.kr` A 레코드가 이 서버의 고정 IP를 가리키는지 확인한다(Caddy 인증서 발급 조건).
+4. Docker와 스왑(t3.small에서 이미지 빌드 중 메모리 부족 방지)을 준비한다.
 
    ```sh
    sudo apt-get update && sudo apt-get install -y docker.io docker-compose-v2 git
@@ -69,7 +70,10 @@ curl -s https://api.passform.kr/health   # {"status":"ok"}
 cd ~/Passform && git pull
 cd deploy && docker compose up -d --build app
 docker compose logs --tail 100 app
+docker image prune -f   # 이전 빌드가 남긴 이름 없는 이미지를 지운다
 ```
+
+- 디스크 확인: `df -h /`로 남은 공간을, `docker system df`로 이미지·컨테이너·볼륨이 차지한 양을 본다.
 
 - 세션은 메모리에 있어서 app을 다시 띄우면 모두 다시 로그인한다.
 - DB 백업: `mkdir -p ~/passform-backups`를 한 번 하고 `crontab -e`에 아래 한 줄을 넣는다. 서버 시계는 UTC라 한국 시각 03:30이다. 백업은 7일 보관한다.

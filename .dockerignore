@@ -1,0 +1,16 @@
+# 비밀값과 로컬 산출물이 이미지에 들어가지 않게 한다.
+**/.env
+**/.env.*
+.git
+.gradle
+build
+frontend
+_local
+data
+docs
+evals
+load
+tests
+.claude
+.vscode
+.idea

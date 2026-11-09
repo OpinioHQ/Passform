@@ -333,6 +333,31 @@ class AttachmentApiTest extends DatabaseTest {
 	}
 
 	@Test
+	void S3가_저장한_뒤_put이_예외로_끝나도_원본을_지운다() throws Exception {
+		String formId = openForm(owner);
+		long before = used(owner);
+		storage.failAfterStoring();
+
+		assertError(uploadNote(formId, owner, "a.png", PNG), 503, "storage_unavailable");
+
+		assertThat(storage.deleteCount()).isEqualTo(1);
+		assertUnchanged(formId, 1, before, 0);
+	}
+
+	@Test
+	void S3가_복사한_뒤_copy가_예외로_끝나도_복사한_원본을_지운다() throws Exception {
+		String formId = createForm(owner);
+		idOf(uploadNote(formId, owner, "a.png", PNG));
+		long forms = createdFormCount();
+		storage.failAfterStoring();
+
+		assertError(copy(formId, owner), 503, "storage_unavailable");
+
+		assertThat(storage.objectCount()).isEqualTo(1);
+		assertThat(createdFormCount()).isEqualTo(forms);
+	}
+
+	@Test
 	void DB_저장이_실패하면_올린_원본을_지우고_목록_버전_사용량_행이_그대로다() throws Exception {
 		String formId = openForm(owner);
 		long before = used(owner);

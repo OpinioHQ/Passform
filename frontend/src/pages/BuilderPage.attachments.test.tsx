@@ -61,7 +61,7 @@ afterEach(() => {
 describe('빌더의 첨부 연결 (AC63)', () => {
   it('설명란과 문항 첨부 칸이 있고 초안 첨부는 저장 안 한 변경으로 치지 않는다', async () => {
     const upload = vi.spyOn(api, 'uploadAttachment').mockResolvedValue(uploaded);
-    const reload = vi.spyOn(api, 'formDefinition');
+    vi.spyOn(api, 'formDefinition').mockResolvedValue(initial('draft', null));
     render(<BuilderPage formId="f1" initial={initial('draft', null)} templates={null} />);
     expect(questionPicker().disabled).toBe(false);
 
@@ -70,7 +70,17 @@ describe('빌더의 첨부 연결 (AC63)', () => {
     await screen.findByRole('button', { name: '폼 설명 a.png 빼기' });
     expect(upload).toHaveBeenCalledWith('f1', null, file);
     expect(screen.queryByText(/저장하지 않은 변경/)).toBeNull();
-    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it('초안에서 업로드하는 사이 배포되어도 새 폼 버전을 표시한다', async () => {
+    vi.spyOn(api, 'uploadAttachment').mockResolvedValue(uploaded);
+    const reload = vi.spyOn(api, 'formDefinition').mockResolvedValue(initial('open', 2));
+    render(<BuilderPage formId="f1" initial={initial('draft', null)} templates={null} />);
+
+    fireEvent.change(notePicker(), { target: { files: [file] } });
+
+    await waitFor(() => expect(reload).toHaveBeenCalledWith('f1'));
+    await waitFor(() => expect(screen.getByText(/폼 버전 2/)).toBeTruthy());
   });
 
   it('배포된 폼에 첨부하면 서버가 만든 새 폼 버전을 표시한다', async () => {

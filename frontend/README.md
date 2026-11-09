@@ -34,7 +34,7 @@ GitHub Actions의 `frontend` job이 Node 20에서 `npm ci`, lint, typecheck, tes
 
 - API 호출은 `src/api/client.ts`에 둡니다.
 - `.env`에 `VITE_USE_API=true`, `VITE_API_BASE_URL=http://localhost:8080`을 지정합니다.
-- 화면이 실제로 호출하는 것은 내 폼함 화면의 `GET /me/forms`, 응답 화면의 `GET /f/{slug}`·`GET /forms/{form_id}`·`POST /forms/{form_id}/responses`뿐입니다. 다른 화면은 가짜 데이터 기반입니다.
+- `VITE_USE_API=true`면 모든 화면이 실제 API를 호출합니다. 가짜 데이터는 `VITE_USE_API=false`일 때만 씁니다.
 - Figma의 데모 사용자/제출 내역은 실제 인증 결과가 아닙니다. 세션·OAuth·CORS·CSRF가 동작하도록 백엔드와 함께 통합해야 합니다.
 
 ## 설계 근거

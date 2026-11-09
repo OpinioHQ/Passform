@@ -18,6 +18,8 @@ export interface BrowserDraft {
   form_definition: PublicForm;
   answers: ResponseAnswer[];
   saved_at: string;
+  /** 저장할 때의 화면 주소. 공유 링크가 404가 되면 어느 초안을 지울지 이 값으로 찾는다. */
+  path?: string;
 }
 
 /** 폼마다 다른 키다. 다른 폼의 초안과 섞이지 않는다. */
@@ -67,6 +69,27 @@ export function removeBrowserDraft(formId: string): void {
   storage()?.removeItem(browserDraftKey(formId));
 }
 
+const DRAFT_PREFIX = 'passform:draft:';
+
+/**
+ * 폼이 삭제된 것을 확인했을 때 그 폼의 브라우저 초안을 지운다(SPEC 5절 208행). 지운 폼 ID를 돌려준다.
+ * 슬러그 주소에서는 폼 ID를 모르므로 저장할 때 남긴 주소로 찾는다.
+ */
+export function removeBrowserDraftsAt(path: string): string[] {
+  const store = storage();
+  if (!store) return [];
+  const removed: string[] = [];
+  for (const key of Object.keys(store)) {
+    if (!key.startsWith(DRAFT_PREFIX)) continue;
+    const formId = key.slice(DRAFT_PREFIX.length);
+    if (readBrowserDraft(formId)?.path === path) {
+      store.removeItem(key);
+      removed.push(formId);
+    }
+  }
+  return removed;
+}
+
 /** 화면의 답을 저장할 목록으로 바꾼다. 아직 아무것도 고르거나 쓰지 않은 문항은 넣지 않는다. */
 export function answersToSave(answers: AnswerMap): ResponseAnswer[] {
   return Object.entries(answers)
@@ -104,6 +127,7 @@ export function browserSink(form: PublicForm): DraftSink {
         form_definition: form,
         answers,
         saved_at: new Date().toISOString(),
+        path: window.location.pathname,
       };
       store.setItem(browserDraftKey(form.form_id), JSON.stringify(draft));
     },

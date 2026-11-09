@@ -17,7 +17,8 @@ import { ProfilePage } from '../pages/ProfilePage';
 import { ClosedNotice, ResponsePage } from '../pages/ResponsePage';
 import { DraftGate } from '../response/DraftGate';
 import { changeErrorText } from '../response/changeErrors';
-import { answersToMap } from '../response/draftSync';
+import { answersToMap, removeBrowserDraft, removeBrowserDraftsAt } from '../response/draftSync';
+import { ANONYMOUS_SCOPE, fileDraftKey, removeFileDraft } from '../response/fileDrafts';
 import type {
   Profile,
   ProfileInput,
@@ -144,6 +145,22 @@ function useInboxEntry(formId: string | undefined): 'saved' | 'unsaved' | null {
   return entry;
 }
 
+/** 폼이 없어진 것을 확인하면 이 브라우저에 남은 그 폼의 답과 파일을 지운다(SPEC 5절 208행). */
+function forgetDraftsOfMissingForm(formId: string | undefined) {
+  const ids = removeBrowserDraftsAt(window.location.pathname);
+  if (formId !== undefined && !ids.includes(formId)) {
+    removeBrowserDraft(formId);
+    ids.push(formId);
+  }
+  const forget = (scope: string) =>
+    ids.forEach((id) => void removeFileDraft(fileDraftKey(scope, id)).catch(() => undefined));
+  forget(ANONYMOUS_SCOPE);
+  api.me().then(
+    (me) => forget(me.user_id),
+    () => undefined,
+  );
+}
+
 /** `/f/:slug`와 `/forms/:formId`가 함께 쓴다. 공개 경로라 로그인 전용 API를 부르지 않는다. */
 export function FormResponseRoute() {
   const { slug, formId } = useParams();
@@ -168,8 +185,10 @@ export function FormResponseRoute() {
         if (!active) return;
         const code = e instanceof ApiError ? (e.detail as { error?: unknown } | null)?.error : null;
         if (code === 'form_closed') setFailure('closed');
-        else if (e instanceof ApiError && e.status === 404) setFailure('not_found');
-        else setFailure('failed');
+        else if (e instanceof ApiError && e.status === 404) {
+          setFailure('not_found');
+          forgetDraftsOfMissingForm(formId);
+        } else setFailure('failed');
       });
     return () => {
       active = false;

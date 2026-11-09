@@ -4,6 +4,7 @@ import { ShareQr } from '../builder/ShareQr';
 import { statusLabel } from '../builder/messages';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
 import type { CreatorFormSummary, StorageUsage } from '../types/api';
+import { type CleanupKind, FormCleanupActions } from './FormCleanupActions';
 
 export type CreatedFormsLoad = 'loading' | 'failed' | 'ready';
 
@@ -37,6 +38,7 @@ export function CreatedPage({
   storage,
   loadQr,
   onCopy,
+  onCleaned,
 }: {
   forms: CreatorFormSummary[];
   load: CreatedFormsLoad;
@@ -49,6 +51,8 @@ export function CreatedPage({
   loadQr?: (formId: string) => Promise<Blob>;
   /** 폼 복사(AC40). 성공하면 부른 쪽이 새 초안 빌더로 이동한다. 실패하면 reject한다. */
   onCopy?: (formId: string) => Promise<void>;
+  /** 정리 작업이 성공한 뒤 부른다. 서버에 연결된 화면만 넘겨서 없으면 정리 버튼을 보이지 않는다. */
+  onCleaned?: (formId: string, kind: CleanupKind) => void;
 }) {
   const now = Date.now();
   const [qrFor, setQrFor] = React.useState<string | null>(null);
@@ -170,6 +174,14 @@ export function CreatedPage({
                 </p>
               )}
               {showingQr && <ShareQr load={loadOpenQr} label={name} />}
+              {onCleaned && (
+                <FormCleanupActions
+                  formId={form.form_id}
+                  name={name}
+                  responseCount={form.response_count}
+                  onCleaned={(kind) => onCleaned(form.form_id, kind)}
+                />
+              )}
             </Panel>
           );
         })}

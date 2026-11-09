@@ -79,6 +79,9 @@ function Detail({ detail, linkOf }: { detail: ResponseHistoryDetail; linkOf: Fil
         </div>
         <Badge tone="green">제출 완료</Badge>
       </div>
+      {useLiveApi && detail.form_definition === null && (
+        <p className="small muted">제작자가 폼이나 받은 응답을 삭제해서 조회만 할 수 있어요.</p>
+      )}
       <div className="answer-list">
         {detail.content.map((a, i) => (
           <div key={`${a.question_id}-${i}`} className="answer-line">

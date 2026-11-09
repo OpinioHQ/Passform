@@ -1983,3 +1983,11 @@ h3 {
   text-decoration: underline;
   cursor: pointer;
 }
+.form-cleanup {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e3e5dd;
+}
+.form-cleanup-confirm {
+  margin-top: 10px;
+}

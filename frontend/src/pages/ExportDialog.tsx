@@ -20,7 +20,7 @@ export function exportFilename(format: ExportFormat, now: Date = new Date()): st
   return `passform-export-${date.replace(/-/g, '')}.${format}`;
 }
 
-function saveFile(file: Blob, filename: string) {
+export function saveFile(file: Blob, filename: string) {
   const link = document.createElement('a');
   link.href = URL.createObjectURL(file);
   link.download = filename;

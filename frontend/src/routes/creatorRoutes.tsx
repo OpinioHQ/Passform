@@ -115,6 +115,17 @@ function LiveCreatedForms() {
       forms={forms}
       load={load}
       storage={storage}
+      onCleaned={(formId, kind) => {
+        setForms((list) =>
+          kind === 'form'
+            ? list.filter((f) => f.form_id !== formId)
+            : kind === 'responses'
+              ? list.map((f) => (f.form_id === formId ? { ...f, response_count: 0 } : f))
+              : list,
+        );
+        // 목록을 먼저 고친다. 사용량을 못 읽어도 정리는 이미 성공했다.
+        api.storage().then(setStorage, () => undefined);
+      }}
       onCreate={() => navigate(paths.newForm)}
       onEdit={(id) => navigate(paths.editForm(id))}
       onResults={(id) => navigate(paths.formResults(id))}

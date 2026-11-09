@@ -63,6 +63,39 @@ public final class FormAttachments {
 		return withList(definition, questionId, items -> items.removeIf(item -> attachmentId.equals(idOf(item))));
 	}
 
+	// 폼 복사: 목록의 ID를 새 ID로 바꾼다. 새 ID가 없는 항목은 복사되지 않은 파일이라 뺀다.
+	public static Map<String, Object> withIdsReplaced(Map<String, Object> definition, Map<String, String> newIds) {
+		Map<String, Object> result = new LinkedHashMap<>(definition);
+		result.put(NOTE, replacedIds(definition.get(NOTE), newIds));
+		List<Object> sections = new ArrayList<>();
+		for (Object rawSection : FormJson.array(definition.get(SECTIONS))) {
+			Map<String, Object> section = new LinkedHashMap<>(FormJson.object(rawSection));
+			List<Object> questions = new ArrayList<>();
+			for (Object rawQuestion : FormJson.array(section.get(QUESTIONS))) {
+				Map<String, Object> question = new LinkedHashMap<>(FormJson.object(rawQuestion));
+				question.put(ATTACHMENTS, replacedIds(question.get(ATTACHMENTS), newIds));
+				questions.add(question);
+			}
+			section.put(QUESTIONS, questions);
+			sections.add(section);
+		}
+		result.put(SECTIONS, sections);
+		return result;
+	}
+
+	private static List<Object> replacedIds(Object list, Map<String, String> newIds) {
+		List<Object> items = new ArrayList<>();
+		for (Object raw : FormJson.array(list)) {
+			String replacement = newIds.get(idOf(raw));
+			if (replacement != null) {
+				Map<String, Object> item = new LinkedHashMap<>(FormJson.object(raw));
+				item.put(ATTACHMENT_ID, replacement);
+				items.add(item);
+			}
+		}
+		return items;
+	}
+
 	// 첨부 목록은 첨부 API로만 바뀐다. 빌더가 보낸 목록을 버리고 저장된 목록을 문항 ID로 찾아 넣는다(사람 결정, #63).
 	// stored가 null이면(새 폼) 목록을 비운다. 다른 폼의 attachment_id를 끌어올 수 없다.
 	// 값의 모양이 틀린 곳은 그대로 두어 스키마 검증이 거부하게 한다.

@@ -1,7 +1,10 @@
 package com.opinio.passform.service;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -50,7 +53,7 @@ public class StorageQuotaService implements FormStorageRules {
 	@Override
 	@Transactional
 	public long lockAndMeasure(UUID ownerId) {
-		users.findByIdForUpdate(ownerId).orElseThrow(() -> new IllegalStateException("폼 소유자가 없다"));
+		users.findByIdForUpdate(ownerId);
 		return attachments.usedBytes(ownerId);
 	}
 
@@ -89,6 +92,18 @@ public class StorageQuotaService implements FormStorageRules {
 			}
 		}
 		cleanup.deleteAfterCommit(formId, keys);
+	}
+
+	@Override
+	@Transactional
+	public Map<String, String> attachCopies(UUID formId, List<CopiedFile> files, Instant now) {
+		Map<String, String> newIds = new LinkedHashMap<>();
+		for (CopiedFile file : files) {
+			Attachment saved = attachments.save(new Attachment(formId, null, file.questionId(), file.filename(),
+					file.contentType(), file.sizeBytes(), file.key(), now));
+			newIds.put(file.sourceAttachmentId(), saved.getId().toString());
+		}
+		return newIds;
 	}
 
 	// 첨부 API가 만든 ID는 UUID다. 그 밖의 값에는 지울 행이 없다.

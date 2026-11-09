@@ -39,12 +39,7 @@ public final class ResponsePathCalculator {
 				.map(BranchRule::goTo)
 				.findFirst()
 				.orElse(null);
-			if (goTo != null && goTo.submit()) {
-				break;
-			}
-			// 대상은 뒤쪽이어야 한다(배포 때 검증). 뒤쪽이 아니거나 없는 대상이 와도 다음으로 넘어가 반복에 빠지지 않는다.
-			int target = goTo == null ? -1 : targetIndex(definition, goTo);
-			index = target > last ? target : last + 1;
+			index = nextIndex(definition, last, goTo);
 		}
 		Set<String> onPathIds = new HashSet<>();
 		onPath.forEach(question -> onPathIds.add(question.questionId()));
@@ -52,6 +47,19 @@ public final class ResponsePathCalculator {
 			.filter(question -> !onPathIds.contains(question.questionId()))
 			.toList();
 		return new ResponsePath(List.copyOf(onPath), skipped);
+	}
+
+	/**
+	 * last 위치 문항 다음에 보일 문항의 전체 순서 위치다. 제출이면 문항 수와 같다. goTo가 없으면 기본 다음 이동이다.
+	 * 응답 경로와 분기 흐름 그래프(AC45)가 함께 쓴다.
+	 */
+	public static int nextIndex(FormDefinition definition, int last, GoTo goTo) {
+		if (goTo != null && goTo.submit()) {
+			return definition.questions().size();
+		}
+		// 대상은 뒤쪽이어야 한다(배포 때 검증). 뒤쪽이 아니거나 없는 대상이 와도 다음으로 넘어가 반복에 빠지지 않는다.
+		int target = goTo == null ? -1 : targetIndex(definition, goTo);
+		return target > last ? target : last + 1;
 	}
 
 	private static int lastIndexOfSection(FormDefinition definition, int index) {

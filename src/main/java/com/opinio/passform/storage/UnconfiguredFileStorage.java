@@ -21,6 +21,11 @@ public class UnconfiguredFileStorage implements FileStorage {
 	}
 
 	@Override
+	public void copy(String sourceKey, String targetKey) {
+		throw unavailable();
+	}
+
+	@Override
 	public URI presignDownload(String key, String contentType, String filename, boolean inline) {
 		throw unavailable();
 	}

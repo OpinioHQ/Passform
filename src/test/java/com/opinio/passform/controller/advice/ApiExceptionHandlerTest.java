@@ -72,7 +72,8 @@ class ApiExceptionHandlerTest {
 			Map.entry(ErrorCode.FILE_TOO_LARGE, HttpStatus.CONTENT_TOO_LARGE),
 			Map.entry(ErrorCode.STORAGE_QUOTA_EXCEEDED, HttpStatus.CONFLICT),
 			Map.entry(ErrorCode.ATTACHMENT_REMOVED, HttpStatus.GONE),
-			Map.entry(ErrorCode.STORAGE_UNAVAILABLE, HttpStatus.SERVICE_UNAVAILABLE));
+			Map.entry(ErrorCode.STORAGE_UNAVAILABLE, HttpStatus.SERVICE_UNAVAILABLE),
+			Map.entry(ErrorCode.NOT_OPEN, HttpStatus.CONFLICT));
 
 	@Autowired
 	private MockMvc mockMvc;

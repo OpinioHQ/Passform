@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,6 +17,8 @@ import com.opinio.passform.domain.attachment.FileTypes;
 import com.opinio.passform.domain.attachment.FileTypes.Audience;
 import com.opinio.passform.domain.error.DomainException;
 import com.opinio.passform.domain.error.ErrorCode;
+import com.opinio.passform.service.AttachmentTransactions.CopyPlan;
+import com.opinio.passform.service.FormService.CreatedForm;
 import com.opinio.passform.storage.FileStorage;
 
 // 폼 설명란·문항 첨부(SPEC 5절 121~124행, 169~170행, 196~197행, AC63).
@@ -24,12 +28,15 @@ public class AttachmentService {
 
 	private final AttachmentTransactions transactions;
 
+	private final FormService forms;
+
 	private final FileStorage storage;
 
 	private final FileCleanup cleanup;
 
-	public AttachmentService(AttachmentTransactions transactions, FileStorage storage, FileCleanup cleanup) {
+	public AttachmentService(AttachmentTransactions transactions, FormService forms, FileStorage storage, FileCleanup cleanup) {
 		this.transactions = transactions;
+		this.forms = forms;
 		this.storage = storage;
 		this.cleanup = cleanup;
 	}
@@ -58,6 +65,29 @@ public class AttachmentService {
 
 	public void remove(RemoveCommand command) {
 		transactions.remove(command);
+	}
+
+	// 폼 복사(AC40, SPEC 5절 118행). 첨부 원본도 새 키로 복사해 원본 폼을 지워도 복사본이 남게 한다(사람 결정, #63).
+	public CreatedForm copyForm(UUID userId, String formId) {
+		CopyPlan plan = transactions.planCopy(userId, formId);
+		long total = plan.files().stream().mapToLong(Attachment::getSizeBytes).sum();
+		if (total > 0 && plan.usedBytes() + total > StorageQuotaService.LIMIT_BYTES) {
+			throw new DomainException(ErrorCode.STORAGE_QUOTA_EXCEEDED);
+		}
+		List<CopiedFile> copied = new ArrayList<>();
+		try {
+			for (Attachment file : plan.files()) {
+				String key = "attachments/" + plan.sourceFormId() + "/" + UUID.randomUUID();
+				storage.copy(file.getS3Key(), key);
+				copied.add(new CopiedFile(file.getId().toString(), file.getQuestionId(), file.getFilename(),
+						file.getContentType(), file.getSizeBytes(), key));
+			}
+			return forms.copy(userId, formId, copied);
+		}
+		catch (RuntimeException exception) {
+			copied.forEach(file -> cleanup.deleteNow(plan.sourceFormId(), file.key()));
+			throw exception;
+		}
 	}
 
 	// 권한을 확인한 뒤에만 Presigned URL을 만든다.

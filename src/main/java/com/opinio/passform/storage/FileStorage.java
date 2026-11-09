@@ -13,6 +13,9 @@ public interface FileStorage {
 
 	void delete(String key);
 
+	// 폼 복사에 쓴다. 원본은 그대로 둔다.
+	void copy(String sourceKey, String targetKey);
+
 	// inline이 false면 브라우저가 바로 열지 않고 내려받는다(SPEC 5절 220행).
 	URI presignDownload(String key, String contentType, String filename, boolean inline);
 

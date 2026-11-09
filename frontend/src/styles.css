@@ -559,10 +559,6 @@ h3 {
   display: flex;
   gap: 8px;
 }
-.corner-bookmark {
-  margin-left: auto;
-  color: var(--color-ink);
-}
 .form-line {
   display: flex;
   align-items: center;
@@ -576,20 +572,6 @@ h3 {
 .form-line .muted {
   font-size: 12px;
 }
-.progress-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.progress-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-}
-.progress-label b {
-  font-size: 12px;
-  color: var(--color-ink);
-}
 .track {
   height: 5px;
   overflow: hidden;
@@ -600,9 +582,6 @@ h3 {
   height: 100%;
   background: var(--color-ink);
   border-radius: var(--radius-pill);
-}
-.progress-wrap small {
-  font-size: 12px;
 }
 .response-hero {
   display: flex;
@@ -1012,30 +991,6 @@ textarea::placeholder {
   align-items: center;
   margin-bottom: 20px;
 }
-/* category-tab: 연회색 pill 묶음 안에서 고른 탭만 흰 pill로 띄운다. */
-.segmented {
-  display: flex;
-  padding: var(--space-1);
-  border-radius: var(--radius-pill);
-  background: var(--color-surface-card);
-  gap: var(--space-1);
-}
-.segmented button {
-  min-height: 32px;
-  padding: 0 var(--space-4);
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: transparent;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-muted);
-}
-.segmented button.active {
-  background: var(--color-canvas);
-  box-shadow: var(--shadow-sm);
-  color: var(--color-ink);
-  font-weight: 600;
-}
 .builder-intro {
   padding: var(--space-8);
 }
@@ -1120,6 +1075,28 @@ textarea::placeholder {
 }
 .builder-actions {
   margin-left: auto;
+}
+/* 위로·아래로·복제·삭제는 글자 버튼이라 좌우 여백을 줄이고, 좁으면 다음 줄로 내린다. */
+.builder-actions .btn-ghost {
+  padding: 0 var(--space-2);
+}
+.builder-actions {
+  gap: 2px;
+}
+.question-top,
+.builder-section .section-title {
+  flex-wrap: wrap;
+}
+.builder-section .section-title .builder-section-title {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+@media (max-width: 760px) {
+  .builder-intro,
+  .builder-section,
+  .builder-question {
+    padding: var(--space-4);
+  }
 }
 .builder-field {
   display: flex;

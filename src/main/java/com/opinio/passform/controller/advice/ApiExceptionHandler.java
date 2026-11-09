@@ -46,6 +46,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			case FILE_TOO_LARGE -> HttpStatus.CONTENT_TOO_LARGE;
 			case STORAGE_QUOTA_EXCEEDED -> HttpStatus.CONFLICT;
 			case ATTACHMENT_REMOVED -> HttpStatus.GONE;
+			case NOT_OPEN -> HttpStatus.CONFLICT;
 		};
 	}
 

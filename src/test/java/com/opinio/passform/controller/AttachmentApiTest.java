@@ -704,6 +704,107 @@ class AttachmentApiTest extends DatabaseTest {
 		assertThat(used(other)).isGreaterThan(otherBefore);
 	}
 
+	// 폼 복사
+
+	private MockHttpServletResponse copy(String formId, UUID actor) throws Exception {
+		return perform(post("/forms/" + formId + "/copy"), actor);
+	}
+
+	private long createdFormCount() throws Exception {
+		return JSON.readTree(perform(get("/me/created-forms"), owner).getContentAsByteArray()).size();
+	}
+
+	@Test
+	void AC40_복사는_첨부_원본도_새로_복사해_복사본에서_받을_수_있고_사용량이_는다() throws Exception {
+		String formId = createForm(owner);
+		String note = idOf(uploadNote(formId, owner, "a.png", PNG));
+		String question = idOf(uploadQuestion(formId, owner, "b.pdf", PDF));
+		long before = used(owner);
+
+		MockHttpServletResponse response = copy(formId, owner);
+
+		assertThat(response.getStatus()).isEqualTo(201);
+		String copied = JSON.readTree(response.getContentAsByteArray()).get("form_id").asString();
+		JsonNode body = definition(copied);
+		String newNote = body.at("/note_attachments/0/attachment_id").asString();
+		String newQuestion = body.at("/sections/0/questions/0/attachments/0/attachment_id").asString();
+		assertThat(newNote).isNotEqualTo(note);
+		assertThat(newQuestion).isNotEqualTo(question);
+		assertThat(body.at("/note_attachments/0/filename").asString()).isEqualTo("a.png");
+		assertThat(storage.objectCount()).isEqualTo(4);
+		assertRedirected(download("/forms/" + copied + "/attachments/" + newNote, owner));
+		assertRedirected(download("/forms/" + copied + "/questions/q1/attachments/" + newQuestion, owner));
+		assertThat(used(owner)).isGreaterThan(before + PNG.length + PDF.length);
+	}
+
+	@Test
+	void 원본의_첨부를_지워도_복사본의_파일은_남는다() throws Exception {
+		String formId = createForm(owner);
+		String note = idOf(uploadNote(formId, owner, "a.png", PNG));
+		String copied = JSON.readTree(copy(formId, owner).getContentAsByteArray()).get("form_id").asString();
+		String newNote = definition(copied).at("/note_attachments/0/attachment_id").asString();
+
+		assertThat(perform(delete("/forms/" + formId + "/attachments/" + note), owner).getStatus()).isEqualTo(204);
+
+		storage.awaitObjectCount(1);
+		assertThat(storage.objectCount()).isEqualTo(1);
+		assertRedirected(download("/forms/" + copied + "/attachments/" + newNote, owner));
+	}
+
+	@Test
+	void AC65_복사가_한도를_넘으면_409이고_폼과_객체가_늘지_않는다() throws Exception {
+		String formId = createForm(owner);
+		idOf(uploadNote(formId, owner, "a.png", PNG));
+		fillUsageTo(owner, formId, LIMIT - PNG.length + 1);
+		long before = used(owner);
+		int objects = storage.objectCount();
+		long forms = createdFormCount();
+
+		assertError(copy(formId, owner), 409, "storage_quota_exceeded");
+
+		assertThat(used(owner)).isEqualTo(before);
+		assertThat(storage.objectCount()).isEqualTo(objects);
+		assertThat(createdFormCount()).isEqualTo(forms);
+	}
+
+	@Test
+	void AC65_파일_복사_뒤_잠금_안_최종_판정이_실패하면_복사한_원본을_지운다() throws Exception {
+		String formId = createForm(owner);
+		idOf(uploadNote(formId, owner, "a.png", PNG));
+		// 파일만 보는 사전 검사는 통과하고, 새 폼의 정의 JSON까지 세면 넘는다.
+		fillUsageTo(owner, formId, LIMIT - PNG.length);
+		int objects = storage.objectCount();
+		long forms = createdFormCount();
+
+		assertError(copy(formId, owner), 409, "storage_quota_exceeded");
+
+		assertThat(storage.objectCount()).isEqualTo(objects);
+		assertThat(createdFormCount()).isEqualTo(forms);
+	}
+
+	@Test
+	void S3_복사가_실패하면_503이고_폼과_객체가_늘지_않는다() throws Exception {
+		String formId = createForm(owner);
+		idOf(uploadNote(formId, owner, "a.png", PNG));
+		long forms = createdFormCount();
+		storage.failPuts();
+
+		assertError(copy(formId, owner), 503, "storage_unavailable");
+
+		assertThat(storage.objectCount()).isEqualTo(1);
+		assertThat(createdFormCount()).isEqualTo(forms);
+	}
+
+	@Test
+	void AC2_남의_폼은_복사할_수_없고_첨부도_복사하지_않는다() throws Exception {
+		String formId = createForm(owner);
+		idOf(uploadNote(formId, owner, "a.png", PNG));
+
+		assertError(copy(formId, other), 403, "forbidden");
+
+		assertThat(storage.objectCount()).isEqualTo(1);
+	}
+
 	@Test
 	void 사용량_API는_SPEC_모양이고_로그인이_필요하다() throws Exception {
 		JsonNode body = JSON.readTree(perform(get("/me/storage"), owner).getContentAsByteArray());

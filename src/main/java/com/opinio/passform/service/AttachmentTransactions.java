@@ -105,6 +105,23 @@ public class AttachmentTransactions {
 		quota.requireWithinLimit(form.getOwnerId(), before);
 	}
 
+	// 폼 복사 전 검사. 원본 폼의 작업 정의가 참조하는 제작자 첨부를 돌려준다.
+	@Transactional(readOnly = true)
+	public CopyPlan planCopy(UUID userId, String formId) {
+		Form source = forms.findById(FormService.parseId(formId)).orElseThrow(AttachmentTransactions::notFound);
+		FormService.requireOwner(source, userId);
+		List<UUID> ids = FormAttachments.allIds(source.getWorkingDefinition())
+			.stream()
+			.map(AttachmentTransactions::parseOrNull)
+			.filter(Objects::nonNull)
+			.toList();
+		List<Attachment> files = attachments.findAllById(ids)
+			.stream()
+			.filter(file -> file.getFormId().equals(source.getId()) && file.getResponseId() == null)
+			.toList();
+		return new CopyPlan(source.getId(), files, attachments.usedBytes(userId));
+	}
+
 	@Transactional(readOnly = true)
 	public Attachment readableAttachment(DownloadCommand command) {
 		UUID formId = FormService.parseId(command.formId());
@@ -184,6 +201,15 @@ public class AttachmentTransactions {
 		}
 	}
 
+	private static UUID parseOrNull(String id) {
+		try {
+			return UUID.fromString(id);
+		}
+		catch (IllegalArgumentException exception) {
+			return null;
+		}
+	}
+
 	private static UUID parseAttachmentId(String attachmentId) {
 		try {
 			return UUID.fromString(attachmentId);
@@ -195,6 +221,9 @@ public class AttachmentTransactions {
 
 	private static DomainException notFound() {
 		return new DomainException(ErrorCode.NOT_FOUND);
+	}
+
+	public record CopyPlan(UUID sourceFormId, List<Attachment> files, long usedBytes) {
 	}
 
 }

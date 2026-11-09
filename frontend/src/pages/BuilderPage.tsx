@@ -1,6 +1,7 @@
 import React from 'react';
 import { api } from '../api/client';
 import { AttachmentEditor } from '../builder/AttachmentEditor';
+import { BranchFlowView } from '../builder/BranchFlowView';
 import { branchPublishProblems } from '../builder/branchRules';
 import { FormSettingsPanel } from '../builder/FormSettingsPanel';
 import {
@@ -22,6 +23,8 @@ import {
 } from '../builder/formDefinition';
 import { friendlyError, statusLabel } from '../builder/messages';
 import { QuestionEditor, RowButton } from '../builder/QuestionEditor';
+import { ShareQr } from '../builder/ShareQr';
+import { useCreatorAutosave, useLeaveWarning } from '../builder/creatorAutosave';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
 import type {
   Attachment,
@@ -72,10 +75,41 @@ export function BuilderPage({
   const [problems, setProblems] = React.useState<string[]>([]);
   const [copyNote, setCopyNote] = React.useState('');
   const [previewing, setPreviewing] = React.useState(false);
+  const [showingFlow, setShowingFlow] = React.useState(false);
+  const [showingQr, setShowingQr] = React.useState(false);
+  const loadQr = React.useCallback(() => api.formQr(formId), [formId]);
+  // 분기 흐름은 저장된 정의로 만든다(SPEC 125행). 문구를 보이려고 같은 때 저장된 정의도 읽는다.
+  const loadFlow = React.useCallback(
+    () =>
+      Promise.all([api.branchGraph(formId), api.formDefinition(formId)]).then(([graph, saved]) => ({
+        graph,
+        definition: toDefinition(saved),
+      })),
+    [formId],
+  );
 
   const { status, share_url: shareUrl, definition_version: version } = formState;
   const busy = pending !== '';
   const messagesRef = React.useRef<HTMLDivElement>(null);
+  const pageRef = React.useRef<HTMLDivElement>(null);
+
+  // draft만 자동 저장한다(SPEC 153행, AC84). open·closed는 지금처럼 명시적으로 저장한다.
+  const autosaveRequest = React.useCallback(
+    (def: FormDefinition) => api.updateForm(formId, def),
+    [formId],
+  );
+  const markSaved = React.useCallback(() => setDirty(false), []);
+  const autosave = useCreatorAutosave(autosaveRequest, markSaved);
+  const { schedule } = autosave;
+  React.useEffect(() => {
+    if (status === 'draft' && dirty) schedule(definition);
+  }, [status, dirty, definition, schedule]);
+  // 저장이 끝나지 않았거나 실패한 편집이 있으면 나갈 때 경고한다.
+  useLeaveWarning(
+    status === 'draft' && dirty,
+    pageRef,
+    '저장되지 않은 변경이 있어요. 이 화면을 나갈까요?',
+  );
 
   // 아래쪽 버튼을 눌러도 결과와 문제 목록(맨 위)이 보이게 한다. 이미 보이면 움직이지 않는다.
   React.useEffect(() => {
@@ -102,6 +136,8 @@ export function BuilderPage({
     setOutcome('');
     setFailure('');
     setProblems([]);
+    // 기다리는 자동 저장을 버리고 보낸 것이 끝나길 기다린다. 이 요청이 현재 편집 전체를 보내므로 겹치지 않게만 한다.
+    await autosave.cancel();
     try {
       const view = await api.updateForm(formId, body);
       setFormState(view);
@@ -258,11 +294,23 @@ export function BuilderPage({
     );
   }
 
+  // 자동 저장 중·완료·실패를 구분한다. 실패는 "저장됨"으로 바뀌지 않는다(AC84). 기다리는 중은 기존 안내를 쓴다.
+  const autosaveText =
+    status !== 'draft'
+      ? null
+      : autosave.status === 'saving'
+        ? PENDING_TEXT.save
+        : autosave.status === 'saved'
+          ? '저장됨'
+          : autosave.status === 'failed'
+            ? '저장 실패 · 지금 편집 내용은 아직 저장되지 않았어요.'
+            : null;
+
   const questionsBefore = (sectionIndex: number) =>
     definition.sections.slice(0, sectionIndex).reduce((sum, s) => sum + s.questions.length, 0);
 
   return (
-    <div className="page-shell builder-page">
+    <div className="page-shell builder-page" ref={pageRef}>
       <Heading
         eyebrow="제작자 워크스페이스 / 폼 편집"
         title="폼 편집"
@@ -277,12 +325,27 @@ export function BuilderPage({
               {version !== null && ` · 폼 버전 ${version}`}
             </Badge>
             <span className="small muted" role="status">
-              {busy ? PENDING_TEXT[pending as Exclude<Pending, ''>] : outcome}
-              {!busy &&
-                dirty &&
-                !failure &&
-                (outcome ? ' · ' : '') + '저장하지 않은 변경이 있어요.'}
+              {busy ? (
+                PENDING_TEXT[pending as Exclude<Pending, ''>]
+              ) : autosaveText ? (
+                <span className={autosave.status === 'failed' ? 'error' : undefined}>
+                  {autosaveText}
+                </span>
+              ) : (
+                <>
+                  {outcome}
+                  {dirty && !failure && (outcome ? ' · ' : '') + '저장하지 않은 변경이 있어요.'}
+                </>
+              )}
             </span>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              aria-expanded={showingFlow}
+              onClick={() => setShowingFlow((open) => !open)}
+            >
+              분기 흐름 보기
+            </button>
           </div>
         </div>
         {failure && (
@@ -298,6 +361,7 @@ export function BuilderPage({
           </div>
         )}
       </div>
+      {showingFlow && <BranchFlowView load={loadFlow} onClose={() => setShowingFlow(false)} />}
       {status !== 'draft' && (
         <p className="small muted">
           변경은 저장해야 반영돼요. 응답자가 보는 내용이 바뀌면 새 폼 버전이 되고, 공유 링크는
@@ -313,7 +377,16 @@ export function BuilderPage({
           <Button variant="secondary" onClick={copyShareUrl}>
             링크 복사
           </Button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            aria-expanded={showingQr}
+            onClick={() => setShowingQr((open) => !open)}
+          >
+            {showingQr ? 'QR 닫기' : 'QR 보기'}
+          </button>
           {copyNote && <small className="muted">{copyNote}</small>}
+          {showingQr && <ShareQr load={loadQr} label={definition.title.trim() || '제목 없는 폼'} />}
         </Panel>
       )}
       <fieldset className="builder-fieldset" disabled={busy}>

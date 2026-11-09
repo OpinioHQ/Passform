@@ -2,6 +2,7 @@ package com.opinio.passform.service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -30,6 +31,11 @@ public interface FormStorageRules {
 			return List.of();
 		}
 
+		@Override
+		public Map<String, String> attachCopies(UUID formId, List<CopiedFile> files, Instant now) {
+			return Map.of();
+		}
+
 	};
 
 	// 소유자 기준으로 직렬화하고 지금 사용량을 돌려준다. 폼 행을 잠그는 경로는 폼 행을 먼저 잠근 뒤 부른다.
@@ -43,5 +49,8 @@ public interface FormStorageRules {
 
 	// 올린 파일을 응답에 연결한다. 호출자의 트랜잭션 안에서 부른다.
 	List<AttachmentItem> attachToResponse(UUID formId, UUID responseId, List<StoredFile> files, Instant now);
+
+	// 복사한 원본을 새 폼의 첨부 행으로 만들고 원본 ID → 새 ID를 돌려준다. 호출자의 트랜잭션 안에서 부른다.
+	Map<String, String> attachCopies(UUID formId, List<CopiedFile> files, Instant now);
 
 }

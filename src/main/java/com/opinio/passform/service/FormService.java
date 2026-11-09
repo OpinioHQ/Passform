@@ -3,6 +3,7 @@ package com.opinio.passform.service;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -18,10 +19,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.opinio.passform.domain.error.DomainException;
 import com.opinio.passform.domain.error.ErrorCode;
+import com.opinio.passform.domain.form.BranchGraph;
 import com.opinio.passform.domain.form.Form;
 import com.opinio.passform.domain.form.FormAttachments;
+import com.opinio.passform.domain.form.FormDefinition;
 import com.opinio.passform.domain.form.FormPublishValidator;
 import com.opinio.passform.domain.form.FormStatus;
 import com.opinio.passform.domain.form.FormVersion;
@@ -87,14 +92,38 @@ public class FormService {
 		long usedBefore = storageRules.lockAndMeasure(command.ownerId());
 		Object body = command.body() instanceof Map<?, ?> ? FormAttachments.keepStoredLists(objectOf(command.body()), null)
 				: command.body();
-		ValidatedDefinition definition = schemaValidator.validate(body);
-		Instant now = clock.instant();
-		Form form = new Form(command.ownerId(), definition.definition(), now);
-		form.replaceDefinition(definition.definition(), definition.deadline(), definition.editable(),
-				definition.cancellable(), definition.responseLimit(), now);
-		Form saved = forms.save(form);
+		Form saved = saveNewDraft(command.ownerId(), body);
 		storageRules.requireWithinLimit(command.ownerId(), usedBefore);
 		return new CreatedForm(saved.getId(), saved.getStatus().value());
+	}
+
+	// 섹션·문항·분기·설정이 같은 새 draft를 요청한 제작자 소유로 만든다(AC40, SPEC 5절 118행).
+	// 현재 저장된 정의(working_definition)만 가져온다. 응답·slug(share_url)·definition_version·배포 때 고정한 고지는
+	// 폼 행의 다른 열이라 따라오지 않고, 복사본이 자기 첫 배포 때 새로 정한다(SPEC 5절 157~158행, AC90).
+	// 첨부는 호출자가 트랜잭션 밖에서 복사해 둔 새 원본으로 연결한다. 실패하면 호출자가 복사한 원본을 지운다(사람 결정, #63).
+	@Transactional
+	public CreatedForm copy(UUID userId, String formId, List<CopiedFile> files) {
+		Form source = forms.findById(parseId(formId)).orElseThrow(FormService::notFound);
+		requireOwner(source, userId);
+		long usedBefore = storageRules.lockAndMeasure(userId);
+		Form saved = saveNewDraft(userId, deepCopy(source.getWorkingDefinition()));
+		Instant now = clock.instant();
+		Map<String, String> newIds = storageRules.attachCopies(saved.getId(), files, now);
+		ValidatedDefinition linked = schemaValidator.validate(FormAttachments.withIdsReplaced(saved.getWorkingDefinition(), newIds));
+		saved.replaceDefinition(linked.definition(), linked.deadline(), linked.editable(), linked.cancellable(),
+				linked.responseLimit(), now);
+		storageRules.requireWithinLimit(userId, usedBefore);
+		return new CreatedForm(saved.getId(), saved.getStatus().value());
+	}
+
+	// 새 폼은 항상 draft다(AC38). 형식 검증만 한다(AC56).
+	private Form saveNewDraft(UUID ownerId, Object body) {
+		ValidatedDefinition definition = schemaValidator.validate(body);
+		Instant now = clock.instant();
+		Form form = new Form(ownerId, definition.definition(), now);
+		form.replaceDefinition(definition.definition(), definition.deadline(), definition.editable(),
+				definition.cancellable(), definition.responseLimit(), now);
+		return forms.save(form);
 	}
 
 	// 첨부 API가 호출자의 트랜잭션 안에서 부른다. 호출자가 폼 행을 잠갔다.
@@ -113,6 +142,19 @@ public class FormService {
 		if (publishing) {
 			publishIfChanged(form, next, now);
 		}
+	}
+
+	// 원본 엔티티의 JSON 값을 복사본과 공유하지 않는다. 복사본을 고쳐도 원본이 바뀌지 않게 한다.
+	private static Object deepCopy(Object value) {
+		if (value instanceof Map<?, ?> map) {
+			Map<String, Object> copied = new LinkedHashMap<>();
+			map.forEach((key, item) -> copied.put((String) key, deepCopy(item)));
+			return copied;
+		}
+		if (value instanceof List<?> list) {
+			return new ArrayList<>(list.stream().map(FormService::deepCopy).toList());
+		}
+		return value;
 	}
 
 	@Transactional(readOnly = true)
@@ -186,6 +228,19 @@ public class FormService {
 			.toList();
 	}
 
+	// 현재 저장된 정의(초안이면 저장된 초안)로 분기 흐름을 만든다(AC45). 화면의 저장 전 편집은 반영하지 않는다.
+	@Transactional(readOnly = true)
+	public BranchGraphView branchGraph(UUID userId, String formId) {
+		Form form = forms.findById(parseId(formId)).orElseThrow(FormService::notFound);
+		requireOwner(form, userId);
+		BranchGraph graph = BranchGraph.of(FormDefinition.from(form.getWorkingDefinition()));
+		return new BranchGraphView(graph.nodes().stream().map(node -> new NodeView(node.id(), node.type())).toList(),
+				graph.edges()
+					.stream()
+					.map(edge -> new EdgeView(edge.from(), edge.to(), edge.kind(), edge.ruleIndex()))
+					.toList());
+	}
+
 	// 버전 대상 정의가 마지막 배포본과 다를 때만 다음 번호로 저장한다(SPEC 5절 155~156행, AC56, AC58).
 	private void publishIfChanged(Form form, ValidatedDefinition next, Instant now) {
 		Integer current = form.getDefinitionVersion();
@@ -218,6 +273,7 @@ public class FormService {
 		return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 	}
 
+	// 같은 패키지의 제작자 전용 서비스(FormQrService)도 같은 판정을 쓴다.
 	static void requireOwner(Form form, UUID userId) {
 		if (form.isDeleted()) {
 			throw notFound();
@@ -265,7 +321,7 @@ public class FormService {
 		}
 	}
 
-	private static DomainException notFound() {
+	static DomainException notFound() {
 		return new DomainException(ErrorCode.NOT_FOUND);
 	}
 
@@ -297,6 +353,17 @@ public class FormService {
 
 	public record CreatedFormView(UUID formId, String title, String status, Instant deadline, String shareUrl,
 			long responseCount) {
+	}
+
+	public record BranchGraphView(List<NodeView> nodes, List<EdgeView> edges) {
+	}
+
+	public record NodeView(String id, String type) {
+	}
+
+	// rule_index는 rule 엣지에만 나간다(SPEC 5절 125행).
+	@JsonInclude(Include.NON_NULL)
+	public record EdgeView(String from, String to, String kind, Integer ruleIndex) {
 	}
 
 }

@@ -16,7 +16,9 @@ public enum ErrorCode {
 	// 분석 API(SPEC 5절 235행).
 	INVALID_CONTEXT, LLM_UNAVAILABLE,
 	// 첨부와 저장 공간(SPEC 5절 121~124행, 188행, 198행). storage_unavailable은 사람 결정(#63)이다.
-	INVALID_FILE_TYPE, FILE_TOO_LARGE, STORAGE_QUOTA_EXCEEDED, ATTACHMENT_REMOVED, STORAGE_UNAVAILABLE;
+	INVALID_FILE_TYPE, FILE_TOO_LARGE, STORAGE_QUOTA_EXCEEDED, ATTACHMENT_REMOVED, STORAGE_UNAVAILABLE,
+	// QR은 공유 링크가 생긴 뒤에만 만든다(SPEC 5절 126행).
+	NOT_OPEN;
 
 	// 응답의 error 값이다(예: not_found).
 	public String code() {

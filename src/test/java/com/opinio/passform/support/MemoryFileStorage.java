@@ -120,6 +120,15 @@ public class MemoryFileStorage implements FileStorage {
 	}
 
 	@Override
+	public void copy(String sourceKey, String targetKey) {
+		byte[] source = objects.get(sourceKey);
+		if (failPuts || source == null) {
+			throw new DomainException(ErrorCode.STORAGE_UNAVAILABLE);
+		}
+		objects.put(targetKey, source);
+	}
+
+	@Override
 	public URI presignDownload(String key, String contentType, String filename, boolean inline) {
 		return URI.create("https://memory.test/" + key + "?type=" + URLEncoder.encode(contentType, StandardCharsets.UTF_8)
 				+ "&inline=" + inline);

@@ -108,14 +108,17 @@ export function CreatedPage({
                 >
                   <Icon name="edit" size={16} /> 폼 편집
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  aria-label={`${form.title.trim() || '제목 없는 폼'} 결과`}
-                  onClick={() => onResults(form.form_id)}
-                >
-                  결과 보기 <Icon name="arrow" size={16} />
-                </button>
+                {onCopy && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    aria-label={`${name} 복제`}
+                    disabled={copying !== null}
+                    onClick={() => void copy(form.form_id)}
+                  >
+                    {copying === form.form_id ? '복제 중…' : '복제'}
+                  </button>
+                )}
                 {form.share_url && loadQr && (
                   <button
                     type="button"
@@ -127,21 +130,18 @@ export function CreatedPage({
                     {showingQr ? 'QR 닫기' : 'QR 보기'}
                   </button>
                 )}
-                {onCopy && (
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    aria-label={`${name} 복사`}
-                    disabled={copying !== null}
-                    onClick={() => void copy(form.form_id)}
-                  >
-                    {copying === form.form_id ? '복사 중…' : '복사'}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  aria-label={`${form.title.trim() || '제목 없는 폼'} 결과`}
+                  onClick={() => onResults(form.form_id)}
+                >
+                  결과 보기 <Icon name="arrow" size={16} />
+                </button>
               </div>
               {copyFailed === form.form_id && (
                 <p className="error" role="alert">
-                  복사하지 못했어요. 잠시 뒤 다시 시도해 주세요.
+                  복제하지 못했어요. 잠시 뒤 다시 시도해 주세요.
                 </p>
               )}
               {showingQr && <ShareQr load={loadOpenQr} label={name} />}

@@ -294,13 +294,18 @@ describe('폼 복사 (AC40)', () => {
     });
     await openLive('/creator');
     await screen.findByText('서버 폼');
+    // 카드 버튼 순서: 폼 편집, 복제, QR 보기, 결과 보기(사람 결정).
+    const card = screen.getByRole('button', { name: '서버 폼 복제' }).closest('.button-row');
+    expect(
+      Array.from(card?.querySelectorAll('button') ?? []).map((b) => b.textContent?.trim()),
+    ).toEqual(['폼 편집', '복제', 'QR 보기', '결과 보기']);
 
-    fireEvent.click(screen.getByRole('button', { name: '서버 폼 복사' }));
-    expect((await screen.findByRole('alert')).textContent).toContain('복사하지 못했어요');
+    fireEvent.click(screen.getByRole('button', { name: '서버 폼 복제' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('복제하지 못했어요');
     expect(screen.getByTestId('path').textContent).toBe('/creator');
 
     copyReply = { status: 201, body: { form_id: 'f9', status: 'draft' } };
-    fireEvent.click(screen.getByRole('button', { name: '서버 폼 복사' }));
+    fireEvent.click(screen.getByRole('button', { name: '서버 폼 복제' }));
     await waitFor(() =>
       expect(screen.getByTestId('path').textContent).toBe('/creator/forms/f9/edit'),
     );

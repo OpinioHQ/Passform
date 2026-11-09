@@ -1,5 +1,6 @@
 package com.opinio.passform.domain.result;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,10 +13,14 @@ public record FormResults(int responseCount, Combined combined, List<Version> ve
 		versions = List.copyOf(versions);
 	}
 
-	public record Combined(List<CombinedQuestion> questions) {
+	// textQuestions·questionOrder는 사람 결정(2026-11-09)으로 더한 필드다. questions의 이름·의미는 그대로다.
+	public record Combined(List<CombinedQuestion> questions, List<CombinedTextQuestion> textQuestions,
+			List<QuestionRef> questionOrder) {
 
 		public Combined {
 			questions = List.copyOf(questions);
+			textQuestions = List.copyOf(textQuestions);
+			questionOrder = List.copyOf(questionOrder);
 		}
 
 	}
@@ -40,10 +45,24 @@ public record FormResults(int responseCount, Combined combined, List<Version> ve
 
 	}
 
-	public record Version(int formVersion, int responseCount, List<VersionQuestion> questions) {
+	// 단답·장문 문항 묶음(선택형과 같은 묶기 규칙). answers는 최신 제출이 먼저다.
+	public record CombinedTextQuestion(String questionId, String questionNote, String questionType,
+			List<Integer> formVersions, List<TextAnswer> answers) {
+
+		public CombinedTextQuestion {
+			formVersions = List.copyOf(formVersions);
+			answers = List.copyOf(answers);
+		}
+
+	}
+
+	public record Version(int formVersion, int responseCount, List<VersionQuestion> questions,
+			List<VersionTextQuestion> textQuestions, List<QuestionRef> questionOrder) {
 
 		public Version {
 			questions = List.copyOf(questions);
+			textQuestions = List.copyOf(textQuestions);
+			questionOrder = List.copyOf(questionOrder);
 		}
 
 	}
@@ -55,6 +74,23 @@ public record FormResults(int responseCount, Combined combined, List<Version> ve
 			counts = Collections.unmodifiableMap(new LinkedHashMap<>(counts));
 		}
 
+	}
+
+	public record VersionTextQuestion(String questionId, String questionNote, String questionType,
+			List<TextAnswer> answers) {
+
+		public VersionTextQuestion {
+			answers = List.copyOf(answers);
+		}
+
+	}
+
+	// 빈 답은 넣지 않는다. submittedAt은 제출 시각을 모르면(통계만 계산할 때) null이다.
+	public record TextAnswer(String responseId, int formVersion, String value, Instant submittedAt) {
+	}
+
+	// 화면이 선택형과 단답·장문 카드를 섞어 놓을 순서. questions·textQuestions의 항목을 이 세 값으로 찾는다.
+	public record QuestionRef(String questionId, String questionNote, String questionType) {
 	}
 
 }

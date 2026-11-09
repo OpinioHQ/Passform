@@ -50,7 +50,7 @@
 | 응답 화면 보기 방식 | 제작자가 기본 시작 방식을 정한다. 분기가 없는 폼은 응답자가 「한 질문씩」(한 화면에 질문 하나)과 「전체 질문 보기」(한 페이지에 모든 섹션·질문) 사이를 전환할 수 있다. 분기가 있는 폼은 제작자가 정한 「한 질문씩」 또는 「섹션별 보기」(한 화면에 한 섹션의 모든 질문)로만 응답하고 전환 버튼은 보이지 않는다. 작성 중 현재 단계와 확인 가능한 남은 분량을 표시한다 | 로그 7(긴 페이지 스크롤 부담), 로그 4·8·9(장문 설문 중단), 로그 4·9(전체 분량 파악 어려움), 로그 2·6(작성 중 앞선 응답 확인) |
 | 공유 링크·QR코드 | 배포한 폼의 공유 링크와 그 링크를 담은 QR 이미지 | (기본 폼 기능 / 계획서 — 인터뷰 근거 없음) |
 | 송금·결제 링크 연결 | 제작자가 넣은 송금 링크를 응답 화면에 표시, 응답자는 외부 앱으로 이동 | 로그 3, 10, 관찰 1·2 |
-| 결과 대시보드 | 폼 전체 제출 응답 수를 보여 주고, 문항·선택지 통계는 「통합 보기」와 「버전별 보기」 사이에서 전환한다. 통합 보기에서는 같은 문항·선택지만 합산하고 바뀐 항목은 버전 표시와 함께 구분한다 | 로그 1, 2, 8, 관찰 1; 통합·버전 선택은 제품 정책 |
+| 결과 대시보드 | 폼 전체 제출 응답 수를 보여 주고, 문항·선택지 통계는 「통합 보기」와 「버전별 보기」 사이에서 전환한다. 통합 보기에서는 같은 문항·선택지만 합산하고 바뀐 항목은 버전 표시와 함께 구분한다. 단답·장문 문항은 세지 않고 답을 응답마다 한 줄씩 최신 제출부터 보여 준다(긴 답은 펼쳐 봄) | 로그 1, 2, 8, 관찰 1; 통합·버전 선택은 제품 정책 |
 | AI 기반 대시보드 필터링·답변 | 자연어를 강의 3의 `RequestContext`(`conditions`·`match`·`operation`·`sort`·`target`·`topic`)로 구조화한다. 해당 폼의 모든 제출 버전을 대상으로 조건에 맞는 응답의 `count`·`list`·`summarize`, 목록 정렬·되묻기를 제공한다. 요약은 전체 요약(A)·특정 문항(B)·빈도 질문(C)·특정 의견(D)이다. 주관식 답에 LLM이 붙인 주제 라벨을 코드가 세어 개수 순으로 보여 주고 근거 응답을 인용하며, 특정 의견 요약은 개수를 반환하지 않는다. AI 요약은 배포 때 켠 폼에서, AI 요약에 동의한 응답만 사용한다. 각 버전의 제출 당시 문항으로 조건을 판정하고 판정 불가 응답 수를 알린다. 건수와 주제별 개수는 코드가 계산한다 | 로그 1·2·8, 관찰 1(⑦ 응답 확인, ⑧ 시트 정렬·필터, 주관식 응답 확인·코멘트 3~5분; 자연어 방식은 설계 가설); 전체 버전 검색·AI 요약 동의는 제품 정책 |
 | 내보내기(JSON·YAML·CSV) | 전체 응답 또는 AI 필터 결과를 내보낸다. 여러 버전의 응답은 출처 버전을 표시하고 JSON·YAML에는 각 버전의 폼 정의를 포함한다 | 로그 2(엑셀 연동 불편), 로그 8(엑셀로 옮겨 직접 가공), 관찰 1(응답 탭·시트 병행); 버전 구분은 제품 정책 |
 
@@ -231,7 +231,7 @@
 
 | 엔드포인트 | 인증 | 입력 | 출력 |
 |---|---|---|---|
-| `GET /forms/{form_id}/results` | 제작자 | — | `{response_count, combined: {questions: [{question_id, question_note, question_type, form_versions, options: [{label, count, form_versions}]}]}, versions: [{form_version, response_count, questions: [{question_id, question_note, counts: {선택지: 수}}]}]}` — 화면에서 통합·버전별 보기 전환 |
+| `GET /forms/{form_id}/results` | 제작자 | — | `{response_count, combined: {questions: [{question_id, question_note, question_type, form_versions, options: [{label, count, form_versions}]}], text_questions: [{question_id, question_note, question_type, form_versions, answers: [{response_id, form_version, value, submitted_at}]}], question_order: [{question_id, question_note, question_type}]}, versions: [{form_version, response_count, questions: [{question_id, question_note, counts: {선택지: 수}}], text_questions: [{question_id, question_note, question_type, answers}], question_order}]}` — 화면에서 통합·버전별 보기 전환. `questions`는 선택형, `text_questions`는 단답·장문(빈 답 제외, `submitted_at` 내림차순 → `response_id` 오름차순), `question_order`는 두 목록을 섞을 문항 순서 |
 | `POST /forms/{form_id}/analyze` | 제작자 | `{query}` 또는 `{context}` — 대시보드의 버전별 보기 선택과 무관하게 해당 폼의 모든 제출 버전을 분석 | 아래 / `400 {error: "invalid_context"}`(`query`와 `context`를 함께 보내거나 둘 다 없을 때 포함) / `503 {error: "llm_unavailable"}`(LLM 호출 실패) — 자연어에서 특정 버전 분석이나 지원 밖 통계를 요구하면 안내·되묻기 |
 | `GET /forms/{form_id}/responses/{response_id}` | 제작자 | — | `{response_id, form_version, submitted_at, updated_at, content: [{question_id, question_note, value}], attachments}` — 해당 제출 버전의 문항 문구 / `404`(없는 응답 또는 다른 폼의 응답) |
 | `DELETE /forms/{form_id}/responses` | 제작자 | — | `204` — 그 폼에 현재 받은 응답 전체와 응답 첨부 전체 삭제, 폼 정의는 유지 |

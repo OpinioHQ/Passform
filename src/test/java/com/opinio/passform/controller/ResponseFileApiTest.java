@@ -333,6 +333,17 @@ class ResponseFileApiTest extends DatabaseTest {
 	}
 
 	@Test
+	void S3가_저장한_뒤_put이_예외로_끝나도_원본을_지우고_응답이_없다() throws Exception {
+		rememberCounts();
+		storage.failAfterStoring();
+
+		assertError(submit(respondent, pdf("q5")), 503, "storage_unavailable");
+
+		assertThat(storage.deleteCount()).isEqualTo(1);
+		assertNothingStored();
+	}
+
+	@Test
 	void S3_저장이_중간에_실패하면_503이고_응답이_없다() throws Exception {
 		rememberCounts();
 		storage.failPuts();

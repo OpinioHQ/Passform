@@ -101,14 +101,15 @@ public class ResponseFileService {
 			for (Inspected file : inspected) {
 				// 키는 서버가 새로 만들고 파일 이름을 넣지 않는다.
 				String key = "attachments/" + formId + "/" + UUID.randomUUID();
-				storage.put(key, file.upload().content(), file.upload().sizeBytes(), file.contentType());
+				// S3가 저장한 뒤 응답이 끊겨 put이 실패할 수 있어 먼저 목록에 넣는다.
 				stored.add(new StoredFile(file.upload().questionId(), file.filename(), file.contentType(),
 						file.upload().sizeBytes(), key));
+				storage.put(key, file.upload().content(), file.upload().sizeBytes(), file.contentType());
 			}
 			return save.apply(stored);
 		}
 		catch (RuntimeException exception) {
-			// 커밋 실패까지 여기로 온다. 실패한 요청의 원본을 남기지 않는다.
+			// put 실패와 커밋 실패까지 여기로 온다. 실패한 요청의 원본을 남기지 않는다.
 			stored.forEach(file -> cleanup.deleteNow(formId, file.key()));
 			throw exception;
 		}

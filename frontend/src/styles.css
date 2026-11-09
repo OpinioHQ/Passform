@@ -1901,3 +1901,46 @@ h3 {
   font-size: 15px;
   margin: 0;
 }
+
+/* 분기 흐름 보기(AC45). 그래프 라이브러리 없이 목록과 화살표 글자로 그린다. */
+.branch-flow-list {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 12px;
+}
+.branch-flow-list ul {
+  padding-left: 18px;
+  margin: 6px 0 0;
+}
+.branch-flow-edges {
+  list-style: none;
+}
+.branch-flow-rule {
+  color: #1f5f9e;
+}
+.branch-flow-default {
+  color: #73776f;
+}
+.share-qr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.share-qr img {
+  background: #fff;
+  border-radius: 8px;
+}
+/* 글자에 밑줄만 있는 버튼. 내가 만든 폼의 공유 링크 오른쪽 "QR 보기"에 쓴다. */
+.text-button {
+  margin-left: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

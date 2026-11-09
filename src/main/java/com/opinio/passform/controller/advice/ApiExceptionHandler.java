@@ -40,6 +40,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			case INVALID_TRANSITION, RESPONSE_LIMIT_REACHED, FORM_CLOSED, HISTORY_ONLY, NOT_EDITABLE, NOT_CANCELLABLE -> HttpStatus.CONFLICT;
 			case INVALID_CONTEXT -> HttpStatus.BAD_REQUEST;
 			case LLM_UNAVAILABLE -> HttpStatus.SERVICE_UNAVAILABLE;
+			case NOT_OPEN -> HttpStatus.CONFLICT;
 		};
 	}
 

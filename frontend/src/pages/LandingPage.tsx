@@ -40,8 +40,7 @@ export function LandingPage({
             끊김 없이 이어서.
           </h2>
           <p className="muted">
-            여러 곳에서 받은 폼을 내 폼함에 저장하세요. 중단한 작성은 이어 쓰고, 제출한 답을 다시
-            확인하세요.
+            받은 폼을 내 폼함에 저장하세요. 중단한 폼은 이어 쓰고, 제출한 답을 다시 확인하세요.
           </p>
           <Button variant="secondary" onClick={onStart}>
             내 폼함 가기

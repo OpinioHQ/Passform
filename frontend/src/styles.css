@@ -2248,3 +2248,14 @@ input[type='file']::file-selector-button {
     padding: var(--space-6);
   }
 }
+/* 비로그인 안내: 내 폼함·제출 내역·내 프로필·내가 만든 폼이 같은 상자와 검정 버튼을 쓴다. */
+.panel.login-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  max-width: 580px;
+}
+.panel.login-prompt > p {
+  margin: 0;
+}

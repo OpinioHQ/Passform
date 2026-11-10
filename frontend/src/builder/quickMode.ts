@@ -5,7 +5,7 @@ import type {
   QuickAudience,
   QuickPurpose,
 } from '../types/api';
-import { emptyQuestion } from './formDefinition';
+import { emptyQuestion, removeQuestion } from './formDefinition';
 
 /** 빠른 모드에서 고르는 값(SPEC 179행 예시). 서버 V3 초기 데이터와 같은 값이다. */
 export const PURPOSE_LABELS: Record<QuickPurpose, string> = {
@@ -57,4 +57,30 @@ export function appendQuestions(def: FormDefinition, questions: Question[]): For
       index === last ? { ...section, questions: [...section.questions, ...questions] } : section,
     ),
   };
+}
+
+/** 폼에 들어 있는 추천 문항의 출처(`template_id`). 직접 만든 문항은 빠진다. */
+export function templateIdsIn(def: FormDefinition): Set<string> {
+  return new Set(
+    def.sections
+      .flatMap((s) => s.questions)
+      .map((q) => q.template_id)
+      .filter((id): id is string => id !== null),
+  );
+}
+
+/** 추천 문항 단계에서 체크를 푼 문항을 뺀다. 기본 모드의 문항 삭제(removeQuestion)를 그대로 쓴다. */
+export function removeTemplateQuestions(
+  def: FormDefinition,
+  templateIds: Set<string>,
+): FormDefinition {
+  let next = def;
+  for (const section of def.sections) {
+    for (const question of section.questions) {
+      if (question.template_id !== null && templateIds.has(question.template_id)) {
+        next = removeQuestion(next, section.section_id, question.question_id);
+      }
+    }
+  }
+  return next;
 }

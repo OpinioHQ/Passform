@@ -132,7 +132,7 @@ const button = (name: string | RegExp) => screen.getByRole('button', { name });
 
 async function addFromSuggestions(label: RegExp) {
   fireEvent.click(await screen.findByLabelText(label));
-  fireEvent.click(button('1개 추가하고 다음'));
+  fireEvent.click(button('적용하고 다음'));
 }
 
 beforeEach(() => {
@@ -306,6 +306,24 @@ describe('빠른 모드 화면', () => {
     fireEvent.click(button('편집 마치고 미리보기 (아래)'));
     expect(screen.getByRole('heading', { level: 1, name: '미리보기' })).toBeTruthy();
     expect(calls('POST', '/forms/f1/responses')).toHaveLength(0);
+  });
+
+  it('추천 문항 단계로 돌아오면 넣은 문항이 체크된 채이고, 체크를 풀고 적용하면 폼에서 빠진다', async () => {
+    stubApi();
+    await openLive('/creator/forms/f1/quick');
+    await pickPurposeAndAudience('신청', '대학생');
+    await addFromSuggestions(/학과\(전공\)/);
+    await screen.findByRole('button', { name: '폼 직접 편집' });
+
+    fireEvent.click(button('3. 추천 문항'));
+    const major = (await screen.findByLabelText(/학과\(전공\)/)) as HTMLInputElement;
+    expect(major.checked).toBe(true);
+    expect(button('다음')).toBeTruthy();
+
+    fireEvent.click(major);
+    fireEvent.click(button('적용하고 다음'));
+    fireEvent.click(await screen.findByRole('button', { name: '폼 직접 편집' }));
+    expect(screen.queryByLabelText('질문 1 문구')).toBeNull();
   });
 
   it('설정·배포에서 배포하면 status open으로 현재 정의를 보내고 공유 링크를 보인다', async () => {

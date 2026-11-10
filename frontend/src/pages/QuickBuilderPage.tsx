@@ -21,6 +21,8 @@ import {
   isBasicTemplate,
   PURPOSE_LABELS,
   questionFromTemplate,
+  removeTemplateQuestions,
+  templateIdsIn,
 } from '../builder/quickMode';
 import { Badge, Button, Heading, Panel } from '../components/UI';
 import { QUESTION_TYPE_LABELS } from '../components/questionTypeLabels';
@@ -115,7 +117,6 @@ export function QuickBuilderPage({
     if (step !== 'pick' || !purpose || !audience) return;
     let active = true;
     setSuggestions({ state: 'loading' });
-    setPicked([]);
     api
       .questionTemplates(purpose, audience)
       .then((items) => {
@@ -136,17 +137,39 @@ export function QuickBuilderPage({
     setProblems([]);
   }
 
+  // 체크박스는 그 추천 문항이 폼에 들어 있는지를 보인다(사람 결정 A, #58).
+  const addedTemplateIds = templateIdsIn(definition);
+
   function go(next: Step) {
     setFailure('');
     setProblems([]);
     setEditing(false);
+    // 추천 문항 단계에 들어오면 이미 넣은 문항을 체크된 채로 보인다.
+    if (next === 'pick') setPicked([...templateIdsIn(definition)]);
     setStep(next);
   }
 
-  function addPicked() {
-    if (suggestions.state === 'ready') {
-      const chosen = suggestions.items.filter((t) => picked.includes(t.template_id));
-      if (chosen.length > 0) edit((d) => appendQuestions(d, chosen.map(questionFromTemplate)));
+  /** 새로 체크한 문항은 더하고, 체크를 푼 문항은 폼에서 뺀다. 이 목록에 없는 문항은 건드리지 않는다. */
+  const pickChanges = () => {
+    const items = suggestions.state === 'ready' ? suggestions.items : [];
+    return {
+      toAdd: items.filter(
+        (t) => picked.includes(t.template_id) && !addedTemplateIds.has(t.template_id),
+      ),
+      toRemove: new Set(
+        items
+          .filter((t) => !picked.includes(t.template_id) && addedTemplateIds.has(t.template_id))
+          .map((t) => t.template_id),
+      ),
+    };
+  };
+
+  function applyPicked() {
+    const { toAdd, toRemove } = pickChanges();
+    if (toAdd.length > 0 || toRemove.size > 0) {
+      edit((d) =>
+        appendQuestions(removeTemplateQuestions(d, toRemove), toAdd.map(questionFromTemplate)),
+      );
     }
     go('preview');
   }
@@ -468,8 +491,11 @@ export function QuickBuilderPage({
               ))}
           {nav(
             backTo('intro'),
-            <Button onClick={addPicked}>
-              {picked.length > 0 ? `${picked.length}개 추가하고 다음` : '추가하지 않고 다음'}
+            <Button onClick={applyPicked}>
+              {(() => {
+                const { toAdd, toRemove } = pickChanges();
+                return toAdd.length > 0 || toRemove.size > 0 ? '적용하고 다음' : '다음';
+              })()}
             </Button>,
           )}
         </Panel>

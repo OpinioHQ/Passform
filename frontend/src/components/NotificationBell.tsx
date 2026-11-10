@@ -27,9 +27,10 @@ export function NotificationBell({ open, onToggle, onClose }: Props) {
 
   React.useEffect(() => {
     let active = true;
+    // 배열이 아닌 응답은 빈 목록으로 다룬다. 실패하면 개수를 보이지 않고 조용히 둔다.
     api.notifications().then(
       (list) => {
-        if (active) setItems(list);
+        if (active) setItems(Array.isArray(list) ? list : []);
       },
       () => undefined,
     );
@@ -43,7 +44,9 @@ export function NotificationBell({ open, onToggle, onClose }: Props) {
     let active = true;
     api.savedForms().then(
       (list) => {
-        if (active) setForms(new Map(list.map((form) => [form.form_id, form])));
+        if (active) {
+          setForms(new Map((Array.isArray(list) ? list : []).map((form) => [form.form_id, form])));
+        }
       },
       () => {
         if (active) setForms(new Map());

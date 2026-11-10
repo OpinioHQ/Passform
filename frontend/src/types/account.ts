@@ -9,6 +9,20 @@ export interface MeResponse {
   deadline_reminder: boolean;
 }
 
+/** `PATCH /me/settings`의 입력(SPEC 101행). 빠진 값은 서버가 유지한다. */
+export interface SettingsInput {
+  deadline_reminder?: boolean;
+}
+
+/** `GET /me/notifications`의 항목(SPEC 201행). 순서는 서버가 정한다(created_at 내림차순 → id 오름차순). */
+export interface NotificationView {
+  notification_id: string;
+  form_id: string;
+  type: 'deadline';
+  created_at: string;
+  read: boolean;
+}
+
 /** `GET /me/storage` (SPEC 100행) */
 export interface StorageUsage {
   used_bytes: number;

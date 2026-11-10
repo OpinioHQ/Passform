@@ -48,6 +48,8 @@ const STEPS: { step: Step; label: string }[] = [
   { step: 'publish', label: '설정·배포' },
 ];
 
+const allQuestionsOf = (def: FormDefinition) => def.sections.flatMap((s) => s.questions);
+
 type Suggestions =
   { state: 'loading' } | { state: 'ready'; items: QuestionTemplateView[] } | { state: 'failed' };
 
@@ -149,19 +151,31 @@ export function QuickBuilderPage({
     setStep(next);
   }
 
-  /** 새로 체크한 문항은 더하고, 체크를 푼 문항은 폼에서 뺀다. 이 목록에 없는 문항은 건드리지 않는다. */
+  /**
+   * 새로 체크한 문항은 체크한 순서대로 끝에 더하고(사람 결정, #58), 체크를 푼 문항은 폼에서 뺀다.
+   * 이미 들어 있는 문항은 자리를 지키고, 이 목록에 없는 문항은 건드리지 않는다.
+   */
   const pickChanges = () => {
     const items = suggestions.state === 'ready' ? suggestions.items : [];
-    return {
-      toAdd: items.filter(
-        (t) => picked.includes(t.template_id) && !addedTemplateIds.has(t.template_id),
-      ),
-      toRemove: new Set(
-        items
-          .filter((t) => !picked.includes(t.template_id) && addedTemplateIds.has(t.template_id))
-          .map((t) => t.template_id),
-      ),
-    };
+    const byId = new Map(items.map((t) => [t.template_id, t]));
+    const toAdd = picked
+      .filter((id) => !addedTemplateIds.has(id))
+      .map((id) => byId.get(id))
+      .filter((t): t is QuestionTemplateView => t !== undefined);
+    const toRemove = new Set(
+      items
+        .filter((t) => !picked.includes(t.template_id) && addedTemplateIds.has(t.template_id))
+        .map((t) => t.template_id),
+    );
+    // 적용한 뒤의 문항 순서. 체크한 문항 옆에 "N번"으로 보인다.
+    const order = [
+      ...allQuestionsOf(definition)
+        .map((q) => q.template_id)
+        .filter((id) => id === null || !toRemove.has(id)),
+      ...toAdd.map((t) => t.template_id),
+    ];
+    const positionOf = (id: string) => order.indexOf(id) + 1;
+    return { toAdd, toRemove, positionOf };
   };
 
   function applyPicked() {
@@ -258,7 +272,8 @@ export function QuickBuilderPage({
         : autosave.status === 'failed'
           ? '저장 실패 · 지금 편집 내용은 아직 저장되지 않았어요.'
           : null;
-  const allQuestions = definition.sections.flatMap((s) => s.questions);
+  const allQuestions = allQuestionsOf(definition);
+  const pickPlan = pickChanges();
   const lastSectionId = definition.sections[definition.sections.length - 1]?.section_id;
   const branchProblems = branchPublishProblems(definition);
 
@@ -435,7 +450,7 @@ export function QuickBuilderPage({
             {PURPOSE_LABELS[purpose]} · {AUDIENCE_LABELS[audience]}에 맞는 추천 문항
           </h2>
           <p className="small muted quick-hint">
-            필요한 문항을 골라 추가하세요. 추가한 뒤에도 고칠 수 있어요.
+            체크한 순서대로 폼에 들어가요. 넣은 뒤에도 고칠 수 있어요.
           </p>
           {suggestions.state === 'loading' && (
             <p className="muted">추천 문항을 불러오는 중이에요.</p>
@@ -483,6 +498,11 @@ export function QuickBuilderPage({
                               {t.options.length > 0 && ` · ${t.options.join(', ')}`}
                             </small>
                           </span>
+                          {checked && (
+                            <span className="quick-order">
+                              {pickPlan.positionOf(t.template_id)}번
+                            </span>
+                          )}
                         </label>
                       );
                     })}
@@ -492,10 +512,7 @@ export function QuickBuilderPage({
           {nav(
             backTo('intro'),
             <Button onClick={applyPicked}>
-              {(() => {
-                const { toAdd, toRemove } = pickChanges();
-                return toAdd.length > 0 || toRemove.size > 0 ? '적용하고 다음' : '다음';
-              })()}
+              {pickPlan.toAdd.length > 0 || pickPlan.toRemove.size > 0 ? '적용하고 다음' : '다음'}
             </Button>,
           )}
         </Panel>

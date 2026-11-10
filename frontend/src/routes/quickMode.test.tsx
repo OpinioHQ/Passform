@@ -308,6 +308,28 @@ describe('빠른 모드 화면', () => {
     expect(calls('POST', '/forms/f1/responses')).toHaveLength(0);
   });
 
+  it('체크한 순서대로 번호가 보이고 그 순서로 폼에 들어간다', async () => {
+    const patches: Record<string, unknown>[] = [];
+    stubApi((body) => {
+      patches.push(body);
+      return { status: 200, body: { status: 'draft', share_url: null, definition_version: null } };
+    });
+    await openLive('/creator/forms/f1/quick');
+    await pickPurposeAndAudience('신청', '대학생');
+    const major = await screen.findByLabelText(/학과\(전공\)/);
+    fireEvent.click(major);
+    fireEvent.click(screen.getByLabelText(/^이름/));
+    expect(within(major.closest('label') as HTMLElement).getByText('1번')).toBeTruthy();
+    expect(
+      within(screen.getByLabelText(/^이름/).closest('label') as HTMLElement).getByText('2번'),
+    ).toBeTruthy();
+
+    fireEvent.click(button('적용하고 다음'));
+    fireEvent.click(await screen.findByRole('button', { name: '폼 직접 편집' }));
+    expect((screen.getByLabelText('질문 1 문구') as HTMLInputElement).value).toBe('학과(전공)');
+    expect((screen.getByLabelText('질문 2 문구') as HTMLInputElement).value).toBe('이름');
+  });
+
   it('추천 문항 단계로 돌아오면 넣은 문항이 체크된 채이고, 체크를 풀고 적용하면 폼에서 빠진다', async () => {
     stubApi();
     await openLive('/creator/forms/f1/quick');

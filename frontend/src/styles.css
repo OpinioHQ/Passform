@@ -2368,6 +2368,13 @@ input[type='file']::file-selector-button {
 .quick-suggestion {
   align-items: flex-start;
 }
+.quick-order {
+  margin-left: auto;
+  padding-left: var(--space-2);
+  font-weight: 600;
+  color: var(--color-ink);
+  white-space: nowrap;
+}
 .quick-suggestion-text {
   display: flex;
   flex-direction: column;

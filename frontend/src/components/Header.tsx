@@ -20,7 +20,7 @@ export function Header() {
   const navigate = useNavigate();
   const [reminderOpen, setReminderOpen] = React.useState(false);
   const [accountOpen, setAccountOpen] = React.useState(false);
-  // 화면 상태로만 둔다. 서버 저장(`PATCH /me/settings`의 `deadline_reminder`)은 E12에서 연결한다.
+  // 가상 데이터 미리보기에서는 화면 상태로만 둔다. 실제 API 모드는 NotificationBell이 `PATCH /me/settings`로 저장한다.
   const [deadlineReminder, setDeadlineReminder] = React.useState(true);
   const [me, setMe] = React.useState<MeResponse | null>(null);
   React.useEffect(() => {

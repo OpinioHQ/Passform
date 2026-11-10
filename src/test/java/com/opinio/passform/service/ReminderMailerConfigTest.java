@@ -17,29 +17,39 @@ class ReminderMailerConfigTest {
 
 	@Test
 	void 사용자_이름이나_앱_비밀번호가_비면_보내지_않는_구현이다() {
-		assertThat(config.reminderMailer("smtp.gmail.com", 587, "", "secret", "", 24))
+		assertThat(config.reminderMailer("smtp.gmail.com", "587", "", "secret", "", 24))
 			.isInstanceOf(UnconfiguredReminderMailer.class);
-		assertThat(config.reminderMailer("smtp.gmail.com", 587, "sender@example.com", " ", "", 24))
+		assertThat(config.reminderMailer("smtp.gmail.com", "587", "sender@example.com", " ", "", 24))
 			.isInstanceOf(UnconfiguredReminderMailer.class);
 	}
 
 	@Test
 	void 둘_다_있으면_STARTTLS_SMTP로_보내고_보낸_사람이_없으면_사용자_이름을_쓴다() {
-		ReminderMailer mailer = config.reminderMailer("smtp.gmail.com", 587, "sender@example.com", "app-password", "",
-				24);
+		ReminderMailer mailer = config.reminderMailer("smtp.example.com", "2525", "sender@example.com", "app-password",
+				"", 24);
 
 		assertThat(mailer).isInstanceOf(SmtpReminderMailer.class);
 		assertThat(ReflectionTestUtils.getField(mailer, "from")).isEqualTo("sender@example.com");
 		JavaMailSenderImpl sender = (JavaMailSenderImpl) ReflectionTestUtils.getField(mailer, "sender");
-		assertThat(sender.getHost()).isEqualTo("smtp.gmail.com");
-		assertThat(sender.getPort()).isEqualTo(587);
+		assertThat(sender.getHost()).isEqualTo("smtp.example.com");
+		assertThat(sender.getPort()).isEqualTo(2525);
 		assertThat(sender.getJavaMailProperties()).containsEntry("mail.smtp.auth", "true")
 			.containsEntry("mail.smtp.starttls.enable", "true")
 			.containsEntry("mail.smtp.starttls.required", "true");
 
-		ReminderMailer named = config.reminderMailer("smtp.gmail.com", 587, "sender@example.com", "app-password",
+		ReminderMailer named = config.reminderMailer("smtp.gmail.com", "587", "sender@example.com", "app-password",
 				"Passform <sender@example.com>", 24);
 		assertThat(ReflectionTestUtils.getField(named, "from")).isEqualTo("Passform <sender@example.com>");
+	}
+
+	@Test
+	void 호스트_포트가_비면_Gmail_기본값이고_앱_비밀번호의_공백은_지운다() {
+		ReminderMailer mailer = config.reminderMailer("", " ", "sender@example.com", "abcd efgh ijkl mnop", "", 24);
+
+		JavaMailSenderImpl sender = (JavaMailSenderImpl) ReflectionTestUtils.getField(mailer, "sender");
+		assertThat(sender.getHost()).isEqualTo("smtp.gmail.com");
+		assertThat(sender.getPort()).isEqualTo(587);
+		assertThat(sender.getPassword()).isEqualTo("abcdefghijklmnop");
 	}
 
 }

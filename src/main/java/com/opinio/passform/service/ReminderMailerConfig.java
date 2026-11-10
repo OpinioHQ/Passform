@@ -23,9 +23,15 @@ public class ReminderMailerConfig {
 
 	private static final String TIMEOUT_MILLIS = "10000";
 
+	private static final String DEFAULT_HOST = "smtp.gmail.com";
+
+	private static final int DEFAULT_PORT = 587;
+
+	// 호스트·포트가 빈 값으로 넘어와도(compose의 빈 기본값) Gmail 기본값을 쓴다.
+	// Google이 앱 비밀번호를 4자씩 띄어 보여 주므로 비밀번호의 공백은 지운다.
 	@Bean
-	ReminderMailer reminderMailer(@Value("${passform.mail.host:smtp.gmail.com}") String host,
-			@Value("${passform.mail.port:587}") int port, @Value("${passform.mail.username:}") String username,
+	ReminderMailer reminderMailer(@Value("${passform.mail.host:}") String host,
+			@Value("${passform.mail.port:}") String port, @Value("${passform.mail.username:}") String username,
 			@Value("${passform.mail.password:}") String password, @Value("${passform.mail.from:}") String from,
 			@Value("${passform.deadline-reminder.hours:24}") long hours) {
 		if (!StringUtils.hasText(username) || !StringUtils.hasText(password)) {
@@ -33,10 +39,10 @@ public class ReminderMailerConfig {
 			return new UnconfiguredReminderMailer();
 		}
 		JavaMailSenderImpl sender = new JavaMailSenderImpl();
-		sender.setHost(host);
-		sender.setPort(port);
+		sender.setHost(StringUtils.hasText(host) ? host.strip() : DEFAULT_HOST);
+		sender.setPort(StringUtils.hasText(port) ? Integer.parseInt(port.strip()) : DEFAULT_PORT);
 		sender.setUsername(username.strip());
-		sender.setPassword(password.strip());
+		sender.setPassword(StringUtils.trimAllWhitespace(password));
 		sender.setDefaultEncoding("UTF-8");
 		Properties properties = sender.getJavaMailProperties();
 		properties.put("mail.transport.protocol", "smtp");

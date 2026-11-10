@@ -1,10 +1,12 @@
 -- 빠른 모드 추천 문항(SPEC 5절 179행, #58). 에이전트 초안을 사람이 검토·승인한 표(docs/question_templates_draft.md) 그대로다.
--- purpose: apply(신청)·survey(설문조사)·reservation(예약)·quiz(퀴즈), audience: high_school·university·worker, 공통은 all.
+-- purpose: apply(신청)·survey(설문조사)·reservation(예약)·quiz(퀴즈), audience: high_school·university·worker, 목적 공통은 audience all.
+-- 기본 정보(basic_*)는 purpose·audience가 모두 all이고 어떤 선택에도 함께 추천한다(사람 결정, #58). 화면의 "누구나"(anyone)는 공통 문항과 기본 정보만 받는다.
 -- input_format은 short_answer에만 둔다(form.schema.json). profile_key는 템플릿에 두지 않는다(AC7).
 -- 배포된 폼은 template_id만 보존하므로 이 행의 문구를 고치지 말고 새 ID로 행을 더한다.
 INSERT INTO question_templates (template_id, purpose, audience, question_note, question_type, options, input_format) VALUES
-('apply_all_01', 'apply', 'all', '이름', 'short_answer', NULL, '{"kind": "name"}'),
-('apply_all_02', 'apply', 'all', '휴대폰 번호', 'short_answer', NULL, '{"kind": "mobile_phone"}'),
+('basic_01', 'all', 'all', '이름', 'short_answer', NULL, '{"kind": "name"}'),
+('basic_02', 'all', 'all', '휴대폰 번호', 'short_answer', NULL, '{"kind": "mobile_phone"}'),
+('basic_03', 'all', 'all', '생년월일', 'short_answer', NULL, '{"kind": "date"}'),
 ('apply_all_03', 'apply', 'all', '이메일', 'short_answer', NULL, '{"kind": "email"}'),
 ('apply_all_04', 'apply', 'all', '신청 동기를 적어 주세요', 'long_answer', NULL, NULL),
 ('apply_high_01', 'apply', 'high_school', '학년', 'dropdown', '["1학년", "2학년", "3학년"]', NULL),
@@ -25,7 +27,6 @@ INSERT INTO question_templates (template_id, purpose, audience, question_note, q
 ('survey_work_02', 'survey', 'worker', '근무 형태', 'multiple_choice', '["출근", "재택", "혼합"]', NULL),
 ('reservation_all_01', 'reservation', 'all', '예약자 성함', 'short_answer', NULL, '{"kind": "name"}'),
 ('reservation_all_02', 'reservation', 'all', '예약 날짜', 'short_answer', NULL, '{"kind": "date"}'),
-('reservation_all_03', 'reservation', 'all', '연락처', 'short_answer', NULL, '{"kind": "mobile_phone"}'),
 ('reservation_all_04', 'reservation', 'all', '희망 시간대', 'multiple_choice', '["오전", "오후", "저녁"]', NULL),
 ('reservation_high_01', 'reservation', 'high_school', '학교 이름', 'short_answer', NULL, NULL),
 ('reservation_high_02', 'reservation', 'high_school', '보호자 연락처', 'short_answer', NULL, '{"kind": "mobile_phone"}'),
@@ -33,7 +34,6 @@ INSERT INTO question_templates (template_id, purpose, audience, question_note, q
 ('reservation_univ_02', 'reservation', 'university', '사용 목적', 'multiple_choice', '["스터디", "동아리 활동", "수업 과제", "기타"]', NULL),
 ('reservation_work_01', 'reservation', 'worker', '소속(회사·부서)', 'short_answer', NULL, NULL),
 ('reservation_work_02', 'reservation', 'worker', '이용 인원', 'dropdown', '["1명", "2~4명", "5~9명", "10명 이상"]', NULL),
-('quiz_all_01', 'quiz', 'all', '이름', 'short_answer', NULL, '{"kind": "name"}'),
 ('quiz_all_02', 'quiz', 'all', '다음 중 정답을 하나 골라 주세요', 'multiple_choice', '["보기 1", "보기 2", "보기 3", "보기 4"]', NULL),
 ('quiz_all_03', 'quiz', 'all', '정답을 모두 골라 주세요', 'checkbox', '["보기 1", "보기 2", "보기 3", "보기 4"]', NULL),
 ('quiz_all_04', 'quiz', 'all', '답을 짧게 적어 주세요', 'short_answer', NULL, NULL),

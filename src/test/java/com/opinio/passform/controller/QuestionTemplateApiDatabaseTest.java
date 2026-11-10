@@ -64,17 +64,30 @@ class QuestionTemplateApiDatabaseTest extends DatabaseTest {
 	}
 
 	@Test
-	void 고른_대상과_목적_공통_문항을_template_id_순으로_준다() throws Exception {
-		assertThat(templateIds("apply", "university")).containsExactly("apply_all_01", "apply_all_02", "apply_all_03",
-				"apply_all_04", "apply_univ_01", "apply_univ_02");
+	void 기본_정보를_먼저_그다음_고른_대상과_목적_공통_문항을_template_id_순으로_준다() throws Exception {
+		assertThat(templateIds("apply", "university")).containsExactly("basic_01", "basic_02", "basic_03",
+				"apply_all_03", "apply_all_04", "apply_univ_01", "apply_univ_02");
 	}
 
 	@Test
 	void 같은_목적에서_대상을_바꾸면_그_대상의_문항으로_바뀐다() throws Exception {
-		assertThat(templateIds("apply", "high_school")).containsExactly("apply_all_01", "apply_all_02", "apply_all_03",
-				"apply_all_04", "apply_high_01", "apply_high_02");
-		assertThat(templateIds("apply", "worker")).containsExactly("apply_all_01", "apply_all_02", "apply_all_03",
+		assertThat(templateIds("apply", "high_school")).containsExactly("basic_01", "basic_02", "basic_03",
+				"apply_all_03", "apply_all_04", "apply_high_01", "apply_high_02");
+		assertThat(templateIds("apply", "worker")).containsExactly("basic_01", "basic_02", "basic_03", "apply_all_03",
 				"apply_all_04", "apply_work_01", "apply_work_02");
+	}
+
+	@Test
+	void 누구나는_기본_정보와_목적_공통_문항만_받는다() throws Exception {
+		assertThat(templateIds("quiz", "anyone")).containsExactly("basic_01", "basic_02", "basic_03", "quiz_all_02",
+				"quiz_all_03", "quiz_all_04");
+	}
+
+	@Test
+	void 기본_정보는_이름_휴대폰_번호_생년월일_형식이다() throws Exception {
+		assertThat(noteToKind(fetch("survey", "worker"))).containsEntry("이름", "name")
+			.containsEntry("휴대폰 번호", "mobile_phone")
+			.containsEntry("생년월일", "date");
 	}
 
 	@Test

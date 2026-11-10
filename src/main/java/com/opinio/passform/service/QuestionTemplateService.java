@@ -1,5 +1,6 @@
 package com.opinio.passform.service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +21,8 @@ public class QuestionTemplateService {
 		this.questionTemplates = questionTemplates;
 	}
 
-	// 빠른 모드의 추천 문항(SPEC 5절 113행, AC71). 고른 대상의 문항과 목적 공통(all) 문항을 template_id 순으로 준다.
+	// 빠른 모드의 추천 문항(SPEC 5절 113행, AC71). 기본 정보를 먼저, 그다음 고른 대상의 문항과 목적 공통(all) 문항을
+	// template_id 오름차순으로 준다(AGENTS 5절 결정론적 순서).
 	// 목록 밖의 값은 화면이 보내지 않으므로 400 invalid_request로 드러낸다(사람 결정, #58).
 	// profile_key는 템플릿에 없다 — 추가한 뒤 제작자가 본인 정보 여부를 확인한다(AC7).
 	@Transactional(readOnly = true)
@@ -31,8 +33,9 @@ public class QuestionTemplateService {
 			throw new DomainException(ErrorCode.INVALID_REQUEST);
 		}
 		return questionTemplates
-			.findByPurposeAndAudienceInOrderByIdAsc(purpose, List.of(audience, QuestionTemplate.COMMON_AUDIENCE))
+			.findSuggestions(purpose, List.of(audience, QuestionTemplate.COMMON), QuestionTemplate.COMMON)
 			.stream()
+			.sorted(Comparator.comparing((QuestionTemplate t) -> !t.isBasic()).thenComparing(QuestionTemplate::getId))
 			.map(QuestionTemplateService::viewOf)
 			.toList();
 	}

@@ -2362,6 +2362,9 @@ input[type='file']::file-selector-button {
   font-weight: 600;
   color: var(--color-ink);
 }
+.quick-hint {
+  margin: 0 0 var(--space-6);
+}
 .quick-suggestion {
   align-items: flex-start;
 }

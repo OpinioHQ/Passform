@@ -66,7 +66,17 @@ class QuestionTemplateApiDatabaseTest extends DatabaseTest {
 	@Test
 	void 기본_정보를_먼저_그다음_고른_대상과_목적_공통_문항을_template_id_순으로_준다() throws Exception {
 		assertThat(templateIds("apply", "university")).containsExactly("basic_01", "basic_02", "basic_03",
-				"apply_all_03", "apply_all_04", "apply_univ_01", "apply_univ_02");
+				"apply_all_03", "apply_all_04", "univ_01", "univ_02");
+	}
+
+	@Test
+	void 대학생이면_목적과_상관없이_학번과_학과를_추천한다() throws Exception {
+		for (String purpose : QuestionTemplate.PURPOSES) {
+			assertThat(templateIds(purpose, "university")).as(purpose).contains("univ_01", "univ_02");
+			assertThat(templateIds(purpose, "worker")).as(purpose).doesNotContain("univ_01", "univ_02");
+		}
+		assertThat(noteToKind(fetch("survey", "university"))).containsEntry("학번", "student_id")
+			.containsEntry("학과(전공)", null);
 	}
 
 	@Test

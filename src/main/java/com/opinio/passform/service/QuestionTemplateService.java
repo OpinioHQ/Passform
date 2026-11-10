@@ -33,7 +33,7 @@ public class QuestionTemplateService {
 			throw new DomainException(ErrorCode.INVALID_REQUEST);
 		}
 		return questionTemplates
-			.findSuggestions(purpose, List.of(audience, QuestionTemplate.COMMON), QuestionTemplate.COMMON)
+			.findSuggestions(purpose, audience, QuestionTemplate.COMMON)
 			.stream()
 			.sorted(Comparator.comparing((QuestionTemplate t) -> !t.isBasic()).thenComparing(QuestionTemplate::getId))
 			.map(QuestionTemplateService::viewOf)

@@ -11,13 +11,14 @@ import com.opinio.passform.domain.template.QuestionTemplate;
 
 public interface QuestionTemplateRepository extends JpaRepository<QuestionTemplate, String> {
 
-	// 고른 목적의 대상·목적 공통 문항과 기본 정보(purpose·audience 모두 all). 순서는 서비스가 정한다.
+	// 고른 목적의 대상·목적 공통 문항, 목적과 상관없는 대상 공통 문항(purpose all), 기본 정보(purpose·audience 모두 all).
+	// 순서는 서비스가 정한다.
 	@Query("""
 			select t from QuestionTemplate t
-			where (t.purpose = :purpose and t.audience in :audiences)
-			   or (t.purpose = :common and t.audience = :common)
+			where (t.purpose = :purpose and t.audience in (:audience, :common))
+			   or (t.purpose = :common and t.audience in (:audience, :common))
 			""")
-	List<QuestionTemplate> findSuggestions(@Param("purpose") String purpose,
-			@Param("audiences") Collection<String> audiences, @Param("common") String common);
+	List<QuestionTemplate> findSuggestions(@Param("purpose") String purpose, @Param("audience") String audience,
+			@Param("common") String common);
 
 }

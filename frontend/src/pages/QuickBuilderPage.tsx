@@ -407,7 +407,7 @@ export function QuickBuilderPage({
           <h2>
             {PURPOSE_LABELS[purpose]} · {AUDIENCE_LABELS[audience]}에 맞는 추천 문항
           </h2>
-          <p className="small muted">
+          <p className="small muted quick-hint">
             필요한 문항을 골라 추가하세요. 추가한 뒤에도 고칠 수 있어요.
           </p>
           {suggestions.state === 'loading' && (

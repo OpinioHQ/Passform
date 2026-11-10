@@ -12,6 +12,8 @@ import {
   FormResponseDetailRoute,
   FormResultsRoute,
   NewFormRoute,
+  NewQuickFormRoute,
+  QuickFormRoute,
 } from './routes/creatorRoutes';
 import { paths, routePatterns } from './routes/paths';
 import {
@@ -50,6 +52,8 @@ export function App() {
           <Route path={routePatterns.creator} element={<CreatedFormsRoute />} />
           <Route path={routePatterns.newForm} element={<NewFormRoute />} />
           <Route path={routePatterns.editForm} element={<EditFormRoute />} />
+          <Route path={routePatterns.newQuickForm} element={<NewQuickFormRoute />} />
+          <Route path={routePatterns.quickForm} element={<QuickFormRoute />} />
           <Route path={routePatterns.formResults} element={<FormResultsRoute />} />
           <Route path={routePatterns.formResponse} element={<FormResponseDetailRoute />} />
           <Route path={routePatterns.formExplore} element={<FormExploreRoute />} />

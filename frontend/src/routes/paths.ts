@@ -12,6 +12,8 @@ export const routePatterns = {
   creator: '/creator',
   newForm: '/creator/forms/new',
   editForm: '/creator/forms/:formId/edit',
+  newQuickForm: '/creator/forms/new/quick',
+  quickForm: '/creator/forms/:formId/quick',
   formResults: '/creator/forms/:formId/results',
   formExplore: '/creator/forms/:formId/explore',
   formResponse: '/creator/forms/:formId/responses/:responseId',
@@ -32,6 +34,8 @@ export const paths = {
   creator: routePatterns.creator,
   newForm: routePatterns.newForm,
   editForm: (formId: string) => `/creator/forms/${segment(formId)}/edit`,
+  newQuickForm: routePatterns.newQuickForm,
+  quickForm: (formId: string) => `/creator/forms/${segment(formId)}/quick`,
   formResults: (formId: string) => `/creator/forms/${segment(formId)}/results`,
   formExplore: (formId: string) => `/creator/forms/${segment(formId)}/explore`,
   formResponse: (formId: string, responseId: string) =>

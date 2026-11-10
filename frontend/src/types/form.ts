@@ -88,6 +88,17 @@ export interface ConsentTemplate {
   purpose: string;
   retention: string;
 }
+/** 빠른 모드의 제작 목적·응답 대상. 서버 V3 초기 데이터의 값이다. */
+export type QuickPurpose = 'apply' | 'survey' | 'reservation' | 'quiz';
+export type QuickAudience = 'high_school' | 'university' | 'worker';
+/** `GET /question-templates`(SPEC 113행). 본인 정보 여부(`profile_key`)는 템플릿에 없다(AC7). */
+export interface QuestionTemplateView {
+  template_id: string;
+  question_note: string;
+  question_type: QuestionType;
+  options: string[];
+  input_format: InputFormat | null;
+}
 
 /** AI 요약을 켠 폼의 외부 전송 고지(SPEC 187행, 211행). */
 export interface AiSummaryNotice {

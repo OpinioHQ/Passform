@@ -5,6 +5,9 @@ import type {
   AutofillResult,
   BranchGraph,
   ConsentTemplate,
+  QuestionTemplateView,
+  QuickAudience,
+  QuickPurpose,
   CreatedForm,
   CreatedProfile,
   CreatorFormDefinition,
@@ -194,6 +197,10 @@ export const api = {
   savedForms: () => request<SavedFormSummary[]>('/me/forms'),
   createdForms: () => request<CreatorFormSummary[]>('/me/created-forms'),
   consentTemplates: () => request<ConsentTemplate[]>('/consent-templates'),
+  questionTemplates: (purpose: QuickPurpose, audience: QuickAudience) =>
+    request<QuestionTemplateView[]>(
+      `/question-templates?purpose=${segment(purpose)}&audience=${segment(audience)}`,
+    ),
   createForm: (definition: FormDefinition) => request<CreatedForm>('/forms', json(definition)),
   formDefinition: (formId: string) =>
     request<CreatorFormDefinition>(`/forms/${segment(formId)}/definition`),

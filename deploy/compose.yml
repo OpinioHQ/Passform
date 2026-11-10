@@ -50,6 +50,12 @@ services:
       # 첨부 원본 버킷. 비어 있으면 파일 기능만 503이다. 자격 증명은 넣지 않고 EC2 서버 역할을 쓴다.
       S3_BUCKET: ${S3_BUCKET:-}
       S3_REGION: ${S3_REGION:-ap-northeast-2}
+      # 마감 알림 메일(Gmail SMTP). 사용자 이름이나 앱 비밀번호가 비어 있으면 메일 없이 사이트 알림만 만든다.
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
       # 사람이 정한 배포 값(ARCHITECTURE 10절). 비밀이 아니므로 여기 고정한다.
       SESSION_COOKIE_SECURE: "true"
       FRONTEND_ORIGIN: https://app.passform.kr

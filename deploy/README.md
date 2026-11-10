@@ -32,6 +32,7 @@ vi .env   # change-me를 모두 실제 값으로 바꾼다
 
 - `.env`는 `.gitignore` 대상이다. 값을 화면 공유, 메신저, 이슈, PR에 붙이지 않는다.
 - `docker compose config`는 값을 그대로 출력하므로 그 출력을 공유하지 않는다.
+- 마감 알림 메일: 보내는 Gmail 계정에서 2단계 인증을 켜고 앱 비밀번호를 만든 뒤, 서버의 `.env`에서 `MAIL_USERNAME`(그 Gmail 주소)과 `MAIL_PASSWORD`(앱 비밀번호)를 채우고 `docker compose up -d`로 다시 띄운다. 비워 두면 메일 없이 사이트 알림만 만든다.
 
 ## 3. 백엔드 띄우기
 

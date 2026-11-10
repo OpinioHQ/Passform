@@ -4,7 +4,9 @@ import { api, useLiveApi } from '../api/client';
 import { demoUser } from '../demo/screens';
 import { paths } from '../routes/paths';
 import type { MeResponse } from '../types/api';
-import { Brand, Icon, Badge } from './UI';
+import { DeadlineReminderSwitch } from './DeadlineReminder';
+import { NotificationBell } from './NotificationBell';
+import { Brand, Button, Icon, Badge } from './UI';
 
 const menus: Array<{ label: string; to: string }> = [
   { label: '내 폼함', to: paths.myForms },
@@ -19,9 +21,11 @@ export function Header() {
   const navigate = useNavigate();
   const [reminderOpen, setReminderOpen] = React.useState(false);
   const [accountOpen, setAccountOpen] = React.useState(false);
-  // 화면 상태로만 둔다. 서버 저장(`PATCH /me/settings`의 `deadline_reminder`)은 E12에서 연결한다.
+  // 가상 데이터 미리보기에서는 화면 상태로만 둔다. 실제 API 모드는 계정 메뉴의 스위치가 `PATCH /me/settings`로 저장한다.
   const [deadlineReminder, setDeadlineReminder] = React.useState(true);
   const [me, setMe] = React.useState<MeResponse | null>(null);
+  const [loggingOut, setLoggingOut] = React.useState(false);
+  const [logoutError, setLogoutError] = React.useState('');
   React.useEffect(() => {
     if (!useLiveApi) return;
     let active = true;
@@ -47,6 +51,21 @@ export function Header() {
     setAccountOpen(!accountOpen);
     setReminderOpen(false);
   }
+  /** 서버 세션을 끝내고 첫 화면으로 간다. 로그인 상태는 다음에 다시 묻는다. */
+  async function logout() {
+    setLoggingOut(true);
+    setLogoutError('');
+    try {
+      await api.logout();
+      setMe(null);
+      setAccountOpen(false);
+      navigate(paths.home);
+    } catch {
+      setLogoutError('로그아웃하지 못했어요. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setLoggingOut(false);
+    }
+  }
   return (
     <header className="global-header">
       <Brand onClick={() => navigate(paths.home)} />
@@ -67,8 +86,33 @@ export function Header() {
         {useLiveApi ? (
           me?.name ? (
             <>
-              <span className="avatar">{me.name.slice(0, 1)}</span>
-              <span className="account-name">{me.name}</span>
+              <NotificationBell
+                open={reminderOpen}
+                onToggle={toggleReminder}
+                onClose={() => setReminderOpen(false)}
+              />
+              <button
+                type="button"
+                className="account-trigger"
+                aria-expanded={accountOpen}
+                onClick={toggleAccount}
+              >
+                <span className="avatar">{me.name.slice(0, 1)}</span>
+                <span className="account-name">{me.name}</span>
+              </button>
+              {accountOpen && (
+                <div className="account-popover account-menu">
+                  <DeadlineReminderSwitch />
+                  <Button variant="secondary" onClick={() => void logout()} disabled={loggingOut}>
+                    로그아웃
+                  </Button>
+                  {logoutError && (
+                    <p className="error" role="alert">
+                      {logoutError}
+                    </p>
+                  )}
+                </div>
+              )}
             </>
           ) : (
             <Link className="nav-link" to={paths.login}>

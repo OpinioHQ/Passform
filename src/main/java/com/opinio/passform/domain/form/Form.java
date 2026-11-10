@@ -1,5 +1,6 @@
 package com.opinio.passform.domain.form;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
@@ -156,6 +157,13 @@ public class Form {
 	// deadline이 지나면 status가 open이어도 닫힌 것이다. now == deadline도 닫힘이다(AC16, AC41).
 	public boolean isClosedAt(Instant now) {
 		return status == FormStatus.CLOSED || (deadline != null && !now.isBefore(deadline));
+	}
+
+	// 마감 알림 대상 폼(AC18): open이고 닫히지 않았으며(마감·선착순 마감 포함) 마감까지 남은 시간이 0보다 크고 window 이하다.
+	// deadline이 없거나 삭제된 폼은 대상이 아니다.
+	public boolean isDeadlineReminderDue(Instant now, Duration window) {
+		return status == FormStatus.OPEN && deletedAt == null && deadline != null && !isClosedAt(now)
+				&& !deadline.isAfter(now.plus(window));
 	}
 
 	public boolean isDeleted() {

@@ -48,6 +48,11 @@ public class Notification {
 		this.createdAt = createdAt;
 	}
 
+	// 읽음은 되돌리지 않는다(SPEC 5절 202행의 {read: true}).
+	public void markRead() {
+		this.read = true;
+	}
+
 	public UUID getId() {
 		return id;
 	}

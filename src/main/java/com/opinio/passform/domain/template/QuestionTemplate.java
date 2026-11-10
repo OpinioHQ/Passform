@@ -17,6 +17,13 @@ import jakarta.persistence.Table;
 @Table(name = "question_templates")
 public class QuestionTemplate {
 
+	// 빠른 모드에서 고르는 값(V3 초기 데이터, SPEC 5절 179행 예시). 공통 문항은 audience가 all이다.
+	public static final List<String> PURPOSES = List.of("apply", "survey", "reservation", "quiz");
+
+	public static final List<String> AUDIENCES = List.of("high_school", "university", "worker");
+
+	public static final String COMMON_AUDIENCE = "all";
+
 	@Id
 	@Column(name = "template_id")
 	private String id;

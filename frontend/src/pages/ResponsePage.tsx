@@ -5,6 +5,7 @@ import {
   type AnswerProblem,
   checkAnswer,
   formatHint,
+  formatPlaceholder,
   isAnswered,
   problemMessage,
 } from '../response/answerCheck';
@@ -553,13 +554,26 @@ function ResponseForm({
     );
   }
 
+  /**
+   * 형식 안내는 입력란 안의 placeholder로 보인다(포커스하면 CSS로 숨긴다). 제작자 placeholder가 있으면 그것을 쓴다.
+   * placeholder가 안내 문장 전체가 아니면(예시만이거나 제작자 문구) 화면 읽기 프로그램용 설명으로 문장 전체를 남긴다.
+   */
+  function formatGuide(question: Question) {
+    const format = question.question_type === 'short_answer' ? question.input_format : undefined;
+    if (!format) return null;
+    const placeholder = format.placeholder ?? formatPlaceholder(format.kind);
+    const sentence = formatHint(format.kind);
+    return { placeholder, description: placeholder === sentence ? null : sentence };
+  }
+
   function renderInput(question: Question) {
     const id = question.question_id;
     const value = answers[id] ?? emptyValue(question);
+    const guide = formatGuide(question);
     const describedBy =
       [
         question.question_description ? `desc-${id}` : '',
-        question.input_format ? `hint-${id}` : '',
+        guide?.description ? `format-${id}` : '',
         errors[id] ? `error-${id}` : '',
       ]
         .filter(Boolean)
@@ -659,14 +673,18 @@ function ResponseForm({
           id={`input-${id}`}
           type={type}
           inputMode={kind === 'date' ? 'numeric' : undefined}
+          className={guide ? 'format-input' : undefined}
           value={text}
-          placeholder={
-            question.input_format?.placeholder ?? (kind === 'date' ? 'YYYY-MM-DD' : undefined)
-          }
+          placeholder={guide?.placeholder}
           aria-describedby={describedBy}
           aria-invalid={invalid}
           onChange={(e) => update(question, e.target.value)}
         />
+        {guide?.description && (
+          <span className="sr-only" id={`format-${id}`}>
+            {guide.description}
+          </span>
+        )}
         {counter}
       </>
     );
@@ -726,11 +744,6 @@ function ResponseForm({
         {id in suggested && (
           <p className="field-hint autofill-suggested" data-testid={`suggested-${id}`}>
             프로필에서 채운 값이에요. 고칠 수 있어요.
-          </p>
-        )}
-        {question.input_format && (
-          <p className="field-hint muted" id={`hint-${id}`}>
-            {formatHint(question.input_format.kind)}
           </p>
         )}
         {errors[id] && (

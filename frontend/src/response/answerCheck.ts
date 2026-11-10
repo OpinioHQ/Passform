@@ -75,19 +75,37 @@ export function checkAnswer(
   return null;
 }
 
-const formatHints: Record<InputFormatKind, string> = {
-  name: '이름을 입력해 주세요.',
-  address: '주소를 한 칸에 입력해 주세요.',
-  student_id: '학번을 입력해 주세요.',
-  mobile_phone: '휴대전화 번호를 입력해 주세요. 예: 010-1234-5678',
-  landline_phone: '전화번호를 입력해 주세요. 예: 02-123-4567',
-  email: '이메일을 입력해 주세요. 예: name@example.com',
-  date: '날짜를 YYYY-MM-DD 형식으로 입력해 주세요. 예: 2026-11-20',
+const formatHints: Record<InputFormatKind, { sentence: string; example?: string }> = {
+  name: { sentence: '이름을 입력해 주세요.' },
+  address: { sentence: '주소를 한 칸에 입력해 주세요.' },
+  student_id: { sentence: '학번을 입력해 주세요.' },
+  mobile_phone: { sentence: '휴대전화 번호를 입력해 주세요.', example: '010-1234-5678' },
+  landline_phone: { sentence: '전화번호를 입력해 주세요.', example: '02-123-4567' },
+  email: { sentence: '이메일을 입력해 주세요.', example: 'name@example.com' },
+  date: { sentence: '날짜를 YYYY-MM-DD 형식으로 입력해 주세요.', example: '2026-11-20' },
 };
 
-/** 입력 형식이 있는 문항 아래에 늘 보이는 안내(AC73). */
+/**
+ * 360px 폭의 입력란 안에서 문장 전체가 잘리는 형식. 이 형식은 placeholder에 예시만 쓴다.
+ * 실제 브라우저 360px 폭에서 재서 형식마다 고정했다(docs/prompts/delegation_format_hint_placeholder.md).
+ */
+const exampleOnlyKinds: ReadonlySet<InputFormatKind> = new Set<InputFormatKind>([
+  'mobile_phone',
+  'landline_phone',
+  'email',
+  'date',
+]);
+
+/** 형식 안내 문장 전체(AC73). 형식 오류 문구에도 그대로 들어간다. */
 export function formatHint(kind: InputFormatKind): string {
-  return formatHints[kind];
+  const { sentence, example } = formatHints[kind];
+  return example ? `${sentence} 예: ${example}` : sentence;
+}
+
+/** 입력란 안에 보이는 형식 안내. 잘리는 형식은 예시만, 나머지는 `formatHint` 그대로다. */
+export function formatPlaceholder(kind: InputFormatKind): string {
+  const { example } = formatHints[kind];
+  return example && exampleOnlyKinds.has(kind) ? `예: ${example}` : formatHint(kind);
 }
 
 export function problemMessage(question: Question, problem: AnswerProblem): string {

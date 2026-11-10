@@ -794,6 +794,10 @@ input::placeholder,
 textarea::placeholder {
   color: var(--color-muted-soft);
 }
+/* 응답 화면의 형식 안내는 입력란을 누르면 숨긴다. 비어 있는 채로 벗어나면 다시 보인다. */
+.format-input:focus::placeholder {
+  color: transparent;
+}
 .question-input textarea {
   resize: vertical;
 }

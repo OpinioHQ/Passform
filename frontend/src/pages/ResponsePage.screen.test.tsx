@@ -369,16 +369,13 @@ describe('AC73 입력 형식 안내', () => {
       ],
     });
 
-  it('형식마다 안내 문구를 늘 보이고 맞는 입력란을 쓴다', () => {
+  it('형식마다 입력란 안에 안내를 넣고 맞는 입력란을 쓴다', () => {
     open(formatted());
-    expect(screen.getByText('휴대전화 번호를 입력해 주세요. 예: 010-1234-5678')).toBeTruthy();
-    expect(screen.getByText('이메일을 입력해 주세요. 예: name@example.com')).toBeTruthy();
-    expect(
-      screen.getByText('날짜를 YYYY-MM-DD 형식으로 입력해 주세요. 예: 2026-11-20'),
-    ).toBeTruthy();
+    expect(input('휴대전화').placeholder).toBe('예: 010-1234-5678');
+    expect(input('이메일').placeholder).toBe('예: name@example.com');
+    expect(input('방문 날짜').placeholder).toBe('예: 2026-11-20');
     expect(input('휴대전화').type).toBe('tel');
     expect(input('이메일').type).toBe('email');
-    expect(input('방문 날짜').placeholder).toBe('YYYY-MM-DD');
   });
 
   it('형식에 맞지 않으면 제출 전에 알리고, 서버의 invalid_input_format_value도 문항 아래에 보인다', async () => {
@@ -395,6 +392,153 @@ describe('AC73 입력 형식 안내', () => {
     fireEvent.click(submitButton());
     const error = await screen.findByRole('alert');
     expect(error.closest('.question')?.id).toBe('question-q2');
+  });
+});
+
+describe('AC73 형식 안내는 입력란 안의 placeholder로', () => {
+  const allFormats = (extra: Question[] = []) =>
+    form({
+      sections: [
+        {
+          section_id: 's1',
+          title: '개인정보',
+          questions: [
+            q('q1', '이름', { input_format: { kind: 'name' } }),
+            q('q2', '주소', { input_format: { kind: 'address' } }),
+            q('q3', '학번', { input_format: { kind: 'student_id' } }),
+            q('q4', '휴대전화', { input_format: { kind: 'mobile_phone' } }),
+            q('q5', '집전화', { input_format: { kind: 'landline_phone' } }),
+            q('q6', '이메일', { input_format: { kind: 'email' } }),
+            q('q7', '방문 날짜', { input_format: { kind: 'date' } }),
+            ...extra,
+          ],
+        },
+      ],
+    });
+
+  const expectedPlaceholders: [string, string][] = [
+    ['이름', '이름을 입력해 주세요.'],
+    ['주소', '주소를 한 칸에 입력해 주세요.'],
+    ['학번', '학번을 입력해 주세요.'],
+    ['휴대전화', '예: 010-1234-5678'],
+    ['집전화', '예: 02-123-4567'],
+    ['이메일', '예: name@example.com'],
+    ['방문 날짜', '예: 2026-11-20'],
+  ];
+
+  function expectPlaceholderRule() {
+    for (const [label, placeholder] of expectedPlaceholders) {
+      expect(input(label).placeholder).toBe(placeholder);
+      expect(input(label).classList.contains('format-input')).toBe(true);
+    }
+    for (const id of ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7']) {
+      expect(document.getElementById(`hint-${id}`)).toBeNull();
+    }
+    expect(document.querySelector('.field-hint')).toBeNull();
+  }
+
+  it('360px에서 들어가는 형식은 문장 전체, 잘리는 형식은 예시만 넣는다', () => {
+    open(allFormats());
+    expectPlaceholderRule();
+  });
+
+  it('문항 아래(파일 첨부 아래)에 따로 놓인 안내 문단이 없다', () => {
+    render(
+      <ResponsePage
+        form={allFormats()}
+        onSubmit={onSubmit}
+        onReload={onReload}
+        saving={false}
+        files={{ storageKey: null }}
+      />,
+    );
+    for (const sentence of [
+      '이름을 입력해 주세요.',
+      '휴대전화 번호를 입력해 주세요. 예: 010-1234-5678',
+    ]) {
+      const shown = screen.queryAllByText(sentence).filter((el) => !el.matches('.sr-only'));
+      expect(shown).toHaveLength(0);
+    }
+    expectPlaceholderRule();
+  });
+
+  it('예시만 보이는 칸은 문장 전체를 화면 읽기용 설명으로 남기고, 문장 전체가 보이는 칸은 겹쳐 읽히지 않게 한다', () => {
+    open(allFormats());
+    const phone = input('휴대전화');
+    const describedBy = phone.getAttribute('aria-describedby') ?? '';
+    const description = document.getElementById(describedBy);
+    expect(description?.textContent).toBe('휴대전화 번호를 입력해 주세요. 예: 010-1234-5678');
+    expect(description?.classList.contains('sr-only')).toBe(true);
+    expect(input('이름').getAttribute('aria-describedby')).toBeNull();
+  });
+
+  it('제작자가 정의에 넣은 placeholder가 있으면 그것을 쓴다', () => {
+    open(
+      form({
+        sections: [
+          {
+            section_id: 's1',
+            title: '개인정보',
+            questions: [
+              q('q1', '이름', { input_format: { kind: 'name', placeholder: '홍길동' } }),
+              q('q2', '방문 날짜', { input_format: { kind: 'date', placeholder: '2026.11.20' } }),
+            ],
+          },
+        ],
+      }),
+    );
+    expect(input('이름').placeholder).toBe('홍길동');
+    expect(input('방문 날짜').placeholder).toBe('2026.11.20');
+    const nameDescription = document.getElementById(
+      input('이름').getAttribute('aria-describedby')!,
+    );
+    expect(nameDescription?.textContent).toBe('이름을 입력해 주세요.');
+  });
+
+  it('형식 없는 문항에는 placeholder가 없다', () => {
+    open(allFormats([q('q8', '하고 싶은 말')]));
+    expect(input('하고 싶은 말').hasAttribute('placeholder')).toBe(false);
+    expect(input('하고 싶은 말').classList.contains('format-input')).toBe(false);
+  });
+
+  it('형식 오류 문구에는 안내 문장 전체가 그대로 들어간다', () => {
+    open(allFormats());
+    type('휴대전화', '0101234');
+    type('방문 날짜', '2026-13-01');
+    agree();
+    fireEvent.click(submitButton());
+    expect(alerts()).toEqual([
+      '형식이 맞지 않아요. 휴대전화 번호를 입력해 주세요. 예: 010-1234-5678',
+      '형식이 맞지 않아요. 날짜를 YYYY-MM-DD 형식으로 입력해 주세요. 예: 2026-11-20',
+    ]);
+  });
+
+  it('제출 후 수정 화면에도 같은 규칙을 쓴다', () => {
+    render(
+      <ResponsePage
+        form={allFormats()}
+        onSubmit={onSubmit}
+        onReload={onReload}
+        saving={false}
+        editing={{ initialAnswers: {} }}
+      />,
+    );
+    expect(screen.getAllByText('제출한 답 수정').length).toBeGreaterThan(0);
+    expectPlaceholderRule();
+  });
+
+  it('빌더 미리보기에도 같은 규칙을 쓴다', () => {
+    render(
+      <ResponsePage
+        form={allFormats()}
+        onSubmit={onSubmit}
+        onReload={onReload}
+        saving={false}
+        preview
+      />,
+    );
+    expect(screen.getAllByText('미리보기').length).toBeGreaterThan(0);
+    expectPlaceholderRule();
   });
 });
 
@@ -435,9 +579,7 @@ describe('AC80 응답 화면의 다섯 문항 유형', () => {
         .filter((c) => (c as HTMLInputElement).checked),
     ).toHaveLength(2);
     expect(screen.getByLabelText('짧은 답').tagName).toBe('INPUT');
-    expect(
-      screen.getByText('날짜를 YYYY-MM-DD 형식으로 입력해 주세요. 예: 2026-11-20'),
-    ).toBeTruthy();
+    expect(input('짧은 답').placeholder).toBe('예: 2026-11-20');
     expect(screen.getByLabelText('장문 답').tagName).toBe('TEXTAREA');
     const badges = screen.getAllByText(/^(필수|선택)$/).map((el) => el.textContent);
     expect(badges).toEqual(['필수', '선택', '선택', '선택', '선택']);

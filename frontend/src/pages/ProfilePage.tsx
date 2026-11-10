@@ -170,7 +170,7 @@ export function ProfilePage({ profiles, loadError, onCreate, onUpdate, onDelete 
         }
       />
       {loadError === 'login' && (
-        <Panel className="profile-card">
+        <Panel className="profile-card login-prompt">
           <p className="muted">로그인하면 프로필을 관리할 수 있어요.</p>
           <a className="btn btn-primary" href={googleLoginUrl}>
             Google로 로그인

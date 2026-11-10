@@ -1,6 +1,12 @@
 import { responseAttachmentUrl } from '../api/client';
 import { Heading, Panel } from '../components/UI';
 import type { ResponseDetail } from '../types/api';
+import {
+  type FileLink,
+  filesOfQuestion,
+  filesWithoutAnswer,
+  ResponseFileList,
+} from './ResponseFileList';
 import { versionLabel } from './ResultsPage';
 
 /**
@@ -35,31 +41,9 @@ export function ResponseDetailPage({
   /** 있으면 첨부를 내려받을 수 있다. */
   formId?: string;
 }) {
-  const filesOf = (questionId: string) =>
-    detail.attachments.filter((file) => file.question_id === questionId);
-  const renderFiles = (files: ResponseDetail['attachments']) =>
-    files.length > 0 && (
-      <ul className="small muted attachment-list">
-        {files.map((file) => (
-          <li key={file.attachment_id}>
-            {file.available && formId ? (
-              <a
-                href={responseAttachmentUrl(formId, detail.response_id, file.attachment_id)}
-                download={file.filename}
-              >
-                {file.filename}
-              </a>
-            ) : (
-              file.filename
-            )}
-            {!file.available && ' (삭제된 파일)'}
-          </li>
-        ))}
-      </ul>
-    );
-  const answered = new Set(detail.content.map((a) => a.question_id));
-  // 답 없이 파일만 낸 문항의 파일도 놓치지 않게 아래에 모은다.
-  const fileOnly = detail.attachments.filter((file) => !answered.has(file.question_id));
+  const linkOf: FileLink = formId
+    ? (attachmentId) => responseAttachmentUrl(formId, detail.response_id, attachmentId)
+    : null;
   return (
     <div className="page-shell">
       <Heading
@@ -83,13 +67,19 @@ export function ResponseDetailPage({
                 </dt>
                 <dd>
                   <b>{Array.isArray(a.value) ? a.value.join(', ') : a.value}</b>
-                  {renderFiles(filesOf(a.question_id))}
+                  <ResponseFileList
+                    files={filesOfQuestion(detail.attachments, a.question_id)}
+                    linkOf={linkOf}
+                  />
                 </dd>
               </div>
             ))}
           </dl>
         )}
-        {renderFiles(fileOnly)}
+        <ResponseFileList
+          files={filesWithoutAnswer(detail.content, detail.attachments)}
+          linkOf={linkOf}
+        />
       </Panel>
     </div>
   );

@@ -2479,6 +2479,12 @@ input[type='file']::file-selector-button {
   min-width: 0;
   overflow-wrap: anywhere;
 }
+.quick-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
 .quick-nav {
   display: flex;
   flex-wrap: wrap;

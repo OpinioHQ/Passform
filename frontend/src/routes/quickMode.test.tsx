@@ -65,8 +65,11 @@ const emptyDraft = () => ({
 
 type Reply = { status: number; body?: unknown };
 
-function stubApi(patch: (body: Record<string, unknown>) => Reply = () => ({ status: 200 })) {
-  const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+function stubApi(
+  patch: (body: Record<string, unknown>) => Reply | Promise<Reply> = () => ({ status: 200 }),
+  draft: () => unknown = emptyDraft,
+) {
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     const method = init?.method ?? 'GET';
     const path = url.replace('http://api.test', '');
     const body = init?.body ? (JSON.parse(init.body as string) as Record<string, unknown>) : {};
@@ -77,18 +80,16 @@ function stubApi(patch: (body: Record<string, unknown>) => Reply = () => ({ stat
     else if (path === '/consent-templates') reply = { status: 200, body: templates };
     else if (method === 'POST' && path === '/forms')
       reply = { status: 201, body: { form_id: 'f1', status: 'draft' } };
-    else if (path === '/forms/f1/definition') reply = { status: 200, body: emptyDraft() };
+    else if (path === '/forms/f1/definition') reply = { status: 200, body: draft() };
     else if (path.startsWith('/question-templates'))
       reply = {
         status: 200,
         body: suggestionsFor[`${query.get('purpose')}/${query.get('audience')}`] ?? [],
       };
-    else if (method === 'PATCH' && path === '/forms/f1') reply = patch(body);
-    return Promise.resolve(
-      new Response(reply.body === undefined ? '' : JSON.stringify(reply.body), {
-        status: reply.status,
-      }),
-    );
+    else if (method === 'PATCH' && path === '/forms/f1') reply = await patch(body);
+    return new Response(reply.body === undefined ? '' : JSON.stringify(reply.body), {
+      status: reply.status,
+    });
   });
   vi.stubGlobal('fetch', fetchMock);
   const calls = (method: string, prefix: string) =>
@@ -370,5 +371,86 @@ describe('빠른 모드 화면', () => {
       sections: { questions: { template_id: string }[] }[];
     };
     expect(published.sections[0].questions[0].template_id).toBe('apply_univ_02');
+  });
+
+  it('기본 모드로 열기는 지금 편집을 저장한 뒤에만 옮기고, 실패하면 남아서 알린다(코덱스 검토 1)', async () => {
+    let fail = true;
+    const patches: Record<string, unknown>[] = [];
+    stubApi((body) => {
+      patches.push(body);
+      return fail
+        ? { status: 500 }
+        : { status: 200, body: { status: 'draft', share_url: null, definition_version: null } };
+    });
+    await openLive('/creator/forms/f1/quick');
+    fireEvent.click(await screen.findByRole('button', { name: '2. 제목·설명' }));
+    fireEvent.change(await screen.findByLabelText('폼 제목'), {
+      target: { value: '옮기기 전 제목' },
+    });
+    // 자동 저장을 기다리지 않고 바로 누른다.
+    fireEvent.click(button('기본 모드로 열기'));
+
+    expect(await screen.findByText(/저장 실패/)).toBeTruthy();
+    expect(pathText()).toBe('/creator/forms/f1/quick');
+
+    fail = false;
+    fireEvent.click(button('기본 모드로 열기'));
+    await waitFor(() => expect(pathText()).toBe('/creator/forms/f1/edit'));
+    expect((patches[patches.length - 1] as { title: string }).title).toBe('옮기기 전 제목');
+  });
+
+  it('배포 요청 중에는 설정을 잠그고, 배포 뒤 성공 화면을 보인다(코덱스 검토 2)', async () => {
+    let release: (reply: Reply) => void = () => undefined;
+    stubApi((body) =>
+      body.status === 'open'
+        ? new Promise<Reply>((resolve) => {
+            release = resolve;
+          })
+        : { status: 200, body: { status: 'draft', share_url: null, definition_version: null } },
+    );
+    await openLive('/creator/forms/f1/quick');
+    await pickPurposeAndAudience('신청', '대학생');
+    await addFromSuggestions(/학과\(전공\)/);
+    fireEvent.click(await screen.findByRole('button', { name: '다음' }));
+    const consent = await screen.findByLabelText('동의 템플릿');
+    expect(consent.matches(':disabled')).toBe(false);
+
+    fireEvent.click(button('배포'));
+    await waitFor(() => expect(consent.matches(':disabled')).toBe(true));
+    expect(consent.closest('fieldset')?.hasAttribute('disabled')).toBe(true);
+
+    release({
+      status: 200,
+      body: { status: 'open', share_url: 'https://app.test/f/abc', definition_version: 1 },
+    });
+    expect(await screen.findByDisplayValue('https://app.test/f/abc')).toBeTruthy();
+    expect(screen.queryByText(/저장 실패/)).toBeNull();
+  });
+
+  it('섹션이 없는 초안에서도 추천 적용과 직접 추가가 새 섹션 하나에 들어간다(코덱스 검토 3)', async () => {
+    const patches: Record<string, unknown>[] = [];
+    stubApi(
+      (body) => {
+        patches.push(body);
+        return {
+          status: 200,
+          body: { status: 'draft', share_url: null, definition_version: null },
+        };
+      },
+      () => ({ ...emptyDraft(), sections: [] }),
+    );
+    await openLive('/creator/forms/f1/quick');
+    await pickPurposeAndAudience('신청', '대학생');
+    await addFromSuggestions(/학과\(전공\)/);
+    fireEvent.click(await screen.findByRole('button', { name: '폼 직접 편집' }));
+    fireEvent.click(button('직접 질문 추가'));
+
+    expect(await screen.findByText('저장됨', {}, { timeout: 4000 })).toBeTruthy();
+    const saved = patches[patches.length - 1] as {
+      sections: { section_id: string; questions: { template_id: string | null }[] }[];
+    };
+    expect(saved.sections).toHaveLength(1);
+    expect(saved.sections[0].section_id).toMatch(/^s_/);
+    expect(saved.sections[0].questions.map((q) => q.template_id)).toEqual(['apply_univ_02', null]);
   });
 });

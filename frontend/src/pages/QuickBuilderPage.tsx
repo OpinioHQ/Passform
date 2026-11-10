@@ -4,7 +4,6 @@ import { branchPublishProblems } from '../builder/branchRules';
 import { useCreatorAutosave, useLeaveWarning } from '../builder/creatorAutosave';
 import { FormSettingsPanel } from '../builder/FormSettingsPanel';
 import {
-  addQuestion,
   duplicateQuestion,
   moveQuestion,
   publishProblems,
@@ -16,6 +15,7 @@ import {
 import { friendlyError } from '../builder/messages';
 import { QuestionEditor } from '../builder/QuestionEditor';
 import {
+  addQuestionAtEnd,
   appendQuestions,
   AUDIENCE_LABELS,
   isBasicTemplate,
@@ -91,6 +91,7 @@ export function QuickBuilderPage({
   const [picked, setPicked] = React.useState<string[]>([]);
   const [dirty, setDirty] = React.useState(false);
   const [publishing, setPublishing] = React.useState(false);
+  const [leaving, setLeaving] = React.useState(false);
   const [failure, setFailure] = React.useState('');
   const [problems, setProblems] = React.useState<string[]>([]);
   const [copyNote, setCopyNote] = React.useState('');
@@ -215,6 +216,29 @@ export function QuickBuilderPage({
     }
   }
 
+  /**
+   * 기본 모드로 옮기기 전에 지금 편집을 끝까지 저장한다(코덱스 검토 1). 기본 모드의 저장·배포와 같이
+   * 기다리는 자동 저장을 정리한 뒤 현재 정의 전체를 보내고, 성공해야만 옮긴다. 실패하면 남아서 알린다.
+   */
+  async function openBasic() {
+    if (status !== 'draft' || !dirty) {
+      onBasic();
+      return;
+    }
+    setLeaving(true);
+    setFailure('');
+    await autosave.cancel();
+    try {
+      await api.updateForm(formId, definition);
+      setDirty(false);
+      onBasic();
+    } catch (error) {
+      setFailure(`저장 실패 · 지금 편집 내용은 아직 저장되지 않았어요. ${friendlyError(error)}`);
+    } finally {
+      setLeaving(false);
+    }
+  }
+
   async function copyShareUrl() {
     try {
       await navigator.clipboard.writeText(shareUrl ?? '');
@@ -230,7 +254,11 @@ export function QuickBuilderPage({
       title="빠른 모드로 만들기"
       desc="목적과 대상을 고르면 알맞은 문항을 추천해 드려요."
       action={
-        <Button variant="secondary" onClick={onBasic} disabled={publishing}>
+        <Button
+          variant="secondary"
+          onClick={() => void openBasic()}
+          disabled={publishing || leaving}
+        >
           기본 모드로 열기
         </Button>
       }
@@ -244,6 +272,12 @@ export function QuickBuilderPage({
         <Panel className="quick-panel">
           <Badge tone="green">배포 중{version !== null && ` · 폼 버전 ${version}`}</Badge>
           <p>배포했어요. 공유 링크로 응답을 받을 수 있어요.</p>
+          {/* 배포 뒤에도 자동 저장 실패를 숨기지 않는다(코덱스 검토 2). */}
+          {autosave.status === 'failed' && (
+            <p className="error" role="alert">
+              저장 실패 · 지금 편집 내용은 아직 저장되지 않았어요.
+            </p>
+          )}
           {shareUrl && (
             <div className="builder-share">
               <label className="builder-field">
@@ -274,7 +308,6 @@ export function QuickBuilderPage({
           : null;
   const allQuestions = allQuestionsOf(definition);
   const pickPlan = pickChanges();
-  const lastSectionId = definition.sections[definition.sections.length - 1]?.section_id;
   const branchProblems = branchPublishProblems(definition);
 
   const top = (
@@ -297,6 +330,8 @@ export function QuickBuilderPage({
       <p className="small muted" role="status">
         {publishing ? (
           '배포 중…'
+        ) : leaving ? (
+          '저장 중…'
         ) : saveText ? (
           <span className={autosave.status === 'failed' ? 'error' : undefined}>{saveText}</span>
         ) : null}
@@ -577,10 +612,7 @@ export function QuickBuilderPage({
             )}
           {editing && (
             <div className="button-row quick-add">
-              <Button
-                variant="secondary"
-                onClick={() => lastSectionId && edit((d) => addQuestion(d, lastSectionId))}
-              >
+              <Button variant="secondary" onClick={() => edit(addQuestionAtEnd)}>
                 직접 질문 추가
               </Button>
               <Button variant="secondary" onClick={() => go('pick')}>
@@ -608,12 +640,15 @@ export function QuickBuilderPage({
 
       {step === 'publish' && (
         <>
-          <FormSettingsPanel
-            definition={definition}
-            firstPublished={version !== null}
-            templates={templates}
-            onChange={edit}
-          />
+          {/* 배포 요청 중에는 설정을 잠근다(코덱스 검토 2). 기본 모드의 builder-fieldset과 같은 방식이다. */}
+          <fieldset className="quick-fieldset" disabled={publishing}>
+            <FormSettingsPanel
+              definition={definition}
+              firstPublished={version !== null}
+              templates={templates}
+              onChange={edit}
+            />
+          </fieldset>
           {nav(
             backTo('preview'),
             <Button onClick={() => void publish()} disabled={publishing}>

@@ -1,11 +1,12 @@
 import React from 'react';
+import { googleLoginUrl } from '../api/client';
 import { formatKst } from '../builder/deadline';
 import { ShareQr } from '../builder/ShareQr';
 import { statusLabel } from '../builder/messages';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
 import type { CreatorFormSummary, StorageUsage } from '../types/api';
 
-export type CreatedFormsLoad = 'loading' | 'failed' | 'ready';
+export type CreatedFormsLoad = 'loading' | 'failed' | 'ready' | 'login';
 
 /** 한도가 500,000,000바이트라 화면도 1MB를 1,000,000바이트로 쓴다. */
 const megabytes = (bytes: number) => `${Math.round(bytes / 100_000) / 10}MB`;
@@ -78,11 +79,21 @@ export function CreatedPage({
         title="내가 만든 폼"
         desc="폼을 만들고 배포한 뒤, 모인 답변을 살펴보세요."
         action={
-          <Button onClick={onCreate}>
-            <Icon name="plus" size={16} /> 새 폼 만들기
-          </Button>
+          load !== 'login' && (
+            <Button onClick={onCreate}>
+              <Icon name="plus" size={16} /> 새 폼 만들기
+            </Button>
+          )
         }
       />
+      {load === 'login' && (
+        <Panel className="login-prompt">
+          <p className="muted">로그인하면 내가 만든 폼을 볼 수 있어요.</p>
+          <a className="btn btn-primary" href={googleLoginUrl}>
+            Google로 로그인
+          </a>
+        </Panel>
+      )}
       {storage && <StorageMeter usage={storage} />}
       {load === 'loading' && <p className="muted">목록을 불러오는 중이에요.</p>}
       {load === 'failed' && (
@@ -173,6 +184,19 @@ export function CreatedPage({
             </Panel>
           );
         })}
+        {/* 새 폼 상자: 가상 데이터 화면(demo/DemoCreatedPage.tsx)과 같은 모양이다(사람 결정). */}
+        {load === 'ready' && (
+          <Panel className="creator-card dashed-card">
+            <div className="create-icon">
+              <Icon name="plus" size={26} />
+            </div>
+            <h2>새로운 폼을 만들어보세요</h2>
+            <p className="muted">기본 편집 화면에서 문항을 구성할 수 있어요.</p>
+            <Button variant="secondary" onClick={onCreate}>
+              폼 제작 시작
+            </Button>
+          </Panel>
+        )}
       </div>
     </div>
   );

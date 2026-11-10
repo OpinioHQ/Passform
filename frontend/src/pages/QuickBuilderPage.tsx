@@ -242,13 +242,17 @@ export function QuickBuilderPage({
   const top = (
     <>
       <ol className="quick-steps" aria-label="빠른 모드 단계">
+        {/* 단계 이름을 눌러도 그 단계로 간다(사람 결정, #58). */}
         {STEPS.map(({ step: s, label }, index) => (
-          <li
-            key={s}
-            className={s === step ? 'current' : undefined}
-            aria-current={s === step ? 'step' : undefined}
-          >
-            {index + 1}. {label}
+          <li key={s} className={s === step ? 'current' : undefined}>
+            <button
+              type="button"
+              aria-current={s === step ? 'step' : undefined}
+              onClick={() => go(s)}
+              disabled={publishing}
+            >
+              {index + 1}. {label}
+            </button>
           </li>
         ))}
       </ol>
@@ -292,25 +296,25 @@ export function QuickBuilderPage({
     const consent =
       templates?.find((t) => t.consent_template_id === definition.consent_template_id) ?? null;
     return (
-      <div className="quick-flow" ref={pageRef}>
-        <div className="page-shell quick-page quick-bar">
-          {top}
-          <div className="quick-tools">
-            <Button variant="secondary" onClick={() => setEditing(true)}>
-              폼 직접 편집
-            </Button>
-          </div>
+      <div className="page-shell quick-page" ref={pageRef}>
+        {top}
+        <div className="quick-tools">
+          <Button variant="secondary" onClick={() => setEditing(true)}>
+            폼 직접 편집
+          </Button>
         </div>
-        <ResponsePage
-          key={previewRound}
-          preview
-          form={{ ...toPreviewForm(definition, consent), form_id: formId }}
-          onSubmit={() => Promise.resolve()}
-          saving={false}
-        />
-        <div className="page-shell quick-page quick-bottom">
-          {nav(backTo('pick'), <Button onClick={() => go('publish')}>다음</Button>)}
-        </div>
+        {/* 제작 화면과 응답자 화면의 경계를 테두리 상자로 구분한다(사람 요청, #58). */}
+        <section className="quick-preview-frame" aria-label="응답자 화면 미리보기">
+          <p className="quick-preview-label small">응답자 화면 미리보기</p>
+          <ResponsePage
+            key={previewRound}
+            preview
+            form={{ ...toPreviewForm(definition, consent), form_id: formId }}
+            onSubmit={() => Promise.resolve()}
+            saving={false}
+          />
+        </section>
+        {nav(backTo('pick'), <Button onClick={() => go('publish')}>다음</Button>)}
       </div>
     );
   }

@@ -236,6 +236,16 @@ describe('빠른 모드 화면', () => {
     expect(calls('GET', '/question-templates?purpose=apply&audience=anyone')).toHaveLength(1);
   });
 
+  it('위 단계 이름을 누르면 그 단계로 간다', async () => {
+    stubApi();
+    await openLive('/creator/forms/f1/quick');
+    fireEvent.click(await screen.findByRole('button', { name: '2. 제목·설명' }));
+    expect(await screen.findByLabelText('폼 제목')).toBeTruthy();
+    fireEvent.click(button('5. 설정·배포'));
+    expect(await screen.findByRole('button', { name: '배포' })).toBeTruthy();
+    expect(button('5. 설정·배포').getAttribute('aria-current')).toBe('step');
+  });
+
   it('추가한 문항은 폼 직접 편집에서 기본 모드 편집기로 고치고, 같은 폼 정의로 자동 저장한다(AC7·AC42·AC72·AC84)', async () => {
     const patches: Record<string, unknown>[] = [];
     stubApi((body) => {

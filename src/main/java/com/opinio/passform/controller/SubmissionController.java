@@ -15,6 +15,7 @@ import com.opinio.passform.domain.error.DomainException;
 import com.opinio.passform.domain.error.ErrorCode;
 import com.opinio.passform.domain.response.Answer;
 import com.opinio.passform.service.CurrentUserService;
+import com.opinio.passform.service.ResponseHistoryService.AttachmentItem;
 import com.opinio.passform.service.SubmissionResult;
 import com.opinio.passform.service.SubmissionService;
 import com.opinio.passform.service.SubmitCommand;
@@ -69,15 +70,15 @@ public class SubmissionController {
 	}
 
 	public record SubmissionResponse(UUID responseId, int formVersion, String status, List<ContentItem> content,
-			List<Object> attachments, Instant submittedAt, Instant updatedAt) {
+			List<AttachmentItem> attachments, Instant submittedAt, Instant updatedAt) {
 
 		static SubmissionResponse from(SubmissionResult result) {
 			List<ContentItem> content = result.content()
 				.stream()
 				.map(answer -> new ContentItem(answer.questionId(), answer.questionNote(), answer.value()))
 				.toList();
-			return new SubmissionResponse(result.responseId(), result.formVersion(), "submitted", content, List.of(),
-					result.submittedAt(), null);
+			return new SubmissionResponse(result.responseId(), result.formVersion(), "submitted", content,
+					result.attachments(), result.submittedAt(), null);
 		}
 
 	}

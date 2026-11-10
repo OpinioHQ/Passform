@@ -22,6 +22,8 @@ import com.opinio.passform.domain.result.ResponseDetail;
 import com.opinio.passform.domain.result.ResultStatistics;
 import com.opinio.passform.repository.FormRepository;
 import com.opinio.passform.repository.FormVersionRepository;
+import com.opinio.passform.domain.attachment.Attachment;
+import com.opinio.passform.repository.AttachmentRepository;
 import com.opinio.passform.repository.ResponseRepository;
 
 // 결과 통계와 응답 상세(SPEC 5절 234·236행). 응답은 findSubmittedNotDeletedByFormId로만 읽는다(AC20).
@@ -34,10 +36,14 @@ public class ResultService {
 
 	private final ResponseRepository responses;
 
-	public ResultService(FormRepository forms, FormVersionRepository formVersions, ResponseRepository responses) {
+	private final AttachmentRepository attachments;
+
+	public ResultService(FormRepository forms, FormVersionRepository formVersions, ResponseRepository responses,
+			AttachmentRepository attachments) {
 		this.forms = forms;
 		this.formVersions = formVersions;
 		this.responses = responses;
+		this.attachments = attachments;
 	}
 
 	@Transactional(readOnly = true)
@@ -65,7 +71,22 @@ public class ResultService {
 			.filter(candidate -> candidate.getId().equals(responseId))
 			.findFirst()
 			.orElseThrow(ResultService::notFound);
-		return ResponseDetail.of(response, questionsOf(formId, response.getFormVersion()));
+		List<Map<String, Object>> files = attachments.findByResponseIdOrderByCreatedAtAscIdAsc(responseId)
+			.stream()
+			.map(ResultService::attachmentItem)
+			.toList();
+		return ResponseDetail.of(response, questionsOf(formId, response.getFormVersion()), files);
+	}
+
+	private static Map<String, Object> attachmentItem(Attachment file) {
+		Map<String, Object> item = new LinkedHashMap<>();
+		item.put("question_id", file.getQuestionId());
+		item.put("attachment_id", file.getId());
+		item.put("filename", file.getFilename());
+		item.put("content_type", file.getContentType());
+		item.put("size_bytes", file.getSizeBytes());
+		item.put("available", file.isAvailable());
+		return item;
 	}
 
 	// 없거나 삭제된 폼은 404, 남의 폼은 403이다(SPEC 5절 90행, AC2, AC62).

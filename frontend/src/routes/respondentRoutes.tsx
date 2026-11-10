@@ -25,6 +25,7 @@ import type {
   ResponseHistoryDetail,
   ResponseHistoryItem,
   SavedFormSummary,
+  SubmitFiles,
   SubmitResponseInput,
 } from '../types/api';
 import { paths } from './paths';
@@ -198,12 +199,14 @@ export function FormResponseRoute() {
     );
   }
   // 실패는 화면이 서버 오류 코드를 읽어 안내하도록 그대로 던진다.
-  async function submit(payload: SubmitResponseInput) {
+  async function submit(payload: SubmitResponseInput, files?: SubmitFiles) {
     if (!form) return;
     setBusy(true);
     try {
       if (useLiveApi) {
-        await api.submit(form.form_id, payload);
+        await (files?.files.length
+          ? api.submitWithFiles(form.form_id, payload, files.files)
+          : api.submit(form.form_id, payload));
       } else {
         addResponse(demoSubmission(form, payload));
       }
@@ -342,10 +345,12 @@ export function ResponseEditRoute() {
   }, [responseId]);
   const back = () => navigate(paths.myResponse(responseId));
 
-  async function save(payload: SubmitResponseInput) {
+  async function save(payload: SubmitResponseInput, files?: SubmitFiles) {
     setBusy(true);
     try {
-      await api.editResponse(responseId, payload.answers);
+      await (files
+        ? api.editResponse(responseId, payload.answers, files)
+        : api.editResponse(responseId, payload.answers));
       navigate(paths.myResponse(responseId), { state: { notice: '답변을 수정했어요.' } });
     } finally {
       setBusy(false);
@@ -381,7 +386,7 @@ export function ResponseEditRoute() {
       onSubmit={save}
       saving={busy}
       onBack={back}
-      editing={{ initialAnswers: answersToMap(detail.content) }}
+      editing={{ initialAnswers: answersToMap(detail.content), attachments: detail.attachments }}
     />
   );
 }

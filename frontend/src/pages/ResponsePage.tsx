@@ -9,9 +9,11 @@ import {
   problemMessage,
 } from '../response/answerCheck';
 import { AutofillLoginHint, AutofillPanel } from '../response/AutofillPanel';
-import { changeErrorText } from '../response/changeErrors';
+import { changeErrorText, fileErrorText } from '../response/changeErrors';
 import { type AutosaveStatus, type DraftSink, useAutosave } from '../response/draftSync';
+import { loadFileDraft, removeFileDraft, saveFileDraft } from '../response/fileDrafts';
 import { FormAttachmentList } from '../response/FormAttachmentList';
+import { QUESTION_FILE_LIMIT_BYTES, ResponseFilePicker } from '../response/ResponseFilePicker';
 import {
   type AnswerMap,
   calculateResponsePath,
@@ -22,16 +24,19 @@ import type {
   AnswerValue,
   AutofillResult,
   DisplayMode,
+  FileToSend,
   PublicForm,
   Question,
   ResponseAnswer,
+  ResponseAttachment,
+  SubmitFiles,
   SubmitResponseInput,
 } from '../types/api';
 
 interface Props {
   form: PublicForm;
   /** 성공하면 resolve, 서버가 거부하면 `ApiError`로 reject한다. 화면이 오류를 읽어 안내한다. */
-  onSubmit: (data: SubmitResponseInput) => Promise<void>;
+  onSubmit: (data: SubmitResponseInput, files?: SubmitFiles) => Promise<void>;
   saving: boolean;
   onBack?: () => void;
   /** 최신 폼을 다시 받는다(AC76). 없으면 같은 정의로 처음부터 다시 쓴다. */
@@ -43,7 +48,9 @@ interface Props {
   /** 초안을 불러오지 못했을 때처럼 화면 위에 늘 보일 안내. */
   draftNotice?: string;
   /** 제출 후 수정(T10 #61). 기존 답으로 시작하고 동의를 다시 묻지 않으며 초안을 저장하지 않는다. */
-  editing?: { initialAnswers: AnswerMap };
+  editing?: { initialAnswers: AnswerMap; attachments?: ResponseAttachment[] };
+  /** 응답 파일을 받는다(T12 #63). `storageKey`가 `null`이면 브라우저에 보관하지 않는다. 없으면 첨부 칸을 보이지 않는다. */
+  files?: { storageKey: string | null };
   /** 내 폼함에 저장(E5 #43, AC17). 로그인 사용자에게만 넘긴다. 없으면 버튼을 보이지 않는다. */
   onSaveToInbox?: () => Promise<void>;
   /** 이미 내 폼함에 있으면 버튼 대신 "저장된 폼"을 보인다. */
@@ -180,6 +187,7 @@ function ResponseForm({
   draft,
   draftNotice,
   editing,
+  files,
 }: Props & { onRestart: () => void }) {
   const defaultMode = form.display.default_mode;
   const switchable = form.display.allowed_modes.length > 1;
@@ -216,6 +224,72 @@ function ResponseForm({
   const aiNoticeId = React.useId();
   const [focusId, setFocusId] = React.useState<string | null>(null);
   const [scrollTarget, setScrollTarget] = React.useState<string | null>(null);
+  const fileKey = files?.storageKey ?? null;
+  const editableFiles = React.useMemo(
+    () => (editing?.attachments ?? []).filter((file) => file.available),
+    [editing],
+  );
+  const acceptsFiles = Boolean(files) || Boolean(editing?.attachments);
+  const [picked, setPicked] = React.useState<FileToSend[]>([]);
+  const [keptIds, setKeptIds] = React.useState<string[]>(() =>
+    editableFiles.map((file) => file.attachment_id),
+  );
+  const [fileNotice, setFileNotice] = React.useState('');
+
+  // 같은 브라우저에 보관한 파일을 복원한다(AC82).
+  React.useEffect(() => {
+    if (!fileKey) return;
+    let active = true;
+    loadFileDraft(fileKey)
+      .then((stored) => {
+        if (active && stored.length > 0) setPicked(stored);
+      })
+      .catch(() => {
+        if (active)
+          setFileNotice('이 브라우저에 보관한 파일을 불러오지 못했어요. 다시 골라 주세요.');
+      });
+    return () => {
+      active = false;
+    };
+  }, [fileKey]);
+
+  function changePicked(next: FileToSend[]) {
+    setPicked(next);
+    if (!fileKey) return;
+    saveFileDraft(fileKey, next).catch(() =>
+      setFileNotice('파일을 이 브라우저에 보관하지 못했어요. 새로고침하면 다시 골라야 해요.'),
+    );
+  }
+
+  function forgetPicked() {
+    setPicked([]);
+    if (fileKey) void removeFileDraft(fileKey).catch(() => undefined);
+  }
+
+  function bytesOf(questionId: string): number {
+    const kept = editableFiles
+      .filter((file) => file.question_id === questionId && keptIds.includes(file.attachment_id))
+      .reduce((sum, file) => sum + file.size_bytes, 0);
+    return picked
+      .filter((item) => item.question_id === questionId)
+      .reduce((sum, item) => sum + item.file.size, kept);
+  }
+
+  function addFiles(question: Question, added: File[]) {
+    const id = question.question_id;
+    const total = added.reduce((sum, file) => sum + file.size, bytesOf(id));
+    if (total > QUESTION_FILE_LIMIT_BYTES) {
+      setErrors((prev) => ({ ...prev, [id]: '한 문항에 첨부한 파일의 합계는 25MB까지예요.' }));
+      return;
+    }
+    setErrors((prev) => {
+      if (!(id in prev)) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    changePicked([...picked, ...added.map((file) => ({ question_id: id, file }))]);
+  }
 
   const paged = view !== 'all_questions';
   const pages = paged ? pagesOf(form.sections, defaultMode, view, answers) : [];
@@ -290,6 +364,7 @@ function ResponseForm({
       await settled;
       await sink.clear().catch(() => undefined);
     }
+    forgetPicked();
     (onReload ?? onRestart)();
   }
 
@@ -300,6 +375,7 @@ function ResponseForm({
     await autosave.cancel();
     try {
       await sink.clear();
+      forgetPicked();
       onRestart();
     } catch {
       setFormError('작성한 답을 지우지 못했어요. 잠시 후 다시 시도해 주세요.');
@@ -404,13 +480,22 @@ function ResponseForm({
       ...(form.consent.ai_summary ? { ai_summary_agreed: aiConsent } : {}),
       ...(draftResponseId ? { draft_response_id: draftResponseId } : {}),
     };
+    // 분기로 건너뛴 문항의 파일은 보내지 않는다. 답과 마찬가지다.
+    const onPathIds = new Set(onPath.map((q) => q.question_id));
+    const filesToSend = picked.filter((item) => onPathIds.has(item.question_id));
+    const keepChanged = editableFiles.length !== keptIds.length;
+    const extra: SubmitFiles | undefined =
+      filesToSend.length > 0 || keepChanged
+        ? { files: filesToSend, ...(keepChanged ? { keep: keptIds } : {}) }
+        : undefined;
     try {
-      await onSubmit(body);
+      await (extra ? onSubmit(body, extra) : onSubmit(body));
       // 수정은 이력 화면으로 돌아간다. 제출 완료 화면을 보이지 않는다.
       if (editing) return;
       // 성공한 뒤에만 초안을 정리한다. 실패하면 서버 초안과 브라우저 초안을 그대로 둔다.
       void autosave.cancel();
       sink?.submitted();
+      forgetPicked();
       setOutcome('submitted');
     } catch (e) {
       const detail =
@@ -427,6 +512,7 @@ function ResponseForm({
       else if (code === 'consent_required')
         setConsentError('필수 동의가 필요해요. 동의해야 제출할 수 있어요.');
       else if (answerProblems.includes(code)) showServerProblem(code as AnswerProblem, ids);
+      else if (fileErrorText(code)) setFormError(fileErrorText(code) as string);
       else if (e instanceof ApiError && e.status === 404)
         setFormError('폼을 찾을 수 없어요. 삭제되었을 수 있어요.');
       else setFormError('제출하지 못했어요. 쓴 답은 그대로 있으니 잠시 후 다시 시도해 주세요.');
@@ -620,6 +706,20 @@ function ResponseForm({
           files={question.attachments}
         />
         <div className="question-input">{renderInput(question)}</div>
+        {acceptsFiles && !preview && (
+          <ResponseFilePicker
+            label={question.question_note}
+            existing={editableFiles.filter(
+              (file) => file.question_id === id && keptIds.includes(file.attachment_id),
+            )}
+            picked={picked.filter((item) => item.question_id === id)}
+            onPick={(added) => addFiles(question, added)}
+            onRemovePicked={(item) => changePicked(picked.filter((other) => other !== item))}
+            onRemoveExisting={(attachmentId) =>
+              setKeptIds((ids) => ids.filter((kept) => kept !== attachmentId))
+            }
+          />
+        )}
         {id in suggested && (
           <p className="field-hint autofill-suggested" data-testid={`suggested-${id}`}>
             프로필에서 채운 값이에요. 고칠 수 있어요.
@@ -840,6 +940,18 @@ function ResponseForm({
       {draftNotice && (
         <p className="info" role="status">
           {draftNotice}
+        </p>
+      )}
+      {files && !preview && (
+        <p className="small muted" data-testid="file-draft-notice">
+          {restored && picked.length === 0
+            ? '이 브라우저에 보관한 파일이 없어요. 다른 기기나 브라우저에서 첨부했다면 파일을 다시 골라 주세요.'
+            : '첨부한 파일은 제출 전까지 이 브라우저에만 보관돼요. 다른 기기나 브라우저에서 이어 쓰면 다시 골라야 해요.'}
+        </p>
+      )}
+      {fileNotice && (
+        <p className="error" role="alert">
+          {fileNotice}
         </p>
       )}
       {sink && (restored || autosave.status !== 'idle') && (

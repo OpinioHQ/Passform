@@ -6,7 +6,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-// FormService가 폼을 저장할 때 지키는 저장 공간 규칙. 저장소 없이 판정만 시험하는 골든 테스트는 NONE을 쓴다.
+import com.opinio.passform.service.ResponseHistoryService.AttachmentItem;
+
+// 폼·응답을 저장할 때 지키는 저장 공간 규칙. 저장소 없이 판정만 시험하는 골든 테스트는 NONE을 쓴다.
 public interface FormStorageRules {
 
 	FormStorageRules NONE = new FormStorageRules() {
@@ -25,6 +27,11 @@ public interface FormStorageRules {
 		}
 
 		@Override
+		public List<AttachmentItem> attachToResponse(UUID formId, UUID responseId, List<StoredFile> files, Instant now) {
+			return List.of();
+		}
+
+		@Override
 		public Map<String, String> attachCopies(UUID formId, List<CopiedFile> files, Instant now) {
 			return Map.of();
 		}
@@ -39,6 +46,9 @@ public interface FormStorageRules {
 
 	// 작업 정의에서 빠진 첨부 중 어느 버전도 참조하지 않는 것의 행을 지우고, 커밋 뒤 원본을 지운다.
 	void releaseUnreferenced(UUID formId, Set<String> attachmentIds);
+
+	// 올린 파일을 응답에 연결한다. 호출자의 트랜잭션 안에서 부른다.
+	List<AttachmentItem> attachToResponse(UUID formId, UUID responseId, List<StoredFile> files, Instant now);
 
 	// 복사한 원본을 새 폼의 첨부 행으로 만들고 원본 ID → 새 ID를 돌려준다. 호출자의 트랜잭션 안에서 부른다.
 	Map<String, String> attachCopies(UUID formId, List<CopiedFile> files, Instant now);

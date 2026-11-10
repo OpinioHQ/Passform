@@ -410,12 +410,12 @@ class ResponseChangeApiTest extends DatabaseTest {
 	}
 
 	@Test
-	void attachments를_보내면_invalid_request이고_바뀌지_않는다() throws Exception {
+	void 이_응답의_파일이_아닌_첨부_ID를_보내면_invalid_request이고_바뀌지_않는다() throws Exception {
 		Response response = mine();
 
 		edit(respondentId, response.getId(), """
-				{"answers":[{"question_id":"q1","value":"아니요"},{"question_id":"q4","value":"일반"}],"attachments":[]}
-				""").andExpect(status().isBadRequest())
+				{"answers":[{"question_id":"q1","value":"아니요"},{"question_id":"q4","value":"일반"}],"attachments":["%s"]}
+				""".formatted(UUID.randomUUID())).andExpect(status().isBadRequest())
 			.andExpect(content().json("{\"error\":\"invalid_request\"}", JsonCompareMode.STRICT));
 
 		assertUnchanged(response);
@@ -499,7 +499,7 @@ class ResponseChangeApiTest extends DatabaseTest {
 	}
 
 	@Test
-	void 첨부가_연결된_응답을_취소하면_연결만_끊고_행을_남긴다() throws Exception {
+	void 첨부가_연결된_응답을_취소하면_첨부_행도_지운다() throws Exception {
 		Response response = mine();
 		Attachment file = attachments.saveAndFlush(
 				new Attachment(formId, response.getId(), "q5", "a.pdf", "application/pdf", 1, "key", TestData.NOW));
@@ -507,9 +507,7 @@ class ResponseChangeApiTest extends DatabaseTest {
 		cancel(respondentId, response.getId()).andExpect(status().isNoContent());
 
 		assertThat(exists(response.getId())).isFalse();
-		Attachment found = attachments.findById(file.getId()).orElseThrow();
-		assertThat(found.getResponseId()).isNull();
-		assertThat(found.getS3Key()).isEqualTo("key");
+		assertThat(attachments.findById(file.getId())).isEmpty();
 	}
 
 	// AC17

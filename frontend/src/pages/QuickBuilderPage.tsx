@@ -18,6 +18,7 @@ import { QuestionEditor } from '../builder/QuestionEditor';
 import {
   appendQuestions,
   AUDIENCE_LABELS,
+  isBasicTemplate,
   PURPOSE_LABELS,
   questionFromTemplate,
 } from '../builder/quickMode';
@@ -34,20 +35,22 @@ import type {
 } from '../types/api';
 import { ResponsePage } from './ResponsePage';
 
-type Step = 'purpose' | 'pick' | 'questions' | 'review';
+type Step = 'purpose' | 'intro' | 'pick' | 'preview' | 'publish';
 
+/** 단계 순서와 이름은 사람이 정했다(#58). */
 const STEPS: { step: Step; label: string }[] = [
   { step: 'purpose', label: '목적·대상' },
+  { step: 'intro', label: '제목·설명' },
   { step: 'pick', label: '추천 문항' },
-  { step: 'questions', label: '문항 편집' },
-  { step: 'review', label: '검토·배포' },
+  { step: 'preview', label: '폼 미리보기' },
+  { step: 'publish', label: '설정·배포' },
 ];
 
 type Suggestions =
   { state: 'loading' } | { state: 'ready'; items: QuestionTemplateView[] } | { state: 'failed' };
 
 /**
- * 빠른 모드(SPEC 46행, 179행, AC71). 목적·대상 → 추천 문항 → 문항 편집·직접 추가 → 검토·미리보기·배포.
+ * 빠른 모드(SPEC 46행, 179행, AC71). 목적·대상 → 제목·설명 → 추천 문항 → 폼 미리보기(직접 편집) → 설정·배포.
  * 저장 형식은 기본 모드와 같은 폼 정의이고(AC42), 문항 편집·설정·자동 저장·미리보기는 기본 모드의 것을 그대로 쓴다.
  */
 export function QuickBuilderPage({
@@ -62,7 +65,7 @@ export function QuickBuilderPage({
   templates: ConsentTemplate[] | null;
   /** 같은 폼을 기본 모드 편집 화면으로 연다. */
   onBasic: () => void;
-  /** 배포 뒤 내가 만든 폼 목록으로 간다. */
+  /** 내가 만든 폼 목록으로 간다. */
   onDone: () => void;
 }) {
   const [definition, setDefinition] = React.useState<FormDefinition>(() => toDefinition(initial));
@@ -71,10 +74,13 @@ export function QuickBuilderPage({
     share_url: initial.share_url,
     definition_version: initial.definition_version,
   });
-  // 다시 열었을 때 문항이 있으면 편집 단계부터 이어서 한다(AC84).
+  // 다시 열었을 때 문항이 있으면 미리보기부터 이어서 한다(AC84).
   const [step, setStep] = React.useState<Step>(() =>
-    initial.sections.some((s) => s.questions.length > 0) ? 'questions' : 'purpose',
+    initial.sections.some((s) => s.questions.length > 0) ? 'preview' : 'purpose',
   );
+  const [editing, setEditing] = React.useState(false);
+  // 편집을 마칠 때마다 미리보기를 처음부터 다시 그린다.
+  const [previewRound, setPreviewRound] = React.useState(0);
   const [purpose, setPurpose] = React.useState<QuickPurpose | null>(null);
   const [audience, setAudience] = React.useState<QuickAudience | null>(null);
   const [suggestions, setSuggestions] = React.useState<Suggestions>({ state: 'loading' });
@@ -83,7 +89,6 @@ export function QuickBuilderPage({
   const [publishing, setPublishing] = React.useState(false);
   const [failure, setFailure] = React.useState('');
   const [problems, setProblems] = React.useState<string[]>([]);
-  const [previewing, setPreviewing] = React.useState(false);
   const [copyNote, setCopyNote] = React.useState('');
   const pageRef = React.useRef<HTMLDivElement>(null);
   const { status, share_url: shareUrl, definition_version: version } = formState;
@@ -131,11 +136,24 @@ export function QuickBuilderPage({
     setProblems([]);
   }
 
+  function go(next: Step) {
+    setFailure('');
+    setProblems([]);
+    setEditing(false);
+    setStep(next);
+  }
+
   function addPicked() {
-    if (suggestions.state !== 'ready') return;
-    const chosen = suggestions.items.filter((t) => picked.includes(t.template_id));
-    if (chosen.length > 0) edit((d) => appendQuestions(d, chosen.map(questionFromTemplate)));
-    setStep('questions');
+    if (suggestions.state === 'ready') {
+      const chosen = suggestions.items.filter((t) => picked.includes(t.template_id));
+      if (chosen.length > 0) edit((d) => appendQuestions(d, chosen.map(questionFromTemplate)));
+    }
+    go('preview');
+  }
+
+  function finishEditing() {
+    setEditing(false);
+    setPreviewRound((n) => n + 1);
   }
 
   async function publish() {
@@ -160,16 +178,6 @@ export function QuickBuilderPage({
     }
   }
 
-  function openPreview() {
-    const found = branchPublishProblems(definition);
-    if (found.length > 0) {
-      setFailure('');
-      setProblems(['미리보기 전에 분기 설정을 고쳐 주세요.', ...found]);
-      return;
-    }
-    setPreviewing(true);
-  }
-
   async function copyShareUrl() {
     try {
       await navigator.clipboard.writeText(shareUrl ?? '');
@@ -177,21 +185,6 @@ export function QuickBuilderPage({
     } catch {
       setCopyNote('복사하지 못했어요. 주소를 직접 복사해 주세요.');
     }
-  }
-
-  // 기본 모드의 미리보기를 그대로 쓴다. 실제 Response를 만들지 않는다(AC81).
-  if (previewing) {
-    const consent =
-      templates?.find((t) => t.consent_template_id === definition.consent_template_id) ?? null;
-    return (
-      <ResponsePage
-        preview
-        form={{ ...toPreviewForm(definition, consent), form_id: formId }}
-        onBack={() => setPreviewing(false)}
-        onSubmit={() => Promise.resolve()}
-        saving={false}
-      />
-    );
   }
 
   const heading = (
@@ -244,10 +237,10 @@ export function QuickBuilderPage({
           : null;
   const allQuestions = definition.sections.flatMap((s) => s.questions);
   const lastSectionId = definition.sections[definition.sections.length - 1]?.section_id;
+  const branchProblems = branchPublishProblems(definition);
 
-  return (
-    <div className="page-shell quick-page" ref={pageRef}>
-      {heading}
+  const top = (
+    <>
       <ol className="quick-steps" aria-label="빠른 모드 단계">
         {STEPS.map(({ step: s, label }, index) => (
           <li
@@ -278,6 +271,54 @@ export function QuickBuilderPage({
           ))}
         </div>
       )}
+    </>
+  );
+
+  /** 아래쪽 이동 줄: 이전은 왼쪽, 다음은 오른쪽(사람 결정: 버튼을 한곳에 몰지 않는다). */
+  const nav = (back: React.ReactNode, next: React.ReactNode) => (
+    <div className="quick-nav">
+      {back}
+      {next}
+    </div>
+  );
+  const backTo = (target: Step) => (
+    <Button variant="secondary" onClick={() => go(target)} disabled={publishing}>
+      이전
+    </Button>
+  );
+
+  // 4단계: 기존 미리보기를 그대로 보인다. 답을 입력해도 Response를 만들지 않는다(AC81).
+  if (step === 'preview' && !editing && allQuestions.length > 0 && branchProblems.length === 0) {
+    const consent =
+      templates?.find((t) => t.consent_template_id === definition.consent_template_id) ?? null;
+    return (
+      <div className="quick-flow" ref={pageRef}>
+        <div className="page-shell quick-page quick-bar">
+          {top}
+          <div className="quick-tools">
+            <Button variant="secondary" onClick={() => setEditing(true)}>
+              폼 직접 편집
+            </Button>
+          </div>
+        </div>
+        <ResponsePage
+          key={previewRound}
+          preview
+          form={{ ...toPreviewForm(definition, consent), form_id: formId }}
+          onSubmit={() => Promise.resolve()}
+          saving={false}
+        />
+        <div className="page-shell quick-page quick-bottom">
+          {nav(backTo('pick'), <Button onClick={() => go('publish')}>다음</Button>)}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page-shell quick-page" ref={pageRef}>
+      {heading}
+      {top}
 
       {step === 'purpose' && (
         <Panel className="quick-panel">
@@ -313,16 +354,47 @@ export function QuickBuilderPage({
               ))}
             </div>
           </fieldset>
-          <div className="button-row">
-            <Button onClick={() => setStep('pick')} disabled={!purpose || !audience}>
-              추천 문항 보기
-            </Button>
-            {allQuestions.length > 0 && (
-              <Button variant="secondary" onClick={() => setStep('questions')}>
-                문항 편집으로
-              </Button>
-            )}
-          </div>
+          {nav(
+            <Button variant="secondary" onClick={onDone}>
+              내가 만든 폼으로
+            </Button>,
+            <Button onClick={() => go('intro')} disabled={!purpose || !audience}>
+              다음
+            </Button>,
+          )}
+        </Panel>
+      )}
+
+      {step === 'intro' && (
+        <Panel className="quick-panel builder-intro">
+          <input
+            className="builder-title"
+            value={definition.title}
+            aria-label="폼 제목"
+            placeholder="폼 제목을 입력해 주세요"
+            onChange={(e) => {
+              const title = e.target.value;
+              edit((d) => ({ ...d, title }));
+            }}
+          />
+          <textarea
+            aria-label="폼 설명"
+            value={definition.note}
+            rows={4}
+            placeholder="폼 설명을 입력해 주세요"
+            onChange={(e) => {
+              const note = e.target.value;
+              edit((d) => ({ ...d, note }));
+            }}
+          />
+          {nav(backTo('purpose'), <Button onClick={() => go('pick')}>다음</Button>)}
+        </Panel>
+      )}
+
+      {step === 'pick' && !(purpose && audience) && (
+        <Panel className="quick-panel">
+          <p className="muted">추천을 받으려면 목적과 대상을 먼저 골라 주세요.</p>
+          {nav(backTo('purpose'), <Button onClick={() => go('preview')}>다음</Button>)}
         </Panel>
       )}
 
@@ -339,147 +411,150 @@ export function QuickBuilderPage({
           )}
           {suggestions.state === 'failed' && (
             <p className="error" role="alert">
-              추천 문항을 불러오지 못했어요. 직접 질문을 추가할 수 있어요.
+              추천 문항을 불러오지 못했어요. 다음 단계에서 직접 질문을 추가할 수 있어요.
             </p>
           )}
-          {suggestions.state === 'ready' && (
-            <div className="option-stack" role="group" aria-label="추천 문항">
-              {suggestions.items.map((t) => {
-                const checked = picked.includes(t.template_id);
-                return (
-                  <label
-                    className={`option quick-suggestion ${checked ? 'checked' : ''}`}
-                    key={t.template_id}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() =>
-                        setPicked((list) =>
-                          checked
-                            ? list.filter((id) => id !== t.template_id)
-                            : [...list, t.template_id],
-                        )
-                      }
-                    />
-                    <span className="quick-suggestion-text">
-                      {t.question_note}
-                      <small className="muted">
-                        {QUESTION_TYPE_LABELS[t.question_type]}
-                        {t.options.length > 0 && ` · ${t.options.join(', ')}`}
-                      </small>
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          )}
-          <div className="button-row">
-            <Button variant="secondary" onClick={() => setStep('purpose')}>
-              이전
-            </Button>
+          {suggestions.state === 'ready' &&
+            [
+              { label: '기본 정보', items: suggestions.items.filter(isBasicTemplate) },
+              {
+                label: '추천 문항',
+                items: suggestions.items.filter((t) => !isBasicTemplate(t)),
+              },
+            ]
+              .filter((group) => group.items.length > 0)
+              .map((group) => (
+                <fieldset className="quick-choices" key={group.label}>
+                  <legend>{group.label}</legend>
+                  <div className="option-stack">
+                    {group.items.map((t) => {
+                      const checked = picked.includes(t.template_id);
+                      return (
+                        <label
+                          className={`option quick-suggestion ${checked ? 'checked' : ''}`}
+                          key={t.template_id}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() =>
+                              setPicked((list) =>
+                                checked
+                                  ? list.filter((id) => id !== t.template_id)
+                                  : [...list, t.template_id],
+                              )
+                            }
+                          />
+                          <span className="quick-suggestion-text">
+                            {t.question_note}
+                            <small className="muted">
+                              {QUESTION_TYPE_LABELS[t.question_type]}
+                              {t.options.length > 0 && ` · ${t.options.join(', ')}`}
+                            </small>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              ))}
+          {nav(
+            backTo('intro'),
             <Button onClick={addPicked}>
               {picked.length > 0 ? `${picked.length}개 추가하고 다음` : '추가하지 않고 다음'}
-            </Button>
-          </div>
+            </Button>,
+          )}
         </Panel>
       )}
 
-      {step === 'questions' && (
+      {step === 'preview' && (
         <>
-          {allQuestions.length === 0 && (
+          {editing && (
+            <div className="quick-tools">
+              <Button onClick={finishEditing}>편집 마치고 미리보기</Button>
+            </div>
+          )}
+          {!editing && allQuestions.length === 0 && (
             <Panel className="quick-panel">
               <p className="muted">
-                아직 문항이 없어요. 추천 문항을 고르거나 직접 질문을 추가하세요.
+                아직 문항이 없어요. 추천 문항을 고르거나 폼을 직접 편집해 질문을 추가하세요.
               </p>
+              <div className="quick-tools">
+                <Button variant="secondary" onClick={() => setEditing(true)}>
+                  폼 직접 편집
+                </Button>
+              </div>
             </Panel>
           )}
-          {definition.sections.map((section) =>
-            section.questions.map((question, questionIndex) => {
-              const sectionId = section.section_id;
-              const questionId = question.question_id;
-              return (
-                <Panel className="quick-panel" key={questionId}>
-                  <QuestionEditor
-                    definition={definition}
-                    question={question}
-                    number={allQuestions.findIndex((q) => q.question_id === questionId) + 1}
-                    canMoveUp={questionIndex > 0}
-                    canMoveDown={questionIndex < section.questions.length - 1}
-                    onChange={(next) => edit((d) => replaceQuestion(d, sectionId, next))}
-                    onEdit={edit}
-                    onMove={(delta) => edit((d) => moveQuestion(d, sectionId, questionId, delta))}
-                    onDuplicate={() => edit((d) => duplicateQuestion(d, sectionId, questionId))}
-                    onRemove={() => edit((d) => removeQuestion(d, sectionId, questionId))}
-                  />
-                </Panel>
-              );
-            }),
+          {!editing && branchProblems.length > 0 && (
+            <Panel className="quick-panel">
+              <div className="error" role="alert">
+                <p>미리보기 전에 분기 설정을 고쳐 주세요.</p>
+                {branchProblems.map((problem) => (
+                  <p key={problem}>{problem}</p>
+                ))}
+              </div>
+              <div className="quick-tools">
+                <Button variant="secondary" onClick={() => setEditing(true)}>
+                  폼 직접 편집
+                </Button>
+              </div>
+            </Panel>
           )}
-          <div className="button-row quick-actions">
-            <Button
-              variant="secondary"
-              onClick={() => lastSectionId && edit((d) => addQuestion(d, lastSectionId))}
-            >
-              직접 질문 추가
-            </Button>
-            <Button variant="secondary" onClick={() => setStep('purpose')}>
-              추천 문항 더 보기
-            </Button>
-            <Button onClick={() => setStep('review')}>검토로</Button>
-          </div>
+          {editing &&
+            definition.sections.map((section) =>
+              section.questions.map((question, questionIndex) => {
+                const sectionId = section.section_id;
+                const questionId = question.question_id;
+                return (
+                  <Panel className="quick-panel" key={questionId}>
+                    <QuestionEditor
+                      definition={definition}
+                      question={question}
+                      number={allQuestions.findIndex((q) => q.question_id === questionId) + 1}
+                      canMoveUp={questionIndex > 0}
+                      canMoveDown={questionIndex < section.questions.length - 1}
+                      onChange={(next) => edit((d) => replaceQuestion(d, sectionId, next))}
+                      onEdit={edit}
+                      onMove={(delta) => edit((d) => moveQuestion(d, sectionId, questionId, delta))}
+                      onDuplicate={() => edit((d) => duplicateQuestion(d, sectionId, questionId))}
+                      onRemove={() => edit((d) => removeQuestion(d, sectionId, questionId))}
+                    />
+                  </Panel>
+                );
+              }),
+            )}
+          {editing && (
+            <div className="button-row quick-add">
+              <Button
+                variant="secondary"
+                onClick={() => lastSectionId && edit((d) => addQuestion(d, lastSectionId))}
+              >
+                직접 질문 추가
+              </Button>
+              <Button variant="secondary" onClick={() => go('pick')}>
+                추천 문항 더 보기
+              </Button>
+            </div>
+          )}
+          {nav(backTo('pick'), <Button onClick={() => go('publish')}>다음</Button>)}
         </>
       )}
 
-      {step === 'review' && (
+      {step === 'publish' && (
         <>
-          <Panel className="quick-panel builder-intro">
-            <input
-              className="builder-title"
-              value={definition.title}
-              aria-label="폼 제목"
-              placeholder="폼 제목을 입력해 주세요"
-              onChange={(e) => {
-                const title = e.target.value;
-                edit((d) => ({ ...d, title }));
-              }}
-            />
-            <textarea
-              aria-label="폼 설명"
-              value={definition.note}
-              rows={4}
-              placeholder="폼 설명을 입력해 주세요"
-              onChange={(e) => {
-                const note = e.target.value;
-                edit((d) => ({ ...d, note }));
-              }}
-            />
-            <ol className="quick-review-list">
-              {allQuestions.map((q) => (
-                <li key={q.question_id}>
-                  {q.question_note.trim() || '(문구 없음)'}{' '}
-                  <small className="muted">{QUESTION_TYPE_LABELS[q.question_type]}</small>
-                </li>
-              ))}
-            </ol>
-          </Panel>
           <FormSettingsPanel
             definition={definition}
             firstPublished={version !== null}
             templates={templates}
             onChange={edit}
           />
-          <div className="button-row quick-actions">
-            <Button variant="secondary" onClick={() => setStep('questions')} disabled={publishing}>
-              문항 편집으로
-            </Button>
-            <Button variant="secondary" onClick={openPreview} disabled={publishing}>
-              미리보기
-            </Button>
+          {nav(
+            backTo('preview'),
             <Button onClick={() => void publish()} disabled={publishing}>
               배포
-            </Button>
-          </div>
+            </Button>,
+          )}
         </>
       )}
     </div>

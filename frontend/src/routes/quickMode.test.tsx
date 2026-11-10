@@ -16,7 +16,7 @@ const templates = [
 const suggestionsFor: Record<string, QuestionTemplateView[]> = {
   'apply/university': [
     {
-      template_id: 'apply_all_01',
+      template_id: 'basic_01',
       question_note: '이름',
       question_type: 'short_answer',
       options: [],
@@ -28,6 +28,15 @@ const suggestionsFor: Record<string, QuestionTemplateView[]> = {
       question_type: 'short_answer',
       options: [],
       input_format: null,
+    },
+  ],
+  'apply/anyone': [
+    {
+      template_id: 'basic_01',
+      question_note: '이름',
+      question_type: 'short_answer',
+      options: [],
+      input_format: { kind: 'name' },
     },
   ],
   'apply/worker': [
@@ -114,7 +123,16 @@ const pathText = () => screen.getByTestId('path').textContent;
 async function pickPurposeAndAudience(purpose: string, audience: string) {
   fireEvent.click(await screen.findByLabelText(purpose));
   fireEvent.click(screen.getByLabelText(audience));
-  fireEvent.click(screen.getByRole('button', { name: '추천 문항 보기' }));
+  fireEvent.click(screen.getByRole('button', { name: '다음' }));
+  // 2단계 제목·설명을 지나 3단계 추천 문항으로 간다.
+  fireEvent.click(await screen.findByRole('button', { name: '다음' }));
+}
+
+const button = (name: string | RegExp) => screen.getByRole('button', { name });
+
+async function addFromSuggestions(label: RegExp) {
+  fireEvent.click(await screen.findByLabelText(label));
+  fireEvent.click(button('1개 추가하고 다음'));
 }
 
 beforeEach(() => {
@@ -192,47 +210,65 @@ describe('새 폼 만들기의 모드 고르기', () => {
 });
 
 describe('빠른 모드 화면', () => {
-  it('목적·대상에 맞는 추천을 보이고, 대상을 바꾸면 다시 불러온다(AC71)', async () => {
+  it('목적·대상 → 제목·설명 → 추천 문항 순서이고, 이전으로 돌아가 대상을 바꾸면 다시 불러온다(AC71)', async () => {
     const { calls } = stubApi();
     await openLive('/creator/forms/f1/quick');
     await pickPurposeAndAudience('신청', '대학생');
     expect(await screen.findByLabelText(/학과\(전공\)/)).toBeTruthy();
+    expect(screen.getByRole('group', { name: '기본 정보' })).toBeTruthy();
     expect(calls('GET', '/question-templates?purpose=apply&audience=university')).toHaveLength(1);
 
-    fireEvent.click(screen.getByRole('button', { name: '이전' }));
+    fireEvent.click(button('이전'));
+    expect(await screen.findByLabelText('폼 제목')).toBeTruthy();
+    fireEvent.click(button('이전'));
     fireEvent.click(screen.getByLabelText('직장인'));
-    fireEvent.click(screen.getByRole('button', { name: '추천 문항 보기' }));
+    fireEvent.click(button('다음'));
+    fireEvent.click(await screen.findByRole('button', { name: '다음' }));
     expect(await screen.findByLabelText(/참석 가능한 시간대/)).toBeTruthy();
     expect(screen.queryByLabelText(/학과\(전공\)/)).toBeNull();
   });
 
-  it('고른 추천 문항과 직접 질문을 기본 모드 편집기로 고치고, 같은 폼 정의로 자동 저장한다(AC7·AC42·AC72·AC84)', async () => {
+  it('누구나를 고르면 anyone으로 묻는다', async () => {
+    const { calls } = stubApi();
+    await openLive('/creator/forms/f1/quick');
+    await pickPurposeAndAudience('신청', '누구나');
+    expect(await screen.findByLabelText(/^이름/)).toBeTruthy();
+    expect(calls('GET', '/question-templates?purpose=apply&audience=anyone')).toHaveLength(1);
+  });
+
+  it('추가한 문항은 폼 직접 편집에서 기본 모드 편집기로 고치고, 같은 폼 정의로 자동 저장한다(AC7·AC42·AC72·AC84)', async () => {
     const patches: Record<string, unknown>[] = [];
     stubApi((body) => {
       patches.push(body);
       return { status: 200, body: { status: 'draft', share_url: null, definition_version: null } };
     });
     await openLive('/creator/forms/f1/quick');
-    await pickPurposeAndAudience('신청', '대학생');
-    fireEvent.click(await screen.findByLabelText(/^이름/));
-    fireEvent.click(screen.getByRole('button', { name: '1개 추가하고 다음' }));
+    fireEvent.click(await screen.findByLabelText('신청'));
+    fireEvent.click(screen.getByLabelText('대학생'));
+    fireEvent.click(button('다음'));
+    fireEvent.change(await screen.findByLabelText('폼 제목'), { target: { value: '동아리 신청' } });
+    fireEvent.click(button('다음'));
+    await addFromSuggestions(/^이름/);
 
+    fireEvent.click(await screen.findByRole('button', { name: '폼 직접 편집' }));
     expect((screen.getByLabelText('질문 1 문구') as HTMLInputElement).value).toBe('이름');
     const ownInfo = screen.getByRole('group', { name: '응답자 본인의 이름인가요?' });
     expect((within(ownInfo).getByLabelText('아니요') as HTMLInputElement).checked).toBe(true);
 
-    fireEvent.click(screen.getByRole('button', { name: '직접 질문 추가' }));
+    fireEvent.click(button('직접 질문 추가'));
     fireEvent.change(screen.getByLabelText('질문 2 문구'), { target: { value: '하고 싶은 말' } });
 
     expect(await screen.findByText('저장됨', {}, { timeout: 4000 })).toBeTruthy();
     const saved = patches[patches.length - 1] as {
       status?: string;
+      title: string;
       sections: { questions: Record<string, unknown>[] }[];
     };
     expect(saved.status).toBeUndefined();
+    expect(saved.title).toBe('동아리 신청');
     const [fromTemplate, own] = saved.sections[0].questions;
     expect(fromTemplate).toMatchObject({
-      template_id: 'apply_all_01',
+      template_id: 'basic_01',
       question_note: '이름',
       input_format: { kind: 'name' },
       profile_key: null,
@@ -240,26 +276,25 @@ describe('빠른 모드 화면', () => {
     expect(own).toMatchObject({ template_id: null, question_note: '하고 싶은 말' });
   });
 
-  it('미리보기는 응답을 만들지 않고, 돌아오면 편집 내용이 그대로다(AC81)', async () => {
+  it('폼 미리보기는 응답을 만들지 않고, 직접 편집 뒤 다시 미리보기로 돌아온다(AC81)', async () => {
     const { calls } = stubApi();
     await openLive('/creator/forms/f1/quick');
     await pickPurposeAndAudience('신청', '대학생');
-    fireEvent.click(await screen.findByLabelText(/학과\(전공\)/));
-    fireEvent.click(screen.getByRole('button', { name: '1개 추가하고 다음' }));
-    fireEvent.click(screen.getByRole('button', { name: '검토로' }));
-    fireEvent.click(screen.getByRole('button', { name: '미리보기' }));
+    await addFromSuggestions(/학과\(전공\)/);
 
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('미리보기');
+    expect((await screen.findByRole('heading', { level: 1 })).textContent).toBe('미리보기');
     // 한 질문씩 폼이라 응답 화면과 같이 시작 버튼을 먼저 보인다. 시작하면 고른 추천 문항이 보인다.
-    fireEvent.click(screen.getByRole('button', { name: '시작하기' }));
+    fireEvent.click(button('시작하기'));
     expect(await screen.findByText('학과(전공)')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /편집으로 돌아가기/ }));
-    fireEvent.click(await screen.findByRole('button', { name: '문항 편집으로' }));
+
+    fireEvent.click(button('폼 직접 편집'));
     expect((screen.getByLabelText('질문 1 문구') as HTMLInputElement).value).toBe('학과(전공)');
+    fireEvent.click(button('편집 마치고 미리보기'));
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('미리보기');
     expect(calls('POST', '/forms/f1/responses')).toHaveLength(0);
   });
 
-  it('배포하면 status open으로 현재 정의를 보내고 공유 링크를 보인다', async () => {
+  it('설정·배포에서 배포하면 status open으로 현재 정의를 보내고 공유 링크를 보인다', async () => {
     const patches: Record<string, unknown>[] = [];
     stubApi((body) => {
       patches.push(body);
@@ -272,10 +307,9 @@ describe('빠른 모드 화면', () => {
     });
     await openLive('/creator/forms/f1/quick');
     await pickPurposeAndAudience('신청', '대학생');
-    fireEvent.click(await screen.findByLabelText(/학과\(전공\)/));
-    fireEvent.click(screen.getByRole('button', { name: '1개 추가하고 다음' }));
-    fireEvent.click(screen.getByRole('button', { name: '검토로' }));
-    fireEvent.click(screen.getByRole('button', { name: '배포' }));
+    await addFromSuggestions(/학과\(전공\)/);
+    fireEvent.click(await screen.findByRole('button', { name: '다음' }));
+    fireEvent.click(button('배포'));
 
     expect(await screen.findByDisplayValue('https://app.test/f/abc')).toBeTruthy();
     const published = patches.find((p) => p.status === 'open') as {

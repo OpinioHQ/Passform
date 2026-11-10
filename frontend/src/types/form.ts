@@ -90,7 +90,7 @@ export interface ConsentTemplate {
 }
 /** 빠른 모드의 제작 목적·응답 대상. 서버 V3 초기 데이터의 값이다. */
 export type QuickPurpose = 'apply' | 'survey' | 'reservation' | 'quiz';
-export type QuickAudience = 'high_school' | 'university' | 'worker';
+export type QuickAudience = 'high_school' | 'university' | 'worker' | 'anyone';
 /** `GET /question-templates`(SPEC 113행). 본인 정보 여부(`profile_key`)는 템플릿에 없다(AC7). */
 export interface QuestionTemplateView {
   template_id: string;

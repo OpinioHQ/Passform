@@ -6,7 +6,7 @@ import { Heading } from '../components/UI';
 export function LoginPage() {
   const [params] = useSearchParams();
   return (
-    <div className="page-shell">
+    <div className="page-shell login-page">
       <Heading
         eyebrow="계정"
         title="로그인"

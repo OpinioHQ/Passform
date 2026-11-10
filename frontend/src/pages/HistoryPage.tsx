@@ -170,7 +170,7 @@ export function HistoryPage({
     <div className="page-shell">
       <Heading
         eyebrow="내 워크스페이스 / 제출 내역"
-        title="제출한 답변"
+        title="제출 내역"
         desc="내가 보낸 답과 제출 당시의 질문을 함께 보관해요."
       />
       {notice && (
@@ -184,9 +184,11 @@ export function HistoryPage({
         </p>
       )}
       {problem === 'login' ? (
-        <Panel>
+        <Panel className="login-prompt">
           <p className="muted">로그인하면 제출 내역을 볼 수 있어요.</p>
-          <Link to={paths.login}>로그인</Link>
+          <Link className="btn btn-primary" to={paths.login}>
+            로그인
+          </Link>
         </Panel>
       ) : problem === 'failed' ? (
         <Panel>

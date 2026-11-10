@@ -447,7 +447,7 @@ describe('로그인: 계정에 저장 (AC82, AC83)', () => {
     expect(calls('PUT', draftPath)).toHaveLength(0);
   });
 
-  it('작성한 답 지우기는 계정 초안을 지우고 빈 답으로 돌아간다', async () => {
+  it('응답 전체 지우기는 계정 초안을 지우고 빈 답으로 돌아간다', async () => {
     await openLive(
       '/f/form-1',
       loggedIn(form, (method, path) => {
@@ -458,7 +458,7 @@ describe('로그인: 계정에 저장 (AC82, AC83)', () => {
       }),
     );
     expect((await field('하고 싶은 말')).value).toBe('계정의 답');
-    fireEvent.click(screen.getByRole('button', { name: '작성한 답 지우기' }));
+    fireEvent.click(screen.getByRole('button', { name: '응답 전체 지우기' }));
     await waitFor(() => expect(calls('DELETE', draftPath)).toHaveLength(1));
     await waitFor(() =>
       expect(screen.getByLabelText<HTMLInputElement>('하고 싶은 말').value).toBe(''),

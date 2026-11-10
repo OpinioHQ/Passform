@@ -2,7 +2,7 @@
 /**
  * PR #85 리뷰 반영(T5 #53)의 회귀 테스트. `VITE_USE_API=true`에서 공유 링크 라우트로 열고 서버는 fetch 모의로 대신한다.
  * - 리뷰 1번: `/me`가 401이 아닌 이유로 실패하면 로그인 여부를 모르므로 이 브라우저에 답을 남기지 않는다(AGENTS 3절 1항, AC82).
- * - 리뷰 2번: 저장 중에 "작성한 답 지우기"를 누르면 보낸 저장이 끝난 뒤 지운다. 지운 초안이 되살아나지 않는다(SPEC 5절 208행).
+ * - 리뷰 2번: 저장 중에 "응답 전체 지우기"를 누르면 보낸 저장이 끝난 뒤 지운다. 지운 초안이 되살아나지 않는다(SPEC 5절 208행).
  */
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -169,7 +169,7 @@ describe('리뷰 2번: 저장 중에 지우면 저장이 끝난 뒤 지운다 (S
     await type('하고 싶은 말', '지울 답');
     await waitFor(() => expect(sent('PUT', draftPath)).toHaveLength(1), { timeout: 3000 });
 
-    fireEvent.click(screen.getByRole('button', { name: '작성한 답 지우기' }));
+    fireEvent.click(screen.getByRole('button', { name: '응답 전체 지우기' }));
     await wait(200);
     expect(sent('DELETE', draftPath)).toHaveLength(0);
 

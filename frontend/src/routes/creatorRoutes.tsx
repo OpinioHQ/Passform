@@ -103,13 +103,13 @@ function LiveCreatedForms() {
       })
       .catch((error: unknown) => {
         if (!active) return;
-        if (isUnauthorized(error)) navigate(paths.login, { replace: true });
-        else setLoad('failed');
+        // 비로그인이면 로그인 화면으로 보내지 않고 이 화면의 틀 안에 로그인 안내를 보인다(사람 결정).
+        setLoad(isUnauthorized(error) ? 'login' : 'failed');
       });
     return () => {
       active = false;
     };
-  }, [navigate]);
+  }, []);
   return (
     <CreatedPage
       forms={forms}

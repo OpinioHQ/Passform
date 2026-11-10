@@ -1,5 +1,5 @@
 import React from 'react';
-import { ApiError } from '../api/client';
+import { ApiError, responseAttachmentUrl, useLiveApi } from '../api/client';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
 import {
   analyzeErrorMessage,
@@ -19,7 +19,14 @@ import type {
   SummaryEvidence,
 } from '../types/analyze';
 import type { CreatorFormDefinition, FormResults, ResponseDetail } from '../types/api';
+import { paths } from '../routes/paths';
 import { ExportDialog } from './ExportDialog';
+import {
+  type FileLink,
+  filesOfQuestion,
+  filesWithoutAnswer,
+  ResponseFileList,
+} from './ResponseFileList';
 import { versionLabel, type DashboardSlots } from './ResultsPage';
 
 /** 목록은 이만큼씩 상세를 읽는다. 순서는 result.response_ids 그대로다(AC62). */
@@ -84,12 +91,19 @@ function MatchedBox({ response }: { response: AnalyzeOkResponse }) {
 
 const answerText = (value: string | string[]) => (Array.isArray(value) ? value.join(', ') : value);
 
-function ListResult({
+/**
+ * AI 결과의 응답 목록. 이미 불러온 상세의 첨부를 문항별로 보이고(SPEC 5절 198행),
+ * 응답마다 상세 화면을 새 탭으로 연다(사람 결정: 결과 화면의 질문과 목록을 잃지 않게).
+ * `formId`가 없거나 가짜 데이터 모드면 내려받기 링크 없이 이름만 보인다.
+ */
+export function ListResult({
   ids,
   loadResponse,
+  formId,
 }: {
   ids: string[];
   loadResponse: (responseId: string) => Promise<ResponseDetail>;
+  formId?: string;
 }) {
   const [shown, setShown] = React.useState(Math.min(LIST_PAGE, ids.length));
   const [details, setDetails] = React.useState<Map<string, ResponseDetail | 'failed'>>(new Map());
@@ -116,6 +130,10 @@ function ListResult({
       active = false;
     };
   }, [ids, shown, details, loadResponse]);
+  const fileLink = (responseId: string): FileLink =>
+    useLiveApi && formId
+      ? (attachmentId) => responseAttachmentUrl(formId, responseId, attachmentId)
+      : null;
   return (
     <>
       <ol className="explore-list">
@@ -128,18 +146,40 @@ function ListResult({
                 {detail && detail !== 'failed' && (
                   <Badge tone="blue">{versionLabel([detail.form_version])}</Badge>
                 )}
+                {formId && (
+                  <a
+                    className="small"
+                    href={paths.formResponse(formId, id)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    응답 {index + 1} 상세 보기
+                  </a>
+                )}
               </div>
               {detail === undefined && <p className="muted small">불러오는 중이에요.</p>}
               {detail === 'failed' && <p className="muted small">이 응답을 불러오지 못했어요.</p>}
               {detail && detail !== 'failed' && (
-                <dl>
-                  {detail.content.map((item) => (
-                    <div key={item.question_id}>
-                      <dt>{item.question_note}</dt>
-                      <dd>{answerText(item.value) || '—'}</dd>
-                    </div>
-                  ))}
-                </dl>
+                <>
+                  <dl>
+                    {detail.content.map((item) => (
+                      <div key={item.question_id}>
+                        <dt>{item.question_note}</dt>
+                        <dd>
+                          {answerText(item.value) || '—'}
+                          <ResponseFileList
+                            files={filesOfQuestion(detail.attachments, item.question_id)}
+                            linkOf={fileLink(id)}
+                          />
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <ResponseFileList
+                    files={filesWithoutAnswer(detail.content, detail.attachments)}
+                    linkOf={fileLink(id)}
+                  />
+                </>
               )}
             </li>
           );
@@ -279,9 +319,11 @@ function SummaryResult({
 function OkResult({
   response,
   loadResponse,
+  formId,
 }: {
   response: AnalyzeOkResponse;
   loadResponse: (responseId: string) => Promise<ResponseDetail>;
+  formId?: string;
 }) {
   const { result } = response;
   const topic = isTopicSummary(response);
@@ -295,7 +337,7 @@ function OkResult({
       <CoverageBox response={response} />
       <MatchedBox response={response} />
       {result.operation === 'list' && (
-        <ListResult ids={result.response_ids} loadResponse={loadResponse} />
+        <ListResult ids={result.response_ids} loadResponse={loadResponse} formId={formId} />
       )}
       {result.operation === 'summarize' && (
         <SummaryResult summary={result.summary} count={result.count} hideCounts={topic} />
@@ -489,7 +531,7 @@ export function ExplorePage({
                 </Button>
               </div>
             </div>
-            <OkResult response={shown.response} loadResponse={loadResponse} />
+            <OkResult response={shown.response} loadResponse={loadResponse} formId={formId} />
           </Panel>
         ),
         aside: assistantOpen && (

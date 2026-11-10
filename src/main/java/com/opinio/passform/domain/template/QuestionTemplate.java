@@ -17,6 +17,19 @@ import jakarta.persistence.Table;
 @Table(name = "question_templates")
 public class QuestionTemplate {
 
+	// 빠른 모드에서 고르는 값(V3 초기 데이터, SPEC 5절 179행 예시). 목적 공통 문항은 audience가 all이다.
+	// anyone("누구나")은 행이 없는 대상이라 목적 공통 문항과 기본 정보만 받는다(사람 결정, #58).
+	public static final List<String> PURPOSES = List.of("apply", "survey", "reservation", "quiz");
+
+	public static final List<String> AUDIENCES = List.of("high_school", "university", "worker", "anyone");
+
+	public static final String COMMON = "all";
+
+	// 기본 정보(이름·휴대폰 번호·생년월일)는 purpose·audience가 모두 all이고 어떤 선택에도 함께 추천한다.
+	public boolean isBasic() {
+		return COMMON.equals(purpose) && COMMON.equals(audience);
+	}
+
 	@Id
 	@Column(name = "template_id")
 	private String id;

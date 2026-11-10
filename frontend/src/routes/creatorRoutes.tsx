@@ -3,6 +3,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { api, ApiError, useLiveApi } from '../api/client';
 import { DEFAULT_CONSENT_TEMPLATE_ID } from '../builder/FormSettingsPanel';
 import { newFormDefinition } from '../builder/formDefinition';
+import { ModeChoiceDialog } from '../builder/ModeChoiceDialog';
 import { Button, Heading, Panel } from '../components/UI';
 import { useDemoData } from '../demo/DemoDataContext';
 import { DemoBuilderPage } from '../demo/DemoBuilderPage';
@@ -12,6 +13,7 @@ import { demoBlankForm, demoForm } from '../demo/data';
 import { BuilderPage } from '../pages/BuilderPage';
 import { CreatedPage, type CreatedFormsLoad } from '../pages/CreatedPage';
 import { ExplorePage } from '../pages/ExplorePage';
+import { QuickBuilderPage } from '../pages/QuickBuilderPage';
 import { ResponseDetailPage } from '../pages/ResponseDetailPage';
 import { ResultsDashboard } from '../pages/ResultsPage';
 import type { AnalyzeRequest } from '../types/analyze';
@@ -86,6 +88,8 @@ function LiveCreatedForms() {
   const [forms, setForms] = React.useState<CreatorFormSummary[]>([]);
   const [load, setLoad] = React.useState<CreatedFormsLoad>('loading');
   const [storage, setStorage] = React.useState<StorageUsage | null>(null);
+  const [choosing, setChoosing] = React.useState(false);
+  const closeChoice = React.useCallback(() => setChoosing(false), []);
   React.useEffect(() => {
     let active = true;
     api
@@ -111,31 +115,40 @@ function LiveCreatedForms() {
     };
   }, []);
   return (
-    <CreatedPage
-      forms={forms}
-      load={load}
-      storage={storage}
-      onCleaned={(formId, kind) => {
-        setForms((list) =>
-          kind === 'form'
-            ? list.filter((f) => f.form_id !== formId)
-            : kind === 'responses'
-              ? list.map((f) => (f.form_id === formId ? { ...f, response_count: 0 } : f))
-              : list,
-        );
-        // 목록을 먼저 고친다. 사용량을 못 읽어도 정리는 이미 성공했다.
-        api.storage().then(setStorage, () => undefined);
-      }}
-      onCreate={() => navigate(paths.newForm)}
-      onEdit={(id) => navigate(paths.editForm(id))}
-      onResults={(id) => navigate(paths.formResults(id))}
-      loadQr={api.formQr}
-      onCopy={async (id) => {
-        // 복사본은 원본과 제목이 같은 새 초안이다(AC40). 바로 그 빌더를 연다.
-        const created = await api.copyForm(id);
-        navigate(paths.editForm(created.form_id));
-      }}
-    />
+    <>
+      <CreatedPage
+        forms={forms}
+        load={load}
+        storage={storage}
+        onCleaned={(formId, kind) => {
+          setForms((list) =>
+            kind === 'form'
+              ? list.filter((f) => f.form_id !== formId)
+              : kind === 'responses'
+                ? list.map((f) => (f.form_id === formId ? { ...f, response_count: 0 } : f))
+                : list,
+          );
+          // 목록을 먼저 고친다. 사용량을 못 읽어도 정리는 이미 성공했다.
+          api.storage().then(setStorage, () => undefined);
+        }}
+        onCreate={() => setChoosing(true)}
+        onEdit={(id) => navigate(paths.editForm(id))}
+        onResults={(id) => navigate(paths.formResults(id))}
+        loadQr={api.formQr}
+        onCopy={async (id) => {
+          // 복사본은 원본과 제목이 같은 새 초안이다(AC40). 바로 그 빌더를 연다.
+          const created = await api.copyForm(id);
+          navigate(paths.editForm(created.form_id));
+        }}
+      />
+      {choosing && (
+        <ModeChoiceDialog
+          onBasic={() => navigate(paths.newForm)}
+          onQuick={() => navigate(paths.newQuickForm)}
+          onClose={closeChoice}
+        />
+      )}
+    </>
   );
 }
 
@@ -219,7 +232,8 @@ async function createDraft(): Promise<string> {
   return created.form_id;
 }
 
-function LiveNewForm() {
+/** 초안을 만든 뒤 `open`이 준 주소로 간다. 기본 모드는 편집 화면, 빠른 모드는 빠른 모드 화면이다. */
+function LiveNewForm({ open = paths.editForm }: { open?: (formId: string) => string }) {
   const navigate = useNavigate();
   const [failed, setFailed] = React.useState(false);
   const [attempt, setAttempt] = React.useState(0);
@@ -237,7 +251,7 @@ function LiveNewForm() {
     started.current = true;
     createDraft()
       .then((formId) => {
-        if (mounted.current) navigate(paths.editForm(formId), { replace: true });
+        if (mounted.current) navigate(open(formId), { replace: true });
       })
       .catch((error: unknown) => {
         if (!mounted.current) return;
@@ -248,7 +262,7 @@ function LiveNewForm() {
           setFailed(true);
         }
       });
-  }, [attempt, navigate]);
+  }, [attempt, navigate, open]);
   if (!failed) return <BuilderMessage text="새 폼을 준비하는 중이에요." />;
   return (
     <BuilderMessage text="새 폼을 만들지 못했어요.">
@@ -275,7 +289,19 @@ type EditLoad =
   | { kind: 'error'; message: string }
   | { kind: 'ready'; definition: CreatorFormDefinition; templates: ConsentTemplate[] | null };
 
-function LiveEditForm({ formId }: { formId: string }) {
+/** 빠른 모드는 서버의 추천 문항을 쓰므로 가짜 데이터 모드에서는 안내만 보인다. */
+export function NewQuickFormRoute() {
+  if (useLiveApi) return <LiveNewForm open={paths.quickForm} />;
+  return <BuilderMessage text={demoOnly} />;
+}
+
+export function QuickFormRoute() {
+  const { formId = '' } = useParams();
+  if (useLiveApi) return <LiveEditForm formId={formId} quick />;
+  return <BuilderMessage text={demoOnly} />;
+}
+
+function LiveEditForm({ formId, quick = false }: { formId: string; quick?: boolean }) {
   const navigate = useNavigate();
   const [load, setLoad] = React.useState<EditLoad>({ kind: 'loading' });
   React.useEffect(() => {
@@ -306,6 +332,18 @@ function LiveEditForm({ formId }: { formId: string }) {
   }, [formId, navigate]);
   if (load.kind === 'loading') return <BuilderMessage text="폼을 불러오는 중이에요." />;
   if (load.kind === 'error') return <BuilderMessage text={load.message} />;
+  if (quick) {
+    return (
+      <QuickBuilderPage
+        key={formId}
+        formId={formId}
+        initial={load.definition}
+        templates={load.templates}
+        onBasic={() => navigate(paths.editForm(formId))}
+        onDone={() => navigate(paths.creator)}
+      />
+    );
+  }
   return (
     <BuilderPage
       key={formId}

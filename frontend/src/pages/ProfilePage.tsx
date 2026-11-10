@@ -28,8 +28,6 @@ interface Props {
   onCreate: (input: ProfileInput) => Promise<void>;
   onUpdate: (profileId: string, input: ProfileInput) => Promise<void>;
   onDelete: (profileId: string) => Promise<void>;
-  /** 마감 알림 켬·끔. 실제 API 모드에서만 넘긴다(가상 데이터 미리보기는 헤더에서 바꾼다). */
-  reminder?: React.ReactNode;
 }
 
 function saveErrorText(e: unknown): string {
@@ -102,14 +100,7 @@ function ProfileEditor({
 }
 
 /** `/me/profile`(T9 #60). 저장한 프로필은 응답 화면의 [내 정보로 채우기]에서 고른다. */
-export function ProfilePage({
-  profiles,
-  loadError,
-  onCreate,
-  onUpdate,
-  onDelete,
-  reminder,
-}: Props) {
+export function ProfilePage({ profiles, loadError, onCreate, onUpdate, onDelete }: Props) {
   const [editing, setEditing] = React.useState<Editing | null>(null);
   const [confirming, setConfirming] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
@@ -271,12 +262,6 @@ export function ProfilePage({
           </div>
         </Panel>
       ))}
-      {reminder && !loadError && (
-        <Panel className="profile-card reminder-setting">
-          <h2>마감 알림</h2>
-          {reminder}
-        </Panel>
-      )}
     </div>
   );
 }

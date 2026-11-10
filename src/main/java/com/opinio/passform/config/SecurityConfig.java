@@ -46,7 +46,7 @@ public class SecurityConfig {
 				.loginPage(frontendOrigin + "/login")
 				.defaultSuccessUrl(frontendOrigin, true)
 				.failureUrl(frontendOrigin + "/login?error"))
-			// SPEC에 로그아웃 API가 없다.
+			// 기본 /logout은 열지 않는다. 로그아웃은 로그인 사용자만 부르는 POST /me/logout이다(사람 결정, #57).
 			.logout(AbstractHttpConfigurer::disable)
 			// 비로그인 요청의 응답을 401로 고정한다. oauth2Login을 켜도 로그인 페이지로 302 하지 않는다.
 			.exceptionHandling(handling -> handling

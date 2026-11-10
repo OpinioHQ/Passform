@@ -25,7 +25,7 @@ class ReminderMailTextTest {
 				마감: 2026년 11월 12일 14:00 (한국 시각)
 				폼 열기: https://app.example.com/f/abc
 
-				알림은 내 프로필에서 끌 수 있어요.
+				알림은 Passform 화면 오른쪽 위, 사용자명을 눌러 끌 수 있어요.
 				""");
 	}
 

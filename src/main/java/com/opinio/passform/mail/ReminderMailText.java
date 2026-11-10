@@ -23,7 +23,7 @@ public final class ReminderMailText {
 
 	public static String body(DeadlineReminderMail mail) {
 		return oneLine(mail.formTitle()) + "\n" + "마감: " + SEOUL.format(mail.deadline()) + " (한국 시각)\n" + "폼 열기: "
-				+ mail.formUrl() + "\n\n" + "알림은 내 프로필에서 끌 수 있어요.\n";
+				+ mail.formUrl() + "\n\n" + "알림은 Passform 화면 오른쪽 위, 사용자명을 눌러 끌 수 있어요.\n";
 	}
 
 	static String oneLine(String text) {

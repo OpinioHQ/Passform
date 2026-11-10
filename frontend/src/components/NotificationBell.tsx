@@ -4,17 +4,23 @@ import { api } from '../api/client';
 import { deadlineText } from '../pages/ResponsePage';
 import { paths } from '../routes/paths';
 import type { NotificationView, SavedFormSummary } from '../types/api';
-import { DeadlineReminderSwitch } from './DeadlineReminder';
 import { Icon } from './UI';
+
+interface Props {
+  /** 열림 상태는 헤더가 정한다. 계정 메뉴와 동시에 열리지 않는다. */
+  open: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+}
 
 /**
  * 로그인한 사용자의 마감 알림(AC18, SPEC 201~202행). 화면을 옮길 때마다 목록을 다시 읽어 안 읽은 개수를 보인다.
  * 알림에는 폼 제목·마감이 없어 목록을 열 때 내 폼함(`GET /me/forms`)에서 찾는다. 알림 대상은 내 폼함에 저장한 폼이다.
+ * 알림 켜기·끄기는 여기 두지 않고 계정 메뉴에 둔다(사람 결정).
  */
-export function NotificationBell() {
+export function NotificationBell({ open, onToggle, onClose }: Props) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const [open, setOpen] = React.useState(false);
   const [items, setItems] = React.useState<NotificationView[] | null>(null);
   const [forms, setForms] = React.useState<Map<string, SavedFormSummary> | null>(null);
   const [problem, setProblem] = React.useState('');
@@ -66,7 +72,7 @@ export function NotificationBell() {
       }
     }
     if (forms?.has(notification.form_id)) {
-      setOpen(false);
+      onClose();
       navigate(paths.form(notification.form_id));
     }
   }
@@ -77,7 +83,7 @@ export function NotificationBell() {
         className="icon-btn notification-bell"
         aria-label={unread > 0 ? `마감 알림, 안 읽은 알림 ${unread}개` : '마감 알림'}
         aria-expanded={open}
-        onClick={() => setOpen(!open)}
+        onClick={onToggle}
       >
         <Icon name="bell" />
         {unread > 0 && (
@@ -88,7 +94,6 @@ export function NotificationBell() {
       </button>
       {open && (
         <div className="account-popover reminder-popover notification-popover">
-          <DeadlineReminderSwitch />
           <h2 className="notification-heading">알림</h2>
           {items === null || (items.length > 0 && forms === null) ? (
             <p className="muted">알림을 불러오는 중이에요.</p>

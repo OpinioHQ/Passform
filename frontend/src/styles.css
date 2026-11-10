@@ -319,12 +319,37 @@ h3 {
   line-height: 18px;
   text-align: center;
 }
-.notification-popover {
+.notification-popover,
+.account-menu {
   min-width: 0;
   width: min(340px, calc(100vw - 2 * var(--space-4)));
 }
+/* 사용자명과 동그란 아이콘을 누르면 계정 메뉴(알림 켜기·끄기, 로그아웃)가 펼쳐진다. */
+.account-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  font: inherit;
+  cursor: pointer;
+}
+.account-trigger:hover {
+  background: var(--color-surface-soft);
+}
+.account-menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.account-menu .btn {
+  align-self: flex-start;
+}
 .notification-heading {
-  margin: var(--space-3) 0 var(--space-2);
+  margin: 0 0 var(--space-2);
   font-size: 13px;
   color: var(--color-ink);
 }
@@ -371,9 +396,6 @@ h3 {
   font-size: 11px;
   font-weight: 600;
   color: var(--color-accent-ink);
-}
-.reminder-setting h2 {
-  margin: 0 0 var(--space-3);
 }
 .demo-ribbon {
   background: var(--color-surface-soft);

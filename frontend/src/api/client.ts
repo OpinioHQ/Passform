@@ -182,15 +182,22 @@ function me(): Promise<MeResponse> {
   return mePromise;
 }
 
-/** 설정을 바꾸면 한 번만 묻는 로그인 상태도 같은 값으로 맞춘다(헤더와 내 프로필이 같은 값을 본다). */
+/** 설정을 바꾸면 한 번만 묻는 로그인 상태도 같은 값으로 맞춘다(메뉴를 다시 열어도 바뀐 값을 본다). */
 async function updateSettings(body: SettingsInput): Promise<void> {
   await request<void>('/me/settings', { ...json(body), method: 'PATCH' });
   if (mePromise) mePromise = mePromise.then((account) => ({ ...account, ...body }));
 }
 
-/** 실제 API 연결점. 화면이 호출하는 것은 `/me`, 설정·마감 알림, 프로필, 자동채우기, 내 폼함·저장, 제출 이력, 폼 공개 조회, 응답 초안, 제출, 결과, 응답 상세, 빌더뿐이다. */
+/** 서버 세션을 끝낸다(`POST /me/logout`). 로그인 상태는 다음에 다시 묻는다. */
+async function logout(): Promise<void> {
+  await request<void>('/me/logout', { method: 'POST' });
+  mePromise = null;
+}
+
+/** 실제 API 연결점. 화면이 호출하는 것은 `/me`, 로그아웃, 설정·마감 알림, 프로필, 자동채우기, 내 폼함·저장, 제출 이력, 폼 공개 조회, 응답 초안, 제출, 결과, 응답 상세, 빌더뿐이다. */
 export const api = {
   me,
+  logout,
   updateSettings,
   notifications: () => request<NotificationView[]>('/me/notifications'),
   readNotification: (notificationId: string) =>

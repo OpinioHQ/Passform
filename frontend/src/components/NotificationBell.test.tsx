@@ -48,6 +48,9 @@ function stub(notifications: StubNotification[]) {
       });
       return Promise.resolve(new Response('', { status: 200 }));
     }
+    if (method === 'POST' && path === '/me/logout') {
+      return Promise.resolve(new Response(null, { status: 204 }));
+    }
     if (path.startsWith('/forms/')) {
       return Promise.resolve(new Response(JSON.stringify({ error: 'not_found' }), { status: 404 }));
     }
@@ -128,12 +131,22 @@ describe('마감 알림(AC18)', () => {
     expect(await banner().findByRole('button', { name: '마감 알림' })).toBeTruthy();
   });
 
-  it('알림이 없으면 개수 없이 안내하고, 스위치로 알림을 끄면 설정을 저장한다', async () => {
+  it('알림이 없으면 개수 없이 안내하고, 종 목록에는 켜기·끄기 스위치가 없다', async () => {
     stub([]);
     await openLive('/me/responses');
     fireEvent.click(await banner().findByRole('button', { name: '마감 알림' }));
-    expect(await banner().findByText('아직 알림이 없어요.')).toBeTruthy();
 
+    expect(await banner().findByText('아직 알림이 없어요.')).toBeTruthy();
+    expect(banner().queryByRole('switch')).toBeNull();
+  });
+
+  it('사용자명을 누르면 계정 메뉴가 펼쳐지고, 스위치로 알림을 끄면 설정을 저장한다', async () => {
+    stub([]);
+    await openLive('/me/responses');
+    fireEvent.click(await banner().findByRole('button', { name: '마감 알림' }));
+    fireEvent.click(await banner().findByRole('button', { name: /가상 사용자/ }));
+
+    expect(banner().queryByText('아직 알림이 없어요.')).toBeNull();
     const toggle = (await banner().findByRole('switch')) as HTMLInputElement;
     await waitFor(() => expect(toggle.disabled).toBe(false));
     expect(toggle.checked).toBe(true);
@@ -145,17 +158,24 @@ describe('마감 알림(AC18)', () => {
     await waitFor(() => expect(toggle.checked).toBe(false));
   });
 
-  it('내 프로필에서도 마감 알림을 켜고 끌 수 있다', async () => {
+  it('계정 메뉴의 로그아웃은 서버 세션을 끝내고 로그인 링크를 보인다', async () => {
+    stub([]);
+    await openLive('/me/responses');
+    fireEvent.click(await banner().findByRole('button', { name: /가상 사용자/ }));
+
+    fireEvent.click(await banner().findByRole('button', { name: '로그아웃' }));
+
+    await waitFor(() => expect(sent('POST', '/me/logout')).toHaveLength(1));
+    expect(await banner().findByRole('link', { name: '로그인' })).toBeTruthy();
+    expect(banner().queryByText('가상 사용자')).toBeNull();
+  });
+
+  it('내 프로필에는 마감 알림 스위치를 두지 않는다(사람 결정)', async () => {
     stub([]);
     await openLive('/me/profile');
 
     const main = within(await screen.findByRole('main'));
-    const toggle = (await main.findByRole('switch')) as HTMLInputElement;
-    await waitFor(() => expect(toggle.checked).toBe(true));
-    fireEvent.click(toggle);
-
-    await waitFor(() =>
-      expect(sent('PATCH', '/me/settings')).toEqual([{ deadline_reminder: false }]),
-    );
+    expect(await main.findByRole('heading', { name: '내 프로필' })).toBeTruthy();
+    expect(main.queryByRole('switch')).toBeNull();
   });
 });

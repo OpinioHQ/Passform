@@ -1,13 +1,7 @@
 import React from 'react';
 import { api } from '../api/client';
 
-type Listener = (value: boolean) => void;
-const listeners = new Set<Listener>();
-
-/**
- * 마감 알림 켬·끔(`PATCH /me/settings`의 `deadline_reminder`, SPEC 101행).
- * 헤더의 알림 목록과 내 프로필이 함께 열려 있어도 같은 값을 보이도록 바뀐 값을 서로 알린다.
- */
+/** 마감 알림 켬·끔(`PATCH /me/settings`의 `deadline_reminder`, SPEC 101행). 헤더 알림 목록에서만 바꾼다(사람 결정). */
 function useDeadlineReminder() {
   const [value, setValue] = React.useState<boolean | null>(null);
   const [busy, setBusy] = React.useState(false);
@@ -20,11 +14,8 @@ function useDeadlineReminder() {
       },
       () => undefined,
     );
-    const listener: Listener = (next) => setValue(next);
-    listeners.add(listener);
     return () => {
       active = false;
-      listeners.delete(listener);
     };
   }, []);
   async function change(next: boolean) {
@@ -32,7 +23,7 @@ function useDeadlineReminder() {
     setError('');
     try {
       await api.updateSettings({ deadline_reminder: next });
-      listeners.forEach((listener) => listener(next));
+      setValue(next);
     } catch {
       setError('알림 설정을 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.');
     } finally {

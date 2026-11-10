@@ -91,7 +91,6 @@ public class SubmissionService {
 		Form form = forms.findByIdForUpdate(command.formId())
 			.filter(found -> !found.isHiddenFromPublic())
 			.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND));
-		Instant now = clock.instant();
 		// 잠금 순서는 폼 행 → 소유자 행 → 초안 행이다. 초안 저장이 사용자 행 → 초안 행 순서라 뒤집으면 교착이 생긴다.
 		long usedBefore = storageRules.lockAndMeasure(form.getOwnerId());
 		// 본인의 작성 중 응답만 제출할 수 있다. 남의 것·제출된 것·다른 폼의 것·비로그인은 없는 초안이다(SPEC 5절 188행 404).
@@ -99,6 +98,8 @@ public class SubmissionService {
 				: responses.findByIdForUpdate(command.draftResponseId())
 					.filter(found -> found.isDraftOf(command.userId(), command.formId()))
 					.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND));
+		// 시각은 모든 잠금을 얻은 뒤에 읽는다. 기다리는 사이 마감이 지나면 닫힌 폼이다(AC16).
+		Instant now = clock.instant();
 
 		Validated validated = validate(command, form, draft, now);
 		requireFilesOnPath(validated.onPath(),

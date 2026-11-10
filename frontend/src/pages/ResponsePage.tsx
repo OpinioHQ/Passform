@@ -235,6 +235,8 @@ function ResponseForm({
     editableFiles.map((file) => file.attachment_id),
   );
   const [fileNotice, setFileNotice] = React.useState('');
+  // 복원이 끝나기 전에 사용자가 파일을 바꿨으면 복원 결과로 덮지 않는다.
+  const filesTouched = React.useRef(false);
 
   // 같은 브라우저에 보관한 파일을 복원한다(AC82).
   React.useEffect(() => {
@@ -242,7 +244,7 @@ function ResponseForm({
     let active = true;
     loadFileDraft(fileKey)
       .then((stored) => {
-        if (active && stored.length > 0) setPicked(stored);
+        if (active && !filesTouched.current && stored.length > 0) setPicked(stored);
       })
       .catch(() => {
         if (active)
@@ -254,6 +256,7 @@ function ResponseForm({
   }, [fileKey]);
 
   function changePicked(next: FileToSend[]) {
+    filesTouched.current = true;
     setPicked(next);
     if (!fileKey) return;
     saveFileDraft(fileKey, next).catch(() =>

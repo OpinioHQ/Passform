@@ -55,13 +55,14 @@ public class ResponseFileService {
 
 	public SubmissionResult submit(SubmitCommand command, List<UploadedFile> files) {
 		UUID ownerId = submissions.checkBeforeUpload(command, questionIdsOf(files));
-		List<Inspected> inspected = inspect(files, Map.of(), ownerId);
+		List<Inspected> inspected = inspect(files, Map.of(), 0, ownerId);
 		return withUploaded(command.formId(), inspected, stored -> submissions.submit(command, stored));
 	}
 
 	public EditedResponse edit(EditCommand command, List<UploadedFile> files) {
 		EditPrecheck precheck = changes.checkBeforeUpload(command, questionIdsOf(files));
-		List<Inspected> inspected = inspect(files, precheck.keptBytesByQuestion(), precheck.ownerId());
+		List<Inspected> inspected = inspect(files, precheck.keptBytesByQuestion(), precheck.freedBytes(),
+				precheck.ownerId());
 		return withUploaded(precheck.formId(), inspected, stored -> changes.edit(new EditCommand(command.userId(),
 				command.responseId(), command.answers(), command.keepAttachmentIds(), stored)));
 	}
@@ -72,7 +73,8 @@ public class ResponseFileService {
 				FileTypes.opensInline(attachment.getContentType()));
 	}
 
-	private List<Inspected> inspect(List<UploadedFile> files, Map<String, Long> keptBytes, UUID ownerId) {
+	private List<Inspected> inspect(List<UploadedFile> files, Map<String, Long> keptBytes, long freedBytes,
+			UUID ownerId) {
 		List<Inspected> inspected = new ArrayList<>();
 		Map<String, Long> bytesByQuestion = new HashMap<>(keptBytes);
 		long total = 0;
@@ -83,7 +85,8 @@ public class ResponseFileService {
 			total += file.sizeBytes();
 		}
 		ResponseFileLimits.requireWithinQuestionLimit(bytesByQuestion);
-		if (total > 0 && quota.usedBytes(ownerId) + total > StorageQuotaService.LIMIT_BYTES) {
+		// 최종 판정은 잠금 안에서 다시 한다. 여기서는 교체로 빠지는 파일을 빼고 본다.
+		if (total > 0 && quota.usedBytes(ownerId) - freedBytes + total > StorageQuotaService.LIMIT_BYTES) {
 			throw new DomainException(ErrorCode.STORAGE_QUOTA_EXCEEDED);
 		}
 		return inspected;

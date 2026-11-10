@@ -1,5 +1,6 @@
 package com.opinio.passform.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,8 +15,13 @@ public interface AttachmentRepository extends JpaRepository<Attachment, UUID> {
 	// 응답 한 건의 첨부. 제출 이력 상세가 파일 이름을 보인다.
 	List<Attachment> findByResponseIdOrderByCreatedAtAscIdAsc(UUID responseId);
 
-	// 원본을 지워도 되는지 본다. 다른 행이 같은 원본을 쓰면 남긴다(SPEC 5절 222행).
-	boolean existsByS3Key(String s3Key);
+	// 원본을 지워도 되는지 본다. 사용 중인 다른 행이 같은 원본을 쓰면 남긴다(SPEC 5절 222행).
+	boolean existsByS3KeyAndAvailableTrue(String s3Key);
+
+	List<Attachment> findByResponseIdIn(Collection<UUID> responseIds);
+
+	// 폼 삭제. 응답에 연결되지 않은 제작자 첨부다.
+	List<Attachment> findByFormIdAndResponseIdIsNull(UUID formId);
 
 	// 계정의 저장 공간 사용량(SPEC 5절 171~172행, AC65). 폼 정의·답은 JSON의 UTF-8 바이트, 파일은 size_bytes다(사람 결정, #63).
 	// - 내가 만든 폼(삭제 제외): 작업 정의와 모든 배포 버전

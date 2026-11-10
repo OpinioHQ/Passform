@@ -200,6 +200,11 @@ export const api = {
   updateForm: (formId: string, body: Partial<FormDefinition> & { status?: FormStatus }) =>
     request<FormStateView>(`/forms/${segment(formId)}`, { ...json(body), method: 'PATCH' }),
   uploadAttachment,
+  deleteReceivedResponses: (formId: string) =>
+    request<void>(`/forms/${segment(formId)}/responses`, { method: 'DELETE' }),
+  deleteResponseAttachments: (formId: string) =>
+    request<void>(`/forms/${segment(formId)}/response-attachments`, { method: 'DELETE' }),
+  deleteForm: (formId: string) => request<void>(`/forms/${segment(formId)}`, { method: 'DELETE' }),
   deleteAttachment: (formId: string, questionId: string | null, attachmentId: string) =>
     request<void>(`${attachmentPath(formId, questionId)}/${segment(attachmentId)}`, {
       method: 'DELETE',

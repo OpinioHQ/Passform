@@ -183,13 +183,21 @@ export function DraftGate({ form, ...rest }: Props) {
     try {
       await sink.save(answers);
       removeBrowserDraft(form.form_id);
-      // 로그인 전에 고른 파일도 이 계정의 보관함으로 옮긴다.
+      // 로그인 전에 고른 파일도 이 계정의 보관함으로 옮긴다. 옮긴 뒤에만 원래 자리를 지운다.
       const anonymousKey = fileDraftKey(ANONYMOUS_SCOPE, form.form_id);
+      let notice: string | undefined;
       if (fileKey) {
-        await saveFileDraft(fileKey, await loadFileDraft(anonymousKey)).catch(() => undefined);
-        await removeFileDraft(anonymousKey).catch(() => undefined);
+        const moved = await loadFileDraft(anonymousKey).catch(() => []);
+        if (moved.length > 0) {
+          try {
+            await saveFileDraft(fileKey, moved);
+            await removeFileDraft(anonymousKey).catch(() => undefined);
+          } catch {
+            notice = '로그인 전에 고른 파일을 계정으로 옮기지 못했어요. 파일을 다시 골라 주세요.';
+          }
+        }
       }
-      setSession({ step: 'ready', sink, answers: answersToMap(answers) });
+      setSession({ step: 'ready', sink, answers: answersToMap(answers), notice });
     } catch {
       setError(
         '계정에 옮기지 못했어요. 브라우저의 답은 그대로 있어요. 잠시 후 다시 시도해 주세요.',

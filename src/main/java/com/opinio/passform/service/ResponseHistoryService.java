@@ -87,9 +87,9 @@ public class ResponseHistoryService {
 			.filter(found -> found.getStatus() == ResponseStatus.SUBMITTED && userId.equals(found.getUserId()))
 			.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND));
 		Form form = forms.findById(response.getFormId()).filter(found -> !found.isDeleted()).orElse(null);
-		Map<String, Object> definition = form == null ? null
+		// 폼이나 받은 응답 전체가 삭제되면 조회 전용 이력이다(form_definition: null, SPEC 5절 193행).
+		Map<String, Object> definition = form == null || response.getCreatorDeletedAt() != null ? null
 				: versions.findById(versionIdOf(response)).map(FormVersion::getDefinition).orElse(null);
-		// 폼이 삭제돼 정의가 없으면 조회 전용 이력이다(form_definition: null). 화면은 T12가 맡는다.
 		PublicFormView view = definition == null ? null : publicForms.viewOfVersion(form, response.getFormVersion());
 		Map<String, String> notes = definition == null ? historyNotes(response) : notesOf(definition);
 		List<ContentItem> content = response.getContent()

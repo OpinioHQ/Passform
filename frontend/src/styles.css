@@ -2197,6 +2197,14 @@ textarea::placeholder {
   text-decoration: underline;
   cursor: pointer;
 }
+.form-cleanup {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-hairline);
+}
+.form-cleanup-confirm {
+  margin-top: var(--space-2);
+}
 
 /* 응답 화면은 읽기 폭을 720px로 좁혀 가운데 둔다(바깥 여백은 page-shell 그대로). */
 .page-shell.response-page {

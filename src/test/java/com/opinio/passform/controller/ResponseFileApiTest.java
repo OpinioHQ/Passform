@@ -573,6 +573,18 @@ class ResponseFileApiTest extends DatabaseTest {
 	}
 
 	@Test
+	void AC65_한도에_닿아_있어도_같은_크기로_교체하는_수정은_된다() throws Exception {
+		JsonNode body = created(submit(respondent, new Part("q5", "a.zip", zip(MB))));
+		String responseId = body.get("response_id").asString();
+		fillUsageTo(owner, LIMIT);
+
+		MockHttpServletResponse edited = edit(respondent, responseId, editBody(List.of()), new Part("q5", "b.zip", zip(MB)));
+
+		assertThat(edited.getStatus()).isEqualTo(200);
+		assertThat(used(owner)).isEqualTo(LIMIT);
+	}
+
+	@Test
 	void 수정의_25MB는_남긴_파일과_새_파일을_합쳐_판정한다() throws Exception {
 		JsonNode body = created(submit(respondent, new Part("q5", "a.zip", zip(20 * MB))));
 		String keep = body.at("/attachments/0/attachment_id").asString();

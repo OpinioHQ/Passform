@@ -74,10 +74,12 @@ public class ResponseChangeService {
 		Form form = forms.findById(response.getFormId()).orElse(null);
 		requireAllowed(Change.EDIT, new Target(form, response), clock.instant());
 		SubmissionService.requireFilesOnPath(validate(response, command.answers()).onPath(), fileQuestionIds);
-		List<Attachment> kept = keptFiles(response.getId(), command.keepAttachmentIds()).kept();
-		Map<String, Long> keptBytes = kept.stream()
+		FileChange change = keptFiles(response.getId(), command.keepAttachmentIds());
+		Map<String, Long> keptBytes = change.kept()
+			.stream()
 			.collect(Collectors.groupingBy(Attachment::getQuestionId, Collectors.summingLong(Attachment::getSizeBytes)));
-		return new EditPrecheck(response.getFormId(), form.getOwnerId(), keptBytes);
+		long freedBytes = change.removed().stream().mapToLong(Attachment::getSizeBytes).sum();
+		return new EditPrecheck(response.getFormId(), form.getOwnerId(), keptBytes, freedBytes);
 	}
 
 	// 같은 Response를 덮어쓴다. response_id·form_version·submitted_at·ai_summary_agreed는 그대로다(AC74, SPEC 5절 215·223행).
@@ -201,7 +203,8 @@ public class ResponseChangeService {
 
 	}
 
-	public record EditPrecheck(UUID formId, UUID ownerId, Map<String, Long> keptBytesByQuestion) {
+	// freedBytes는 교체로 빠지는 파일의 합계다. 용량 사전 검사에서 뺀다.
+	public record EditPrecheck(UUID formId, UUID ownerId, Map<String, Long> keptBytesByQuestion, long freedBytes) {
 	}
 
 	public record EditedResponse(UUID responseId, int formVersion, List<SubmittedAnswer> content,

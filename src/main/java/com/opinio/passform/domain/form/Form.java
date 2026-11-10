@@ -166,6 +166,13 @@ public class Form {
 		return ownerId.equals(userId);
 	}
 
+	// 폼 삭제. 정의는 지우고, 이력이 form_id를 돌려주므로 행은 남긴다(ARCHITECTURE 10절).
+	public void markDeleted(Instant now) {
+		this.workingDefinition = null;
+		this.deletedAt = now;
+		this.updatedAt = now;
+	}
+
 	// 첫 배포 뒤에는 되돌리거나 새 버전을 배포해도 바꿀 수 없다(SPEC 5절 157행, AC90).
 	public void checkAiSummaryChange(boolean current, boolean next) {
 		if (definitionVersion != null && current != next) {

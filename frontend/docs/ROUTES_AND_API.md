@@ -34,7 +34,7 @@
 
 주 7: 제출 후 수정·취소(T10 #61)는 `/me/responses/:responseId`의 [답변 수정]·[응답 취소]에서 시작한다. 버튼은 서버가 준 `editable`·`cancellable`일 때만 보인다. 수정 화면 `/me/responses/:responseId/edit`는 `GET /me/responses/{response_id}`의 제출 버전 정의로 응답 화면을 쓰고, `PATCH /me/responses/{response_id}`로만 저장하며 초안을 저장하지 않는다. 취소는 `DELETE /me/responses/{response_id}`다.
 
-주 8: 제작자 첨부(T12 #63)는 빌더(`/creator/forms/:formId/edit`)의 설명란·문항 칸에서 `POST·DELETE /forms/{form_id}/attachments`, `POST·DELETE /forms/{form_id}/questions/{question_id}/attachments`를 바로 부르고, 저장하지 않은 변경이 있으면 막는다. 응답 화면은 이미지만 바로 보이고 PDF·MP4는 다운로드 링크다. `/creator`는 `GET /me/storage`로 사용량을 보인다. 응답 화면은 문항마다 파일을 고르고, 제출 전 파일은 IndexedDB(`passform-files`)에 계정·폼별로 보관한다. 파일이 있으면 `POST /forms/{form_id}/responses`와 `PATCH /me/responses/{response_id}`를 multipart로 보낸다. 삭제 화면은 T12의 다음 단계에서 연결한다.
+주 8: 제작자 첨부(T12 #63)는 빌더(`/creator/forms/:formId/edit`)의 설명란·문항 칸에서 `POST·DELETE /forms/{form_id}/attachments`, `POST·DELETE /forms/{form_id}/questions/{question_id}/attachments`를 바로 부르고, 저장하지 않은 변경이 있으면 막는다. 응답 화면은 이미지만 바로 보이고 PDF·MP4는 다운로드 링크다. `/creator`는 `GET /me/storage`로 사용량을 보인다. 응답 화면은 문항마다 파일을 고르고, 제출 전 파일은 IndexedDB(`passform-files`)에 계정·폼별로 보관한다. 파일이 있으면 `POST /forms/{form_id}/responses`와 `PATCH /me/responses/{response_id}`를 multipart로 보낸다. `/creator`의 폼 카드에서 `DELETE /forms/{form_id}/responses`, `DELETE /forms/{form_id}/response-attachments`, `DELETE /forms/{form_id}`를 부른다. 폼 삭제 전에는 받은 응답을 내보낼지 묻는다.
 
 ## 공통 파일 규칙
 

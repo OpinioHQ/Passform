@@ -32,9 +32,13 @@ async function run<T>(
   if (!database) return undefined;
   try {
     return await new Promise<T>((resolve, reject) => {
-      const request = action(database.transaction(STORE, mode).objectStore(STORE));
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error ?? new Error('브라우저 저장소 오류'));
+      const transaction = database.transaction(STORE, mode);
+      const request = action(transaction.objectStore(STORE));
+      // 요청이 성공해도 커밋 단계에서 중단될 수 있어 트랜잭션 결과로 판정한다.
+      transaction.oncomplete = () => resolve(request.result);
+      transaction.onabort = () => reject(transaction.error ?? new Error('브라우저 저장소 오류'));
+      transaction.onerror = () =>
+        reject(request.error ?? transaction.error ?? new Error('브라우저 저장소 오류'));
     });
   } finally {
     database.close();

@@ -292,15 +292,19 @@ describe('빠른 모드 화면', () => {
     await pickPurposeAndAudience('신청', '대학생');
     await addFromSuggestions(/학과\(전공\)/);
 
-    expect((await screen.findByRole('heading', { level: 1 })).textContent).toBe('미리보기');
+    expect(await screen.findByRole('heading', { level: 1, name: '미리보기' })).toBeTruthy();
+    // 미리보기 단계에서도 빠른 모드 제목·안내가 남는다(사람 요청).
+    expect(screen.getByRole('heading', { level: 1, name: '빠른 모드로 만들기' })).toBeTruthy();
     // 한 질문씩 폼이라 응답 화면과 같이 시작 버튼을 먼저 보인다. 시작하면 고른 추천 문항이 보인다.
     fireEvent.click(button('시작하기'));
     expect(await screen.findByText('학과(전공)')).toBeTruthy();
 
     fireEvent.click(button('폼 직접 편집'));
     expect((screen.getByLabelText('질문 1 문구') as HTMLInputElement).value).toBe('학과(전공)');
-    fireEvent.click(button('편집 마치고 미리보기'));
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('미리보기');
+    // 위·아래 두 곳에 있다. 아래 것(이전·다음 줄)으로 마친다.
+    expect(button('편집 마치고 미리보기')).toBeTruthy();
+    fireEvent.click(button('편집 마치고 미리보기 (아래)'));
+    expect(screen.getByRole('heading', { level: 1, name: '미리보기' })).toBeTruthy();
     expect(calls('POST', '/forms/f1/responses')).toHaveLength(0);
   });
 

@@ -278,11 +278,14 @@ export function QuickBuilderPage({
     </>
   );
 
-  /** 아래쪽 이동 줄: 이전은 왼쪽, 다음은 오른쪽(사람 결정: 버튼을 한곳에 몰지 않는다). */
-  const nav = (back: React.ReactNode, next: React.ReactNode) => (
+  /** 아래쪽 이동 줄: 이전·다음은 오른쪽에 나란히, 그 단계의 다른 버튼은 왼쪽(사람 결정, #58). */
+  const nav = (back: React.ReactNode, next: React.ReactNode, left?: React.ReactNode) => (
     <div className="quick-nav">
-      {back}
-      {next}
+      {left && <div className="quick-nav-left">{left}</div>}
+      <div className="quick-nav-right">
+        {back}
+        {next}
+      </div>
     </div>
   );
   const backTo = (target: Step) => (
@@ -297,6 +300,7 @@ export function QuickBuilderPage({
       templates?.find((t) => t.consent_template_id === definition.consent_template_id) ?? null;
     return (
       <div className="page-shell quick-page" ref={pageRef}>
+        {heading}
         {top}
         <div className="quick-tools">
           <Button variant="secondary" onClick={() => setEditing(true)}>
@@ -541,7 +545,21 @@ export function QuickBuilderPage({
               </Button>
             </div>
           )}
-          {nav(backTo('pick'), <Button onClick={() => go('publish')}>다음</Button>)}
+          {nav(
+            backTo('pick'),
+            <Button onClick={() => go('publish')}>다음</Button>,
+            // 위쪽 버튼과 같은 일을 한다(사람 요청). 화면 읽기 프로그램이 구분하도록 이름에 "(아래)"를 붙인다.
+            editing && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={finishEditing}
+                aria-label="편집 마치고 미리보기 (아래)"
+              >
+                편집 마치고 미리보기
+              </button>
+            ),
+          )}
         </>
       )}
 

@@ -2377,9 +2377,15 @@ input[type='file']::file-selector-button {
 }
 .quick-nav {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-2);
   margin: var(--space-4) 0 var(--space-6);
+}
+.quick-nav-right {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
 }
 .quick-tools {
   display: flex;

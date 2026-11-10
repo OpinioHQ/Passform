@@ -4,6 +4,7 @@ import { api, useLiveApi } from '../api/client';
 import { demoUser } from '../demo/screens';
 import { paths } from '../routes/paths';
 import type { MeResponse } from '../types/api';
+import { NotificationBell } from './NotificationBell';
 import { Brand, Icon, Badge } from './UI';
 
 const menus: Array<{ label: string; to: string }> = [
@@ -67,6 +68,7 @@ export function Header() {
         {useLiveApi ? (
           me?.name ? (
             <>
+              <NotificationBell />
               <span className="avatar">{me.name.slice(0, 1)}</span>
               <span className="account-name">{me.name}</span>
             </>

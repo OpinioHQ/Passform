@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ApiError, api, useLiveApi } from '../api/client';
+import { DeadlineReminderSwitch } from '../components/DeadlineReminder';
 import { Button, Heading, Panel } from '../components/UI';
 import { useDemoData } from '../demo/DemoDataContext';
 import {
@@ -93,6 +94,7 @@ export function MyProfileRoute() {
       onCreate={create}
       onUpdate={update}
       onDelete={remove}
+      reminder={useLiveApi ? <DeadlineReminderSwitch /> : undefined}
     />
   );
 }

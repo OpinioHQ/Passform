@@ -99,6 +99,7 @@
 | `GET /me` | 로그인 | — | `{user_id, name, email, deadline_reminder}` |
 | `GET /me/storage` | 로그인 | — | `{used_bytes, limit_bytes: 500000000}` — 내가 만든 폼, 그 폼에 받은 제출 응답, 내 계정에 보관한 작성 중 응답의 사용량 |
 | `PATCH /me/settings` | 로그인 | `{deadline_reminder?: boolean}` | `200` (기본값 `true`) |
+| `POST /me/logout` | 로그인 | — | `204` |
 | `GET /me/profiles` | 로그인 | — | `[{profile_id, label, personal_info}]` |
 | `POST /me/profiles` · `PUT /me/profiles/{profile_id}` | 로그인 | `{label, personal_info}` | `201 {profile_id}` · `200` / `400 {error: "unsupported_key", keys: []}` |
 | `DELETE /me/profiles/{profile_id}` | 로그인 | — | `204` |

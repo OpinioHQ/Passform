@@ -1,0 +1,40 @@
+{"request_id": "R01", "set": "eval2", "form_id": "club", "conditions": ["새내기"]}
+{"request_id": "R02", "set": "eval2", "form_id": "club", "conditions": ["소속 학과"]}
+{"request_id": "R03", "set": "eval2", "form_id": "club", "conditions": ["고학년"]}
+{"request_id": "R04", "set": "eval2", "form_id": "club", "conditions": ["조장 맡았던 사람"]}
+{"request_id": "R05", "set": "eval2", "form_id": "club", "conditions": ["6번 문항 - 비움"]}
+{"request_id": "R06", "set": "eval2", "form_id": "club", "conditions": ["컴퓨터공학부 학생"]}
+{"request_id": "R07", "set": "eval2", "form_id": "club", "conditions": ["학년 - 1"]}
+{"request_id": "R08", "set": "eval2", "form_id": "club", "conditions": ["자기소개에 게임 개발 얘기한 사람", "개발 쪽 관심"]}
+{"request_id": "R09", "set": "eval2", "form_id": "club", "conditions": ["팀원"]}
+{"request_id": "R10", "set": "eval2", "form_id": "club", "conditions": ["컴퓨터공학", "팀장 역할"]}
+{"request_id": "R11", "set": "eval2", "form_id": "club", "conditions": ["타 전공자"]}
+{"request_id": "R12", "set": "eval2", "form_id": "club", "conditions": ["4번 문항 - 응답"]}
+{"request_id": "R13", "set": "eval2", "form_id": "club", "conditions": ["데이터분석 희망"]}
+{"request_id": "R14", "set": "eval2", "form_id": "club", "conditions": ["프로젝트에서 맡은 역할"]}
+{"request_id": "R15", "set": "eval2", "form_id": "club", "conditions": ["2번 문항 - 4"]}
+{"request_id": "R16", "set": "eval2", "form_id": "club", "conditions": ["전자공학과", "3학년 지원자"]}
+{"request_id": "R17", "set": "eval2", "form_id": "club", "conditions": ["프로젝트 해 본 사람", "디자인 관심"]}
+{"request_id": "R18", "set": "eval2", "form_id": "club", "conditions": ["5번 문항 - 응답"]}
+{"request_id": "R19", "set": "eval2", "form_id": "club", "conditions": ["복수전공생"]}
+{"request_id": "R20", "set": "eval2", "form_id": "club", "conditions": ["자기소개"]}
+{"request_id": "R21", "set": "eval2", "form_id": "event", "conditions": ["M"]}
+{"request_id": "R22", "set": "eval2", "form_id": "event", "conditions": ["학부생"]}
+{"request_id": "R23", "set": "eval2", "form_id": "event", "conditions": ["포폴 리뷰"]}
+{"request_id": "R24", "set": "eval2", "form_id": "event", "conditions": ["7번 문항 - 답함"]}
+{"request_id": "R25", "set": "eval2", "form_id": "event", "conditions": ["11/15"]}
+{"request_id": "R26", "set": "eval2", "form_id": "event", "conditions": ["미신청"]}
+{"request_id": "R27", "set": "eval2", "form_id": "event", "conditions": ["티셔츠 사이즈"]}
+{"request_id": "R28", "set": "eval2", "form_id": "event", "conditions": ["다른 학교 학생", "해커톤 참가"]}
+{"request_id": "R29", "set": "eval2", "form_id": "event", "conditions": ["졸업한 사람", "네트워킹 신청"]}
+{"request_id": "R30", "set": "eval2", "form_id": "event", "conditions": ["3인 이상 팀"]}
+{"request_id": "R31", "set": "eval2", "form_id": "event", "conditions": ["8번 문항 - 미응답"]}
+{"request_id": "R32", "set": "eval2", "form_id": "event", "conditions": ["XS"]}
+{"request_id": "R33", "set": "eval2", "form_id": "event", "conditions": ["개인"]}
+{"request_id": "R34", "set": "eval2", "form_id": "event", "conditions": ["참가 형태", "특강 듣는 사람"]}
+{"request_id": "R35", "set": "eval2", "form_id": "event", "conditions": ["문의사항에 환불 문의한 사람"]}
+{"request_id": "R36", "set": "eval2", "form_id": "event", "conditions": ["엑스라지"]}
+{"request_id": "R37", "set": "eval2", "form_id": "event", "conditions": ["4번 문항 - 미응답", "휴학한 사람"]}
+{"request_id": "R38", "set": "eval2", "form_id": "event", "conditions": ["2인 팀", "11월 16일 참가"]}
+{"request_id": "R39", "set": "eval2", "form_id": "event", "conditions": ["식사 안 함"]}
+{"request_id": "R40", "set": "eval2", "form_id": "event", "conditions": ["2일 모두 참가", "재학 중", "채식 메뉴"]}

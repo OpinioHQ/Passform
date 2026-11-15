@@ -584,95 +584,97 @@
 
 | AC | 골든 케이스 id (`tests/harness/golden_cases.yaml`, 강의 5) 또는 판정 위치 | 구현 상태 |
 |---|---|---|
-| AC1 | `first_login_creates_user` | 미구현 |
-| AC2 | `unauthenticated_401`, `other_users_response_404`, `non_owner_analyze_403` | 미구현 |
-| AC3 | `profile_address_birth_date_allowed`, `profile_rejects_sensitive_key` | 미구현 |
-| AC4 | `autofill_selected_profile` | 미구현 |
-| AC5 | `deleted_profile_not_used` | 미구현 |
-| AC6 | `autofill_own_info_only`, `autofill_option_mismatch`, `autofill_value_reviewable` (API 골든 + 프론트엔드 확인) | 미구현 |
-| AC7 | `template_question_copies_input_format`, `template_profile_key_needs_confirmation` | 미구현 |
-| AC8 | `branch_to_missing_target`, `branch_backward`, `branch_condition_invalid` | 미구현 |
-| AC9 | `skipped_questions_not_required`, `skipped_answers_dropped` | 미구현 |
-| AC10 | `qr_decodes_to_share_url`, `qr_draft_409` | 미구현 |
-| AC11 | `payment_link_https_only` | 미구현 |
-| AC12 | `every_open_form_needs_consent_template`, `unformatted_form_needs_consent_template` | 미구현 |
-| AC13 | `consent_lists_input_formats`, `consent_generic_answer_item` (API 골든 + 프론트엔드 확인) | 미구현 |
-| AC14 | `submit_without_consent`, `unformatted_submit_needs_consent` (API 골든 + 프론트엔드 확인) | 미구현 |
-| AC15 | `submitted_content_roundtrip`, `submission_uses_original_form_version`, `anonymous_submit` | 미구현 |
-| AC16 | `submit_after_deadline`, `edit_after_deadline`, `edit_closed_form`, `history_only_not_editable`, `not_editable_patch`, `not_cancellable_delete` | 미구현 |
-| AC17 | `save_form_once`, `submit_adds_to_inbox`, `partial_cancel_keeps_submitted`, `cancel_returns_to_saved`, `bulk_delete_keeps_submitted_history` | 미구현 |
-| AC18 | `deadline_reminder_once`, `reminder_saved_within_window`, `reminder_opt_out` | 미구현 |
-| AC19 | `results_option_counts_combined_and_by_version`, `results_changed_question_separate` | 미구현 |
-| AC20 | `submitted_only`, `response_count_across_versions`, `injection_in_response` | 일부 구현 |
+| AC1 | `first_login_creates_user` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC2 | `unauthenticated_401`, `other_users_response_404`, `non_owner_analyze_403` | 구현 |
+| AC3 | `profile_address_birth_date_allowed`, `profile_rejects_sensitive_key` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC4 | `autofill_selected_profile` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC5 | `deleted_profile_not_used` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC6 | `autofill_own_info_only`, `autofill_option_mismatch`, `autofill_value_reviewable` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC7 | `template_question_copies_input_format`, `template_profile_key_needs_confirmation` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC8 | `branch_to_missing_target`, `branch_backward`, `branch_condition_invalid` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC9 | `skipped_questions_not_required`, `skipped_answers_dropped` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC10 | `qr_decodes_to_share_url`, `qr_draft_409` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC11 | `payment_link_https_only` | MVP 제외 — 빌더 입력 칸 숨김(#83), 기존 값 표시만 남음 |
+| AC12 | `every_open_form_needs_consent_template`, `unformatted_form_needs_consent_template` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC13 | `consent_lists_input_formats`, `consent_generic_answer_item` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC14 | `submit_without_consent`, `unformatted_submit_needs_consent` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC15 | `submitted_content_roundtrip`, `submission_uses_original_form_version`, `anonymous_submit` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC16 | `submit_after_deadline`, `edit_after_deadline`, `edit_closed_form`, `history_only_not_editable`, `not_editable_patch`, `not_cancellable_delete` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC17 | `save_form_once`, `submit_adds_to_inbox`, `partial_cancel_keeps_submitted`, `cancel_returns_to_saved`, `bulk_delete_keeps_submitted_history` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC18 | `deadline_reminder_once`, `reminder_saved_within_window`, `reminder_opt_out` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC19 | `results_option_counts_combined_and_by_version`, `results_changed_question_separate` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC20 | `submitted_only`, `response_count_across_versions`, `injection_in_response` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC21 | `matching_labeled_set` (규칙이면 골든 / LLM이면 evals) | 스파이크 1차 미달. MVP는 규칙 우선과 임시 LLM 프롬프트, 재도전 미룸 |
-| AC22 | `unknown_condition_all_versions`, `unknown_sort_field`, `condition_missing_one_version_keeps_matches`, `option_renamed_version_not_evaluable`, `parser_dropped_condition_not_counted`, `parser_partially_dropped_condition_clarify`, `question_wording_not_dropped_condition` | 일부 구현 |
-| AC23 | `matched_for_applicable_versions`, `coverage_for_unavailable_version`, `unavailable_version_without_unknown_omitted` | 일부 구현 |
-| AC24 | `match_not_excludes_unknown`, `match_any_known_true_with_unknown`, `checkbox_all_requires_both_options`, `unanswered_kind_counts_blank_only`, `answered_kind_excludes_blank`, `match_all_unknown_when_no_false`, `no_condition_counts_all`, `negation_does_not_count_unknown`, `no_condition_match_any_counts_all`, `no_condition_match_not_counts_all`, `unavailable_version_without_unknown_omitted`, `branch_skipped_condition_not_evaluable`, `branch_visited_blank_is_false` | 일부 구현 |
-| AC25 | `ambiguous_single_choice`, `checkbox_all_ok`, `ambiguous_question_meaning_across_versions` | 미구현 |
-| AC26 | `missing_match_two_conditions`, `parser_partially_dropped_condition_clarify` | 미구현 |
-| AC27 | `missing_operation`, `unsupported_statistics_not_mapped_to_summary`, `missing_operation_without_summary_option` | 미구현 |
-| AC28 | `unsortable_long_answer`, `unsortable_text_age`, `sort_missing_version_last` | 미구현 |
-| AC29 | `double_negation_unanswered` | 미구현 |
-| AC30 | `extra_key_retry_once` | 미구현 |
-| AC31 | `injection_in_response` (+ 레드티밍) | 일부 구현 |
-| AC32 | `confirmed_context_skips_parser`, `confirmed_context_all_versions`, `invalid_context_400` | 미구현 |
-| AC33 | `health` | 구현 |
-| AC34 | 부하 테스트 `load/` | 미구현 |
-| AC35 | evals `evals/evalset.jsonl` | 미구현 |
-| AC36 | CI 커버리지 리포트 | 일부 구현 |
+| AC22 | `unknown_condition_all_versions`, `unknown_sort_field`, `condition_missing_one_version_keeps_matches`, `option_renamed_version_not_evaluable`, `parser_dropped_condition_not_counted`, `parser_partially_dropped_condition_clarify`, `question_wording_not_dropped_condition` | 구현 — 골든 미작성 |
+| AC23 | `matched_for_applicable_versions`, `coverage_for_unavailable_version`, `unavailable_version_without_unknown_omitted` | 구현 |
+| AC24 | `match_not_excludes_unknown`, `match_any_known_true_with_unknown`, `checkbox_all_requires_both_options`, `unanswered_kind_counts_blank_only`, `answered_kind_excludes_blank`, `match_all_unknown_when_no_false`, `no_condition_counts_all`, `negation_does_not_count_unknown`, `no_condition_match_any_counts_all`, `no_condition_match_not_counts_all`, `unavailable_version_without_unknown_omitted`, `branch_skipped_condition_not_evaluable`, `branch_visited_blank_is_false` | 구현 |
+| AC25 | `ambiguous_single_choice`, `checkbox_all_ok`, `ambiguous_question_meaning_across_versions` | 구현 |
+| AC26 | `missing_match_two_conditions`, `parser_partially_dropped_condition_clarify` | 구현 |
+| AC27 | `missing_operation`, `unsupported_statistics_not_mapped_to_summary`, `missing_operation_without_summary_option` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC28 | `unsortable_long_answer`, `unsortable_text_age`, `sort_missing_version_last` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC29 | `double_negation_unanswered` | 구현 |
+| AC30 | `extra_key_retry_once` | 구현 |
+| AC31 | `injection_in_response` (+ 레드티밍) | 구현 — 레드티밍 미실시 |
+| AC32 | `confirmed_context_skips_parser`, `confirmed_context_all_versions`, `invalid_context_400` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC33 | `health` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC34 | 부하 테스트 `load/` | 미구현 — 부하 테스트 스크립트 없음 |
+| AC35 | evals `evals/evalset.jsonl` | 미구현 — 평가셋 비어 있음 |
+| AC36 | CI 커버리지 리포트 | 구현 |
 | AC37 | — | 폐기 |
-| AC38 | `draft_hidden_from_others`, `first_draft_version_null`, `open_creates_share_url`, `first_open_creates_version_one` | 미구현 |
-| AC39 | `created_forms_owner_only` | 미구현 |
-| AC40 | `copy_form_without_responses` | 미구현 |
-| AC41 | `share_url_open_form`, `share_url_closed_form` | 미구현 |
-| AC42 | `quick_and_basic_same_definition`, `own_info_setting_survives_mode_switch` (API 골든 + 프론트엔드 확인) | 미구현 |
-| AC43 | `required_missing_visited_only` | 미구현 |
-| AC44 | `branch_all_conditions`, `branch_any_conditions`, `branch_first_rule_wins` | 미구현 |
-| AC45 | `branch_graph_matches_rules` | 미구현 |
-| AC46 | `unbranched_display_modes`, `branched_display_modes`, `section_page_branch_only_at_end`, `section_page_rejects_question_target`, `one_question_allows_question_branch` | 미구현 |
-| AC47 | `unbranched_respondent_switch_preserves_answers`, `branched_mode_fixed`, `all_questions_sections_visible`, `section_page_first_screen`, `one_question_intro_then_first_question` (프론트엔드·E2E 테스트) | 미구현 |
-| AC48 | `export_json_yaml_same`, `export_csv_rows`, `export_form_versions_separate`, `export_flat_responses_with_version` | 미구현 |
-| AC49 | `export_filtered_matches_analyze`, `export_non_list_time_order`, `export_excludes_not_evaluable` | 미구현 |
-| AC50 | `csv_formula_escaped` | 미구현 |
-| AC51 | `repeat_submission_allowed`, `anonymous_repeat_submission_allowed` | 미구현 |
-| AC52, AC54~AC55 | (추가 개발 — 착수 시 작성) | 추가 개발 |
-| AC53 | `character_limit_saved_both_modes`, `character_count_display_and_validation`, `over_limit_draft_preserved` (프론트엔드·E2E 테스트) | 미구현 |
-| AC56 | `draft_saves_incomplete`, `open_runs_semantic_checks`, `reopen_validates_draft_version` | 미구현 |
-| AC57 | `invalid_status_transition`, `share_url_stable_on_reopen` | 미구현 |
-| AC58 | `form_edit_creates_immutable_version`, `attachment_change_creates_immutable_version`, `operating_setting_keeps_version` | 미구현 |
-| AC59 | `kakao_reminder_once` (연동 시) | MVP 시도 |
-| AC60 | `respondent_progress_known_path`, `respondent_progress_branch_unknown` (프론트엔드·E2E 테스트) | 미구현 |
-| AC61 | `list_sort_default_asc`, `list_sort_all_versions`, `non_list_sort_ignored` | 미구현 |
-| AC62 | `creator_list_response_detail`, `creator_response_other_form_404` | 미구현 |
-| AC63 | `form_and_question_attachments_allowed`, `attachment_api_version_atomic`, `draft_attachment_keeps_version`, `question_attachment_owner_only_draft`, `creator_attachment_rejects_type` (API 골든 + 프론트엔드 확인) | 미구현 |
-| AC64 | `response_attachment_per_question_25mb`, `response_attachment_atomic_failure`, `response_attachment_access` | 미구현 |
-| AC65 | `storage_quota_at_limit`, `storage_quota_rejects_overflow`, `response_file_charged_to_creator` | 미구현 |
-| AC66 | `creator_delete_all_responses`, `bulk_delete_preserves_submitter_history`, `bulk_delete_releases_storage` | 미구현 |
-| AC67 | `delete_form_offers_export`, `delete_form_export_failure_keeps_data`, `delete_form_preserves_submitter_history` (API 골든 + 프론트엔드 확인) | 미구현 |
-| AC68 | `mobile_respondent_full_flow`, `mobile_respondent_no_horizontal_scroll` (프론트엔드·E2E 테스트) | 미구현 |
-| AC69 | `mobile_quick_builder_publish`, `mobile_basic_builder_desktop_notice` (프론트엔드·E2E 테스트) | 미구현 |
-| AC70 | `delete_all_response_attachments`, `attachment_purge_keeps_response_count` | 미구현 |
-| AC71 | `quick_purpose_audience_recommendations`, `quick_custom_question_preview` (API 골든 + 프론트엔드 확인) | 미구현 |
-| AC72 | `own_info_confirmation_both_builders`, `own_info_reset_after_question_change` (프론트엔드·E2E 테스트) | 미구현 |
-| AC73 | `date_format_accepts_valid_date`, `date_format_rejects_invalid_date`, `phone_format_normalizes_and_checks_length`, `email_format_checks_structure`, `text_format_trims_and_checks_required` | 미구현 |
-| AC74 | `response_edit_overwrites_same_id`, `response_edit_uses_original_version`, `response_cancel_removes_one` (API 골든 + 프론트엔드 확인) | 미구현 |
-| AC75 | `analyze_all_versions_fixed_scope`, `context_matches_lecture03_schema`, `full_export_groups_versions` | 미구현 |
-| AC76 | `stale_form_version_rejected`, `latest_form_version_submits` | 미구현 |
-| AC77 | `natural_language_version_scope_rejected`, `unsupported_statistics_explained`, `all_responses_count_supported` | 미구현 |
-| AC78 | `all_versions_condition_filter_with_coverage`, `negation_does_not_count_unknown`, `no_condition_counts_all`, `option_renamed_version_not_evaluable`, `match_all_unknown_when_no_false`, `condition_missing_one_version_keeps_matches`, `no_condition_match_any_counts_all`, `no_condition_match_not_counts_all`, `branch_skipped_condition_not_evaluable` | 일부 구현 |
-| AC79 | `basic_builder_edit_save_reopen`, `question_and_section_duplicate_new_ids`, `duplicate_resets_branch_and_profile_key` (프론트엔드·E2E 테스트) | 미구현 |
-| AC80 | `basic_builder_five_question_types`, `basic_builder_settings_roundtrip`, `published_controls_match_builder` (프론트엔드·E2E 테스트) | 미구현 |
-| AC81 | `builder_preview_unsaved_definition`, `builder_preview_branch_path`, `builder_preview_no_response` (프론트엔드·E2E 테스트) | 미구현 |
-| AC82 | `respondent_draft_restores_same_browser`, `login_draft_text_cross_device`, `draft_file_same_browser_only` (프론트엔드·E2E 테스트) | 미구현 |
-| AC83 | `in_progress_owner_only_and_not_counted`, `submit_draft_same_response_id`, `stale_draft_not_submitted` (API 골든 + 프론트엔드 확인) | 미구현 |
-| AC84 | `creator_draft_autosave_both_modes`, `creator_autosave_no_publish`, `creator_autosave_failure_visible` (프론트엔드·E2E 테스트) | 미구현 |
-| AC85 | `response_limit_auto_close`, `response_limit_concurrent_submit`(통합 시험), `response_limit_reopen_requires_increase` | 미구현 |
-| AC86 | `summarize_target_question_only`, `summarize_all_includes_option_stats`, `summarize_target_partial_versions` | 미구현 |
-| AC87 | `theme_counts_from_labels`, `theme_ids_subset_of_consented_matches`, `theme_order_deterministic` | 미구현 |
-| AC88 | `evidence_within_matched_consented`, `evidence_excludes_personal_questions` | 미구현 |
-| AC89 | `topic_summary_has_no_count`, `topic_no_evidence_no_text` | 미구현 |
-| AC90 | `ai_summary_locked_after_publish`, `ai_summary_copy_can_change`, `ai_summary_notice_frozen_at_publish` | 미구현 |
-| AC91 | `ai_summary_optional_consent_submit`, `no_consent_excluded_from_summary_only`, `summary_disabled_clarify` (API 골든 + 프론트엔드 확인) | 미구현 |
-| AC92 | `personal_question_never_sent`, `contact_masked_in_long_answer`, `unsummarizable_target_clarify` | 미구현 |
-| AC93 | `summary_no_matches_status`, `summary_all_no_consent_status`, `summary_over_limit_no_llm_call` | 미구현 |
-| AC94 | evals `evals/` (목표값은 강의 7에서 확정) | 미구현 |
+| AC38 | `draft_hidden_from_others`, `first_draft_version_null`, `open_creates_share_url`, `first_open_creates_version_one` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC39 | `created_forms_owner_only` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC40 | `copy_form_without_responses` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC41 | `share_url_open_form`, `share_url_closed_form` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC42 | `quick_and_basic_same_definition`, `own_info_setting_survives_mode_switch` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC43 | `required_missing_visited_only` | 구현 |
+| AC44 | `branch_all_conditions`, `branch_any_conditions`, `branch_first_rule_wins` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC45 | `branch_graph_matches_rules` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC46 | `unbranched_display_modes`, `branched_display_modes`, `section_page_branch_only_at_end`, `section_page_rejects_question_target`, `one_question_allows_question_branch` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC47 | `unbranched_respondent_switch_preserves_answers`, `branched_mode_fixed`, `all_questions_sections_visible`, `section_page_first_screen`, `one_question_intro_then_first_question` (프론트엔드·E2E 테스트) | 구현 |
+| AC48 | `export_json_yaml_same`, `export_csv_rows`, `export_form_versions_separate`, `export_flat_responses_with_version` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC49 | `export_filtered_matches_analyze`, `export_non_list_time_order`, `export_excludes_not_evaluable` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC50 | `csv_formula_escaped` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC51 | `repeat_submission_allowed`, `anonymous_repeat_submission_allowed` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC52, AC54~AC55 | (추가 개발 — 착수 시 작성) | MVP 밖(추가 1·2) |
+| AC53 | `character_limit_saved_both_modes`, `character_count_display_and_validation`, `over_limit_draft_preserved` (프론트엔드·E2E 테스트) | 구현 — 골든 미작성 |
+| AC56 | `draft_saves_incomplete`, `open_runs_semantic_checks`, `reopen_validates_draft_version` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC57 | `invalid_status_transition`, `share_url_stable_on_reopen` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC58 | `form_edit_creates_immutable_version`, `attachment_change_creates_immutable_version`, `operating_setting_keeps_version` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC59 | `kakao_reminder_once` (연동 시) | 미구현 — 카카오톡 알림 연동 없음 |
+| AC60 | `respondent_progress_known_path`, `respondent_progress_branch_unknown` (프론트엔드·E2E 테스트) | 구현 |
+| AC61 | `list_sort_default_asc`, `list_sort_all_versions`, `non_list_sort_ignored` | 구현 — 골든 미작성 |
+| AC62 | `creator_list_response_detail`, `creator_response_other_form_404` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC63 | `form_and_question_attachments_allowed`, `attachment_api_version_atomic`, `draft_attachment_keeps_version`, `question_attachment_owner_only_draft`, `creator_attachment_rejects_type` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC64 | `response_attachment_per_question_25mb`, `response_attachment_atomic_failure`, `response_attachment_access` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC65 | `storage_quota_at_limit`, `storage_quota_rejects_overflow`, `response_file_charged_to_creator` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC66 | `creator_delete_all_responses`, `bulk_delete_preserves_submitter_history`, `bulk_delete_releases_storage` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC67 | `delete_form_offers_export`, `delete_form_export_failure_keeps_data`, `delete_form_preserves_submitter_history` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC68 | `mobile_respondent_full_flow`, `mobile_respondent_no_horizontal_scroll` (프론트엔드·E2E 테스트) | 구현 — 골든 미작성 |
+| AC69 | `mobile_quick_builder_publish`, `mobile_basic_builder_desktop_notice` (프론트엔드·E2E 테스트) | 구현 — 골든 미작성 |
+| AC70 | `delete_all_response_attachments`, `attachment_purge_keeps_response_count` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC71 | `quick_purpose_audience_recommendations`, `quick_custom_question_preview` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC72 | `own_info_confirmation_both_builders`, `own_info_reset_after_question_change` (프론트엔드·E2E 테스트) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC73 | `date_format_accepts_valid_date`, `date_format_rejects_invalid_date`, `phone_format_normalizes_and_checks_length`, `email_format_checks_structure`, `text_format_trims_and_checks_required` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC74 | `response_edit_overwrites_same_id`, `response_edit_uses_original_version`, `response_cancel_removes_one` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC75 | `analyze_all_versions_fixed_scope`, `context_matches_lecture03_schema`, `full_export_groups_versions` | 구현 — 골든 미작성 |
+| AC76 | `stale_form_version_rejected`, `latest_form_version_submits` | 구현 |
+| AC77 | `natural_language_version_scope_rejected`, `unsupported_statistics_explained`, `all_responses_count_supported` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC78 | `all_versions_condition_filter_with_coverage`, `negation_does_not_count_unknown`, `no_condition_counts_all`, `option_renamed_version_not_evaluable`, `match_all_unknown_when_no_false`, `condition_missing_one_version_keeps_matches`, `no_condition_match_any_counts_all`, `no_condition_match_not_counts_all`, `branch_skipped_condition_not_evaluable` | 구현 |
+| AC79 | `basic_builder_edit_save_reopen`, `question_and_section_duplicate_new_ids`, `duplicate_resets_branch_and_profile_key` (프론트엔드·E2E 테스트) | 구현 — 골든 미작성 |
+| AC80 | `basic_builder_five_question_types`, `basic_builder_settings_roundtrip`, `published_controls_match_builder` (프론트엔드·E2E 테스트) | 구현 — 골든 미작성 |
+| AC81 | `builder_preview_unsaved_definition`, `builder_preview_branch_path`, `builder_preview_no_response` (프론트엔드·E2E 테스트) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC82 | `respondent_draft_restores_same_browser`, `login_draft_text_cross_device`, `draft_file_same_browser_only` (프론트엔드·E2E 테스트) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC83 | `in_progress_owner_only_and_not_counted`, `submit_draft_same_response_id`, `stale_draft_not_submitted` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC84 | `creator_draft_autosave_both_modes`, `creator_autosave_no_publish`, `creator_autosave_failure_visible` (프론트엔드·E2E 테스트) | 구현 |
+| AC85 | `response_limit_auto_close`, `response_limit_concurrent_submit`(통합 시험), `response_limit_reopen_requires_increase` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC86 | `summarize_target_question_only`, `summarize_all_includes_option_stats`, `summarize_target_partial_versions` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC87 | `theme_counts_from_labels`, `theme_ids_subset_of_consented_matches`, `theme_order_deterministic` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC88 | `evidence_within_matched_consented`, `evidence_excludes_personal_questions` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC89 | `topic_summary_has_no_count`, `topic_no_evidence_no_text` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC90 | `ai_summary_locked_after_publish`, `ai_summary_copy_can_change`, `ai_summary_notice_frozen_at_publish` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC91 | `ai_summary_optional_consent_submit`, `no_consent_excluded_from_summary_only`, `summary_disabled_clarify` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC92 | `personal_question_never_sent`, `contact_masked_in_long_answer`, `unsummarizable_target_clarify` | 구현 |
+| AC93 | `summary_no_matches_status`, `summary_all_no_consent_status`, `summary_over_limit_no_llm_call` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC94 | evals `evals/` (목표값은 강의 7에서 확정) | 미구현 — 요약 평가셋·측정 없음 |
+
+구현 상태: 2026-11-15 main e2f633b 기준, 코드·골든 대조

@@ -594,7 +594,7 @@
 | AC8 | `branch_to_missing_target`, `branch_backward`, `branch_condition_invalid` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC9 | `skipped_questions_not_required`, `skipped_answers_dropped` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC10 | `qr_decodes_to_share_url`, `qr_draft_409` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC11 | `payment_link_https_only` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC11 | `payment_link_https_only` | MVP 제외 — 빌더 입력 칸 숨김(#83), 기존 값 표시만 남음 |
 | AC12 | `every_open_form_needs_consent_template`, `unformatted_form_needs_consent_template` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC13 | `consent_lists_input_formats`, `consent_generic_answer_item` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC14 | `submit_without_consent`, `unformatted_submit_needs_consent` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |

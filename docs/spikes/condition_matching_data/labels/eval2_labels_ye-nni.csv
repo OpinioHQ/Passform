@@ -1,0 +1,103 @@
+﻿request_id,form_id,cond_idx,condition,form_version,label,note
+R01,club,0,새내기,1,q2|option|1학년,
+R01,club,0,새내기,2,q2|option|1학년,
+R02,club,0,소속 학과,1,q1|answered,
+R02,club,0,소속 학과,2,q1|answered,
+R03,club,0,고학년,1,NONE,"고학년은 3학년 & 4학년임 / 규칙 대조 수정(3절 3항), 원래 q2|option|3학년"
+R03,club,0,고학년,2,NONE,"고학년은 3학년 & 4학년임 / 규칙 대조 수정(3절 3항), 원래 q2|option|3학년"
+R04,club,0,조장 맡았던 사람,1,q6|option|팀장,
+R04,club,0,조장 맡았던 사람,2,q6|option|팀장,
+R05,club,0,6번 문항 - 비움,1,q4|unanswered,
+R05,club,0,6번 문항 - 비움,2,q4|unanswered,
+R06,club,0,컴퓨터공학부 학생,1,NONE,"규칙 대조 수정(3절 1·2항), 원래 q1|option|컴퓨터공학과"
+R06,club,0,컴퓨터공학부 학생,2,q1|option|컴퓨터공학부,
+R07,club,0,학년 - 1,1,q2|option|1학년,
+R07,club,0,학년 - 1,2,q2|option|1학년,
+R08,club,0,자기소개에 게임 개발 얘기한 사람,1,NONE,"규칙 대조 수정(3절 4항), 원래 q4|answered"
+R08,club,0,자기소개에 게임 개발 얘기한 사람,2,NONE,"규칙 대조 수정(3절 4항), 원래 q4|answered"
+R08,club,1,개발 쪽 관심,1,q3|option|개발,
+R08,club,1,개발 쪽 관심,2,q3|option|개발,
+R09,club,0,팀원,1,q6|option|팀원,
+R09,club,0,팀원,2,q6|option|팀원,
+R10,club,0,컴퓨터공학,1,q1|option|컴퓨터공학과,
+R10,club,0,컴퓨터공학,2,q1|option|컴퓨터공학부,
+R10,club,1,팀장 역할,1,q6|option|팀장,
+R10,club,1,팀장 역할,2,q6|option|팀장,
+R11,club,0,타 전공자,1,NONE,"애매함. 이 동이라가 어떤 학과의 소학회인지, 어떤 학과가 메인이 되는 동아리인지에 따라 타 전공자의 의미가 달라짐."
+R11,club,0,타 전공자,2,NONE,"애매함. 이 동이라가 어떤 학과의 소학회인지, 어떤 학과가 메인이 되는 동아리인지에 따라 타 전공자의 의미가 달라짐."
+R12,club,0,4번 문항 - 응답,1,q6|answered,
+R12,club,0,4번 문항 - 응답,2,q6|answered,
+R13,club,0,데이터분석 희망,1,NONE,
+R13,club,0,데이터분석 희망,2,q3|option|데이터 분석,
+R14,club,0,프로젝트에서 맡은 역할,1,q6|answered,
+R14,club,0,프로젝트에서 맡은 역할,2,q6|answered,
+R15,club,0,2번 문항 - 4,1,q2|option|4학년,
+R15,club,0,2번 문항 - 4,2,q2|option|4학년,
+R16,club,0,전자공학과,1,NONE,
+R16,club,0,전자공학과,2,NONE,
+R16,club,1,3학년 지원자,1,q2|option|3학년,
+R16,club,1,3학년 지원자,2,q2|option|3학년,
+R17,club,0,프로젝트 해 본 사람,1,q5|option|예,
+R17,club,0,프로젝트 해 본 사람,2,q5|option|예,
+R17,club,1,디자인 관심,1,q3|option|디자인,
+R17,club,1,디자인 관심,2,q3|option|디자인,
+R18,club,0,5번 문항 - 응답,1,q3|answered,
+R18,club,0,5번 문항 - 응답,2,q3|answered,
+R19,club,0,복수전공생,1,NONE,
+R19,club,0,복수전공생,2,NONE,
+R20,club,0,자기소개,1,q4|answered,
+R20,club,0,자기소개,2,q4|answered,
+R21,event,0,M,1,q6|option|M,
+R21,event,0,M,2,q6|option|M,
+R22,event,0,학부생,1,q2|option|재학생,
+R22,event,0,학부생,2,q2|option|재학생,
+R23,event,0,포폴 리뷰,1,NONE,
+R23,event,0,포폴 리뷰,2,q4|option|포트폴리오 리뷰,
+R24,event,0,7번 문항 - 답함,1,q6|answered,"규칙 대조 수정(4절 (가)), 원래 q7|answered"
+R24,event,0,7번 문항 - 답함,2,q6|answered,
+R25,event,0,11/15,1,q3|option|11월 15일(토),
+R25,event,0,11/15,2,q3|option|11월 15일(토),
+R26,event,0,미신청,1,q5|option|미신청,
+R26,event,0,미신청,2,NONE,
+R27,event,0,티셔츠 사이즈,1,q6|answered,
+R27,event,0,티셔츠 사이즈,2,q6|answered,
+R28,event,0,다른 학교 학생,1,NONE,"규칙 대조 수정(3절 7항), 원래 q2|option|외부인"
+R28,event,0,다른 학교 학생,2,NONE,
+R28,event,1,해커톤 참가,1,q4|option|해커톤,
+R28,event,1,해커톤 참가,2,q4|option|해커톤,
+R29,event,0,졸업한 사람,1,q2|option|졸업생,
+R29,event,0,졸업한 사람,2,q2|option|졸업생,
+R29,event,1,네트워킹 신청,1,q4|option|네트워킹,
+R29,event,1,네트워킹 신청,2,q4|option|네트워킹,
+R30,event,0,3인 이상 팀,1,NONE,
+R30,event,0,3인 이상 팀,2,q9|option|단체(3인 이상),
+R31,event,0,8번 문항 - 미응답,1,q7|unanswered,
+R31,event,0,8번 문항 - 미응답,2,q7|unanswered,"규칙 대조 수정(2절 3항), 원래 q7|answered"
+R32,event,0,XS,1,NONE,
+R32,event,0,XS,2,NONE,
+R33,event,0,개인,1,NONE,
+R33,event,0,개인,2,q9|option|개인,
+R34,event,0,참가 형태,1,NONE,
+R34,event,0,참가 형태,2,q9|answered,
+R34,event,1,특강 듣는 사람,1,q4|option|특강,"규칙 대조 수정(2절 2항), 원래 q4|answered"
+R34,event,1,특강 듣는 사람,2,q4|option|특강,"규칙 대조 수정(2절 2항), 원래 q4|answered"
+R35,event,0,문의사항에 환불 문의한 사람,1,NONE,"규칙 대조 수정(3절 4항), 원래 q7|answered"
+R35,event,0,문의사항에 환불 문의한 사람,2,NONE,"규칙 대조 수정(3절 4항), 원래 q7|answered"
+R36,event,0,엑스라지,1,q6|option|XL,
+R36,event,0,엑스라지,2,q6|option|XL,
+R37,event,0,4번 문항 - 미응답,1,NONE,"규칙 대조 수정(4절 (가)), 원래 q4|unanswered"
+R37,event,0,4번 문항 - 미응답,2,q9|unanswered,"규칙 대조 수정(4절 (가)), 원래 q3|unanswered"
+R37,event,1,휴학한 사람,1,q2|option|휴학생,
+R37,event,1,휴학한 사람,2,q2|option|휴학생,
+R38,event,0,2인 팀,1,NONE,
+R38,event,0,2인 팀,2,NONE,
+R38,event,1,11월 16일 참가,1,q3|option|11월 16일(일),양일 모두도 11월 16일에 참가한다고 봐야 함
+R38,event,1,11월 16일 참가,2,q3|option|11월 16일(일),양일 모두도 11월 16일에 참가한다고 봐야 함
+R39,event,0,식사 안 함,1,q5|option|미신청,
+R39,event,0,식사 안 함,2,q8|option|식사 안 함,
+R40,event,0,2일 모두 참가,1,q3|option|양일 모두,
+R40,event,0,2일 모두 참가,2,q3|option|양일 모두,
+R40,event,1,재학 중,1,q2|option|재학생,
+R40,event,1,재학 중,2,q2|option|재학생,
+R40,event,2,채식 메뉴,1,NONE,
+R40,event,2,채식 메뉴,2,q8|option|채식,

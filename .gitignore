@@ -36,3 +36,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### evals ###
+# LLM 요청·응답 저장본(evals 러너 stored 모드). 재현이 필요할 때만 따로 공유한다.
+evals/stored/

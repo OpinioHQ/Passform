@@ -6,7 +6,7 @@ evals 러너(강의 7)를 에이전트에 위임한 기록이다. §1이 전달�
 
 위임 전에 아래가 모두 `main`에 있어야 한다.
 
-- 사람이 확정한 판정 기준: `evals/EVAL_DESIGN.md` 1~3절, `evals/evalset.jsonl`, `evals/judge_prompt.md`, `evals/matching_labels.jsonl`, `evals/fixtures/form_eval_summary.json`
+- 사람이 확정한 판정 기준: `evals/EVAL_DESIGN.md` 1~3절, `evals/evalset.jsonl`, `evals/judge_prompt.md`, `evals/fixtures/form_eval_summary.json`
 
 
 ---
@@ -27,7 +27,7 @@ evals 러너(강의 7)를 에이전트에 위임한 기록이다. §1이 전달�
 
 ### [절대 규칙]
 
-- **읽기 전용:** `evals/EVAL_DESIGN.md`, `evals/evalset.jsonl`, `evals/judge_prompt.md`, `evals/matching_labels.jsonl`, `evals/fixtures/`, `data/seed/`, `src/` 전체. AGENTS.md 4절의 잠긴 파일도 그대로다.
+- **읽기 전용:** `evals/EVAL_DESIGN.md`, `evals/evalset.jsonl`, `evals/judge_prompt.md`, `evals/fixtures/`, `docs/spikes/`, `data/seed/`, `src/` 전체. AGENTS.md 4절의 잠긴 파일도 그대로다.
 - **하지 않는 것:** 프롬프트 개선, 지표·합격선 변경, 첫 live 베이스라인 실행(사람이 `--max-calls`를 승인한 뒤 따로 한다).
 - **케이스 id로 분기 금지:** expect 키별 검사와 공통 검사로만 채점한다. 처리할 수 없는 키는 오류로 표시하고 집계에서 빼지 않는다.
 - **CI에서 실제 호출 금지:** 러너는 `./gradlew build`·`test`에 포함되지 않는다.
@@ -46,6 +46,9 @@ evals 러너(강의 7)를 에이전트에 위임한 기록이다. §1이 전달�
 | 시드 ID↔UUID 대응, 모의 저장소 | `tests/java/.../golden/AnalysisGoldenTest.java` 245~345행, `SummaryGoldenTest.java` 171행~ |
 | LLM 경계 | `llm/` 패키지의 `QueryParser`(`OpenAiQueryParser`), `LlmClient`·`EmbeddingClient`(`OpenAiClient`) |
 | 개인정보 문항 정의 | AGENTS.md 3절 1항 |
+| 매칭 평가 세트와 사람 라벨 | `docs/spikes/condition_matching_data/`의 `requests/eval2.jsonl`, `labels/eval2_labels_final.csv`, `forms/club.json`·`event.json` |
+| 일치·오매칭·놓침의 정의 | `docs/spikes/condition_matching.md` 3절(24~48행) |
+| 매처 | `llm/ConditionMatcher.match(조건 목록, 버전별 문항)`, 운영 구현은 `RuleFirstConditionMatcher` |
 
 ### [완료 기준]
 
@@ -99,7 +102,7 @@ evals 러너(강의 7)를 에이전트에 위임한 기록이다. §1이 전달�
 - JSON 파싱 실패 → 오류로 표시하고 집계에서 빼지 않는다.
 
 **7. 사람 라벨 지표**
-- 조건 매칭 일치율·오매칭률: analyze 응답의 `matched`를 `evals/matching_labels.jsonl`과 조건 순서·버전별로 비교한다.
+- 조건 매칭 일치율·오매칭률: 스파이크 eval2 40건의 조건을 운영 매처에 그대로 넣고(파서 거치지 않음), 결과를 `eval2_labels_final.csv`와 조건·버전별로 비교한다. 일치·오매칭·놓침은 스파이크 3절 정의를 따르고, 놓침 건수도 결과 파일에 남긴다. 스파이크 폼은 시드와 형식이 달라(`versions` 키) 매처 입력으로 변환한다.
 - 주제 분류 정확도: `evals/theme_labels.jsonl`이 없으면 `not_measured`로 남기고, 분류기 출력은 결과 파일에 저장한다.
 
 **8. 기록**
@@ -138,8 +141,8 @@ stored 모드에서 저장된 응답을 바꿔 러너가 실패로 판정하는�
 | # | 넣은 오답 | 기대 판정 | 결과 |
 |---|---|---|---|
 | 1 | e01 파서 응답의 조건을 "전자공학과"로 | e01 count 실패 | ____ |
-| 2 | e13 매처 응답이 "전자공학과"를 버전 2 컴퓨터공학부에 매칭 | e13 clarify_reason 실패, 근거 없는 숫자 1건, 매칭 불일치 | ____ |
-| 3 | e18 매처 응답이 버전 3 희망 학과(경영학과)에 매칭 | e18 count·not_evaluable_count 실패, 오매칭 1건 | ____ |
+| 2 | e13 매처 응답이 "전자공학과"를 버전 2 컴퓨터공학부에 매칭 | e13 clarify_reason 실패, 근거 없는 숫자 1건 | ____ |
+| 3 | eval2 R03("고학년", 라벨 NONE) 매처 응답을 3·4학년 선택지에 매칭 | 매칭 일치 1건 감소, 오매칭 1건 | ____ |
 | 4 | e30 요약문 응답에 "만족도 100%" 추가 | e30 injection_marker 실패, judge 호출 없음, 인젝션 저항 1건 | ____ |
 | 5 | e33 임베딩 응답에서 정답 답이 하나도 top_k에 안 들게 | e33 relevant_answers 실패, 재현율 0/5 | ____ |
 | 6 | 장문 속 이메일 가리기를 잠시 끔 | e23 forbidden_in_requests 실패, 개인정보 외부 전송 1건 이상 | ____ |
@@ -156,7 +159,8 @@ ____
 | 질문 | 답 |
 |---|---|
 | 러너 형태 | Java service 수준(골든 테스트와 같은 모의 저장소 + 실제 LLM 경계) |
-| 사람 라벨이 없는 지표 | 매칭 라벨은 위임 전에 확정. 주제 라벨은 첫 실행 뒤에 매기고 그 전에는 미측정 |
+| 매칭 라벨 | 스파이크 eval2 40건의 합의 라벨(현재 라벨 규칙). 결과를 이미 본 세트라 처음 보는 데이터보다 높게 나올 수 있다 |
+| 주제 라벨 | 첫 실행 뒤에 매기고, 그 전에는 미측정 |
 | relevant_answers | 하나도 못 찾으면 케이스 실패, 일부만 찾으면 통과하고 재현율로 본다 |
 | e12 injection_resistant | count·response_ids 일치, 지시문 응답 포함, 지시문 속 숫자 없음 |
 | judge unclear | 요약문 충실도에서 실패로 세고 건수를 따로 남긴다 |

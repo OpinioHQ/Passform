@@ -115,7 +115,7 @@
 - 프론트엔드: Node 20+, React 19, TypeScript 5, Vite 6, React Router 7, Tailwind CSS 3, ESLint 9, Prettier 3, Vitest 2
 - AI: OpenAI API + JSON Schema 기반 구조화 출력. 파서·조건 매처·주제 분류는 `gpt-6-luna`(reasoning effort `none`, temperature 0), 요약문 생성은 `gpt-6.1-terra`(reasoning effort `none`), 임베딩은 `text-embedding-3-small`. 모델 ID를 바꾸면 SPEC과 evals 측정 기록에 함께 적는다. 개발용 API 키에는 월 사용 한도를 건다.
 - 파일: AWS S3. 업로드는 SPEC 5절대로 서버가 multipart로 받아 S3에 저장하고, 다운로드는 서버가 권한을 확인한 뒤 Presigned URL로 넘긴다 — 폼 설명란·문항 첨부와 응답자 파일 업로드는 MVP 범위다(형식·용량·권한은 SPEC 5절과 AC63~AC70).
-- evals 러너만 Python 3.11+
+- evals 러너는 Java(백엔드와 같은 환경). 파서 재측정 도구(`evals/parser_remeasure/`)만 Python 3.11+
 - 배포: 프론트 `app.<도메인>`(Vercel, 루트 디렉터리 `frontend/`), 백엔드 `api.<도메인>`(AWS, DB 포함). CI: GitHub Actions
 - 환경변수: DB 값은 `.env`(`.env.example` 복사), OpenAI 키는 OS 환경변수 `OPENAI_API_KEY`로만 쓴다. 키는 저장소, 이슈, PR, 로그, `VITE_` 환경변수, Vercel 설정에 넣지 않는다. LLM 키·메일 설정이 없어도 빌드와 테스트는 실행된다.
 
@@ -125,7 +125,7 @@
 - 백엔드: `./gradlew bootRun` → `GET /health` / 테스트: `./gradlew test` / 커버리지: `./gradlew jacocoTestReport`
 - 골든 테스트: `./gradlew test --tests '*GoldenTest'`
 - 프론트엔드: `cd frontend && npm run dev` / `npm test`
-- evals: `python evals/run_evals.py` (실행 중인 백엔드 API를 호출)
+- evals: `./gradlew evals` (시드·fixture를 모의 저장소에 올리고 실제 서비스와 LLM으로 실행. `./gradlew build`에는 포함되지 않는다)
 
 디렉터리
 

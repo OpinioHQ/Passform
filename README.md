@@ -325,7 +325,7 @@ npm run dev
     evalset.jsonl                    # 강의 7 — 평가 데이터셋
     README.md                        # 강의 7 — evals 설계
     judge_prompt.md                  # 강의 7 — judge 프롬프트
-    run_evals.py                     # 강의 7 — 러너
+    java/                            # 강의 7 — 러너(Java, ./gradlew evals)
     results/YYYY-MM-DD.json          # 강의 7 — 측정 기록
   data/seed/                         # 예시 데이터이자 골든 테스트 fixture
 ```

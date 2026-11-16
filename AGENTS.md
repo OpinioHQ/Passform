@@ -59,7 +59,7 @@
 
 ## 4. 금지 사항 (에이전트에게 위임할 때 항상 걸린다)
 
-1. **테스트, 골든 케이스, 판정 기준 파일을 고치지 않는다.** 기존 테스트(`src/test/`, `tests/java/`(골든 테스트), `frontend/src/**/*.test.*`), `tests/harness/golden_cases.yaml`, `data/seed/`(골든 테스트 fixture), `src/passform/schemas/form.schema.json`, `src/response_analysis/schemas/request_context.schema.json`, `src/response_analysis/schemas/analyze_response.schema.json`, `src/response_analysis/prompts/`의 모든 프롬프트 파일(파일 전체), `config/rag.yaml`, `evals/evalset.jsonl`, `load/`의 목표값은 사람이 승인한다. 실패하면 테스트가 아니라 구현을 고친다. 사람이 지시한 변경과 포매터 정리는 승인된 변경으로 보되, 판정에 쓰이는 것(단언문, 케이스, 기대값, `@Disabled`, enum, 임계값)은 건드리지 않는다.
+1. **테스트, 골든 케이스, 판정 기준 파일을 고치지 않는다.** 기존 테스트(`src/test/`, `tests/java/`(골든 테스트), `frontend/src/**/*.test.*`), `tests/harness/golden_cases.yaml`, `data/seed/`(골든 테스트 fixture), `src/passform/schemas/form.schema.json`, `src/response_analysis/schemas/request_context.schema.json`, `src/response_analysis/schemas/analyze_response.schema.json`, `src/response_analysis/prompts/`의 모든 프롬프트 파일(파일 전체), `config/rag.yaml`, `evals/evalset.jsonl`, `evals/EVAL_DESIGN.md`, `evals/judge_prompt.md`, `evals/fixtures/`, `load/`의 목표값은 사람이 승인한다. 실패하면 테스트가 아니라 구현을 고친다. 사람이 지시한 변경과 포매터 정리는 승인된 변경으로 보되, 판정에 쓰이는 것(단언문, 케이스, 기대값, `@Disabled`, enum, 임계값)은 건드리지 않는다.
 2. **완료 조건을 임의로 좁히지 않는다.** `@Disabled`, skip, 케이스 삭제, 커버리지 제외 범위 확대로 통과시키지 않는다.
 3. **근거 없는 결과를 내놓지 않는다.** 통과했다면 각 케이스를 왜 통과하는지 한 줄씩 설명한다.
 4. **막히면 멈추고 보고한다.** 같은 실패로 3회차를 넘기거나, SPEC·AGENTS에 없는 판단이 필요하거나, 판정 기준 파일을 바꿔야만 통과할 수 있으면 더 진행하지 않는다. 무엇을 시도했고 어디서 막혔는지, 사람이 정해야 할 것이 무엇인지 보고한다.
@@ -115,7 +115,7 @@
 - 프론트엔드: Node 20+, React 19, TypeScript 5, Vite 6, React Router 7, Tailwind CSS 3, ESLint 9, Prettier 3, Vitest 2
 - AI: OpenAI API + JSON Schema 기반 구조화 출력. 파서·조건 매처·주제 분류는 `gpt-6-luna`(reasoning effort `none`, temperature 0), 요약문 생성은 `gpt-6.1-terra`(reasoning effort `none`), 임베딩은 `text-embedding-3-small`. 모델 ID를 바꾸면 SPEC과 evals 측정 기록에 함께 적는다. 개발용 API 키에는 월 사용 한도를 건다.
 - 파일: AWS S3. 업로드는 SPEC 5절대로 서버가 multipart로 받아 S3에 저장하고, 다운로드는 서버가 권한을 확인한 뒤 Presigned URL로 넘긴다 — 폼 설명란·문항 첨부와 응답자 파일 업로드는 MVP 범위다(형식·용량·권한은 SPEC 5절과 AC63~AC70).
-- evals 러너만 Python 3.11+
+- evals 러너는 Java(백엔드와 같은 환경). 파서 재측정 도구(`evals/parser_remeasure/`)만 Python 3.11+
 - 배포: 프론트 `app.<도메인>`(Vercel, 루트 디렉터리 `frontend/`), 백엔드 `api.<도메인>`(AWS, DB 포함). CI: GitHub Actions
 - 환경변수: DB 값은 `.env`(`.env.example` 복사), OpenAI 키는 OS 환경변수 `OPENAI_API_KEY`로만 쓴다. 키는 저장소, 이슈, PR, 로그, `VITE_` 환경변수, Vercel 설정에 넣지 않는다. LLM 키·메일 설정이 없어도 빌드와 테스트는 실행된다.
 
@@ -125,7 +125,7 @@
 - 백엔드: `./gradlew bootRun` → `GET /health` / 테스트: `./gradlew test` / 커버리지: `./gradlew jacocoTestReport`
 - 골든 테스트: `./gradlew test --tests '*GoldenTest'`
 - 프론트엔드: `cd frontend && npm run dev` / `npm test`
-- evals: `python evals/run_evals.py` (실행 중인 백엔드 API를 호출)
+- evals: `./gradlew evals` (시드·fixture를 모의 저장소에 올리고 실제 서비스와 LLM으로 실행. `./gradlew build`에는 포함되지 않는다)
 
 디렉터리
 

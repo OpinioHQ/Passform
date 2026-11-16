@@ -58,6 +58,8 @@ final class CallRecorder {
 
 	private int replayedCalls;
 
+	private int changedRequests;
+
 	private String caseId;
 
 	private final Map<String, Integer> counters = new HashMap<>();
@@ -101,6 +103,11 @@ final class CallRecorder {
 
 	int replayedCalls() {
 		return replayedCalls;
+	}
+
+	// stored에서 코드가 새로 만든 요청이 저장된 요청과 다른 호출 수. 1건이라도 있으면 저장 응답이 다른 요청에 끼워졌을 수 있다.
+	int changedRequests() {
+		return changedRequests;
 	}
 
 	void startCase(String id) {
@@ -160,7 +167,11 @@ final class CallRecorder {
 				throw new StoredMissing(key);
 			}
 			replayedCalls++;
-			entry.put("request_changed", !Json.tree(request).equals(stored.path("request")));
+			boolean changed = !Json.tree(request).equals(stored.path("request"));
+			entry.put("request_changed", changed);
+			if (changed) {
+				changedRequests++;
+			}
 			if (stored.hasNonNull("error")) {
 				entry.put("error", stored.get("error").asString());
 				throw new IllegalStateException("저장된 호출이 실패였다: " + key);

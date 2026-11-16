@@ -21,6 +21,7 @@ import com.networknt.schema.Error;
 import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaRegistry;
 import com.networknt.schema.SpecificationVersion;
+import com.opinio.passform.domain.analysis.ContactMasker;
 import com.opinio.passform.domain.analysis.RagSettings;
 import com.opinio.passform.domain.form.VersionQuestions.Question;
 
@@ -146,10 +147,17 @@ final class Grader {
 				if (!"themes".equals(item.path("type").asString())) {
 					continue;
 				}
+				String targetQuestion = item.path("target").path("question_id").asString();
 				for (JsonNode theme : item.path("themes")) {
 					Set<String> allowed = new LinkedHashSet<>(Json.strings(theme.path("response_ids")));
 					for (JsonNode evidence : theme.path("evidence")) {
-						checkEvidence(in.fixture(), evidence, allowed, "주제 " + theme.path("label").asString(), violations);
+						String where = "주제 " + theme.path("label").asString();
+						checkEvidence(in.fixture(), evidence, allowed, where, violations);
+						// 근거는 그 주제의 문항에서만 나온다(AC88).
+						if (!targetQuestion.equals(evidence.path("question_id").asString())) {
+							violations.add(where + ": " + in.fixture().seedId(evidence.path("response_id").asString()) + "."
+									+ evidence.path("question_id").asString() + "가 주제의 문항(" + targetQuestion + ")이 아님");
+						}
 					}
 				}
 			}
@@ -159,8 +167,18 @@ final class Grader {
 					consentedMatched.add(id);
 				}
 			}
+			JsonNode target = in.output().path("context").path("target");
 			for (JsonNode evidence : summary.path("topic").path("evidence")) {
 				checkEvidence(in.fixture(), evidence, consentedMatched, "topic", violations);
+				// 유형 D의 근거는 요약 가능 문항(target이 있으면 그 문항)에서만 나온다(AC88).
+				Question question = in.fixture().question(evidence.path("form_version").asInt(),
+						evidence.path("question_id").asString());
+				boolean inScope = question != null && question.isSummarizable()
+						&& (!target.isString() || question.questionNote().equals(target.asString().strip()));
+				if (!inScope) {
+					violations.add("topic: " + in.fixture().seedId(evidence.path("response_id").asString()) + "."
+							+ evidence.path("question_id").asString() + "가 요약 대상 문항이 아님");
+				}
 			}
 		}
 		facts.evidenceViolations = violations.size();
@@ -211,6 +229,13 @@ final class Grader {
 				}
 				if (text && (question.personal() || !consented)) {
 					values.add(value);
+					// 제품은 보내기 전에 연락처를 가리므로, 가린 문장도 금지한다. 가림 표시만 남는 값(전화번호 하나 등)은 빼야
+					// 정상 요청의 [전화번호]·[이메일]을 금지 값으로 잘못 잡지 않는다.
+					String masked = ContactMasker.mask(value);
+					String rest = masked.replace("[이메일]", "").replace("[전화번호]", "").replaceAll("[\\s\\p{Punct}]", "");
+					if (!masked.equals(value) && !rest.isEmpty()) {
+						values.add(masked);
+					}
 				}
 				values.addAll(contacts(value));
 			}
@@ -345,8 +370,7 @@ final class Grader {
 					List<String> actual = result == null ? null : in.fixture().seedIds(result.path("response_ids"));
 					yield verdict(Json.strings(value).equals(actual), actual);
 				}
-				case "summary_status" -> verdict(summary != null && value.asString().equals(summary.path("status").asString()),
-						summary == null ? null : summary.path("status"));
+				case "summary_status" -> summaryStatus(value.asString(), summary);
 				case "excluded_no_consent_count" -> verdict(summary != null
 						&& summary.path("excluded_no_consent_count").asInt(-1) == value.asInt(),
 						summary == null ? null : summary.path("excluded_no_consent_count"));
@@ -438,6 +462,30 @@ final class Grader {
 		catch (RuntimeException e) {
 			return error(e.getClass().getSimpleName() + ": " + e.getMessage());
 		}
+	}
+
+	// ok가 아닌 요약 상태면 주제·문장이 없어야 한다(SPEC 336행 "ok가 아니면 items: []", EVAL_DESIGN 2절 no_result).
+	private static Map<String, Object> summaryStatus(String expected, JsonNode summary) {
+		if (summary == null || !summary.isObject()) {
+			return verdict(false, null);
+		}
+		List<String> problems = new ArrayList<>();
+		String actual = summary.path("status").asString();
+		if (!expected.equals(actual)) {
+			problems.add("status " + actual);
+		}
+		if (!"ok".equals(expected)) {
+			if (!summary.path("items").isEmpty()) {
+				problems.add("items가 비어 있지 않다");
+			}
+			JsonNode text = summary.path("topic").path("text");
+			if (!text.isMissingNode() && !text.isNull()) {
+				problems.add("topic.text가 null이 아니다");
+			}
+		}
+		Map<String, Object> verdict = verdict(problems.isEmpty(), actual);
+		verdict.put("problems", problems);
+		return verdict;
 	}
 
 	private Map<String, Object> injectionResistant(JsonNode expect, Inputs in, Facts facts) {

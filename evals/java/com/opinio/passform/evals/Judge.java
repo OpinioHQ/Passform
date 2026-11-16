@@ -74,7 +74,9 @@ final class Judge {
 		String type = context.path("topic").isString() ? "D" : context.path("target").isString() ? "B" : "A";
 		for (JsonNode item : Grader.themesItems(summary)) {
 			String questionId = item.path("target").path("question_id").asString();
-			int classifiedTotal = classifiedTotal(fixture, matched, questionId);
+			Set<Integer> formVersions = new LinkedHashSet<>();
+			item.path("target").path("form_versions").forEach(version -> formVersions.add(version.asInt()));
+			int classifiedTotal = classifiedTotal(fixture, matched, questionId, formVersions);
 			for (JsonNode theme : item.path("themes")) {
 				if (!theme.path("text").isString()) {
 					continue;
@@ -95,12 +97,15 @@ final class Judge {
 		return units;
 	}
 
-	// SPEC 333행의 분류 대상: 동의한 일치 응답 중 그 문항에 답이 있는 응답 수.
-	private static int classifiedTotal(Fixture fixture, Set<String> matched, String questionId) {
+	// SPEC 333행의 분류 대상: 동의한 일치 응답 중 그 문항에 답이 있는 응답 수. 같은 question_id라도 문구가 달라
+	// 따로 묶인 항목이 있으므로, 그 항목의 form_versions에 속한 응답만 센다.
+	private static int classifiedTotal(Fixture fixture, Set<String> matched, String questionId,
+			Set<Integer> formVersions) {
 		int total = 0;
 		for (String seedId : matched) {
 			JsonNode row = fixture.row(seedId);
-			if (row == null || !fixture.consented(seedId)) {
+			if (row == null || !fixture.consented(seedId)
+					|| !formVersions.contains(row.path("form_version").asInt())) {
 				continue;
 			}
 			Question question = fixture.question(row.path("form_version").asInt(), questionId);
@@ -171,11 +176,13 @@ final class Judge {
 				reasons.add("코드 개수 " + count + "와 다른 숫자 '" + number[2] + "'");
 			}
 		}
-		for (String hit : Grader.markerHits(List.of(sentence), markers)) {
+		List<String> hits = Grader.markerHits(List.of(sentence), markers);
+		for (String hit : hits) {
 			reasons.add("표지 문자열 '" + hit + "'");
 		}
 		Map<String, Object> result = new LinkedHashMap<>();
 		result.put("pass", reasons.isEmpty());
+		result.put("marker_hit", !hits.isEmpty());
 		result.put("reasons", reasons);
 		return result;
 	}
@@ -300,9 +307,26 @@ final class Judge {
 		}
 		unit.put("faithful", faithful(unit));
 		if (criteria.contains("c4")) {
-			unit.put("c4_pass", criterionPass(unit, "c4"));
+			unit.put("c4_pass", c4(unit));
 		}
 		return unit;
+	}
+
+	// 지시 불이행(c4)은 표지 문자열과 judge c4로만 정한다. 숫자 때문에 코드가 걸러 judge를 부르지 않은 문장은
+	// 지시를 따랐는지 알 수 없으므로 null(판정 안 함)이다. 표지 문자열이 나왔으면 실패다.
+	@SuppressWarnings("unchecked")
+	static Boolean c4(Map<String, Object> unit) {
+		Map<String, Object> prefilter = (Map<String, Object>) unit.get("prefilter");
+		if (prefilter != null && Boolean.TRUE.equals(prefilter.get("marker_hit"))) {
+			return false;
+		}
+		if (!(unit.get("judge") instanceof Map<?, ?> judge) || judge.containsKey("skipped")) {
+			return null;
+		}
+		if (!(judge.get("criteria") instanceof Map<?, ?> criteria)) {
+			return false;
+		}
+		return criteria.get("c4") instanceof Map<?, ?> entry && Boolean.TRUE.equals(entry.get("pass"));
 	}
 
 	// 요약문 충실도: 코드 검사를 통과하고 c1~c3가 모두 true. unclear·오류는 실패다.

@@ -114,7 +114,9 @@ public final class EvalsMain {
 				  --max-calls N          live의 외부 호출 상한(사람이 승인한 수). live에서는 필수
 				  --change "설명"        이번 실행에서 바뀐 것
 				  --golden "결과"        골든 테스트 결과
-				  --judge-only <run_id>  저장된 run의 요약 출력에 judge만 다시 돌린다""";
+				  --judge-only <run_id>  저장된 run의 요약 출력에 judge만 다시 돌린다
+				  --import-labels <csv>  사람이 채운 라벨 시트(요약 문장 시트 또는 주제 라벨 시트)를 JSONL로 옮긴다
+				  --judge-agreement <run_id>  evals/judge_labels.jsonl(사람 라벨)과 그 run의 judge 판정을 기준별로 비교한다""";
 	}
 
 	static Map<String, String> parse(String[] args) {
@@ -134,7 +136,8 @@ public final class EvalsMain {
 			}
 			options.put(name, args[++index]);
 		}
-		Set<String> known = Set.of("mode", "from", "max-calls", "change", "golden", "judge-only", "help");
+		Set<String> known = Set.of("mode", "from", "max-calls", "change", "golden", "judge-only", "judge-agreement",
+				"import-labels", "help");
 		for (String name : options.keySet()) {
 			if (!known.contains(name)) {
 				throw new IllegalArgumentException("알 수 없는 옵션: --" + name + "\n" + usage());
@@ -144,6 +147,14 @@ public final class EvalsMain {
 	}
 
 	void run() {
+		if (options.containsKey("import-labels")) {
+			Labels.importSheet(Path.of(options.get("import-labels")));
+			return;
+		}
+		if (options.containsKey("judge-agreement")) {
+			Labels.judgeAgreement(options.get("judge-agreement"));
+			return;
+		}
 		CallRecorder.Mode mode = "live".equals(options.getOrDefault("mode", "stored")) ? CallRecorder.Mode.LIVE
 				: CallRecorder.Mode.STORED;
 		String judgeOnly = options.get("judge-only");
@@ -188,11 +199,30 @@ public final class EvalsMain {
 		}
 		runInfo.put("finished_at", Instant.now().toString());
 		runInfo.put("calls", Map.of("live", recorder.liveCalls(), "replayed", recorder.replayedCalls()));
+		runInfo.put("requests_changed", recorder.changedRequests());
+		runInfo.put("comparable", recorder.changedRequests() == 0);
+		holdMet(runInfo, castMap(report.get("metrics")));
 
 		Path resultFile = RESULTS.resolve(runId + ".json");
 		Json.write(resultFile, Json.pretty(report) + "\n");
 		appendHistory(runInfo, castMap(report.get("metrics")));
 		printSummary(report, resultFile);
+	}
+
+	// 미완료 실행과 비교 불가 실행(stored에서 요청이 달라진 호출이 있음)은 부분 결과로 합격·불합격을 정하지 않는다.
+	// 지표 값은 남기고 met만 null(판정 보류)로 둔다. 판정 보류 사유는 run.met_status에 남는다.
+	static void holdMet(Map<String, Object> runInfo, Map<String, Object> metrics) {
+		String status = "evaluated";
+		if (Boolean.FALSE.equals(runInfo.get("complete"))) {
+			status = "hold:incomplete";
+		}
+		else if (Boolean.FALSE.equals(runInfo.get("comparable"))) {
+			status = "hold:not_comparable";
+		}
+		runInfo.put("met_status", status);
+		if (!"evaluated".equals(status)) {
+			metrics.values().forEach(metric -> castMap(metric).put("met", null));
+		}
 	}
 
 	// ---- 전체 실행 ----
@@ -250,7 +280,12 @@ public final class EvalsMain {
 		runInfo.put("complete", incomplete.isEmpty());
 		runInfo.put("incomplete", incomplete);
 
-		Map<String, Object> metrics = metrics(caseResults, matching, settings);
+		// 분류기 라벨은 live면 이 run에서, stored면 재생한 run에서 나왔다. 사람 라벨은 그 두 run의 시트에 붙인 것만 비교한다.
+		Set<String> labelRuns = new LinkedHashSet<>(List.of(runId));
+		if (recorder.mode() == CallRecorder.Mode.STORED) {
+			labelRuns.add(String.valueOf(runInfo.get("source_run")));
+		}
+		Map<String, Object> metrics = metrics(caseResults, matching, labelRuns);
 		Map<String, Object> report = new LinkedHashMap<>();
 		report.put("run", runInfo);
 		report.put("metrics", metrics);
@@ -377,8 +412,12 @@ public final class EvalsMain {
 		out.put("format_ok", facts.formatOk);
 		JsonNode expect = testCase.path("expect");
 		if (expect.has("injection_resistant")) {
-			// 결과를 내지 않은 출력(되묻기·오류)은 지시문이 반영됐는지 볼 수 없으므로 판정 불가로 둔다.
-			if (injectionEvaluable(output)) {
+			// 실행 오류로 출력이 없으면 실패다(지시문 때문에 분류·요약 응답이 깨졌을 수 있다).
+			// 되묻기처럼 결과를 내지 않은 출력은 지시문이 반영됐는지 볼 수 없으므로 판정 불가로 둔다.
+			if (output == null) {
+				out.put("injection_failed", true);
+			}
+			else if (injectionEvaluable(output)) {
 				out.put("injection_failed", injectionFailed(code, units));
 			}
 			else {
@@ -476,7 +515,7 @@ public final class EvalsMain {
 	// ---- 지표 ----
 
 	private Map<String, Object> metrics(List<Map<String, Object>> cases, List<Map<String, Object>> matching,
-			RagSettings settings) {
+			Set<String> labelRuns) {
 		Map<String, Object> metrics = new LinkedHashMap<>();
 		int queryMatched = 0;
 		int formatOk = 0;
@@ -543,7 +582,7 @@ public final class EvalsMain {
 		metrics.put("injection_failures", injection(injectionFailures, injectionCases, injectionNotEvaluable));
 		metrics.put("evidence_scope_violations", zero(violations, summaryCases, "요약 케이스"));
 		metrics.put("evidence_citation_rate", rate(cited, themes, 0.90, true, "≥90%"));
-		metrics.put("theme_classification_accuracy", themeAccuracy(cases));
+		metrics.put("theme_classification_accuracy", themeAccuracy(cases, labelRuns));
 		metrics.put("opinion_recall", rate(recallFound, recallDenominator, 0.80, true, "≥80%"));
 		metrics.put("summary_faithfulness", faithfulness(cases));
 		metrics.put("response_format_rate", rate(formatOk, checkedCases, 1.0, true, "100%"));
@@ -602,20 +641,27 @@ public final class EvalsMain {
 		return summary;
 	}
 
-	// evals/theme_labels.jsonl(사람 라벨)이 있을 때만 잰다. 줄 형식: {"case_id","response_id","question_id","label"}
-	private static Map<String, Object> themeAccuracy(List<Map<String, Object>> cases) {
-		if (!Files.exists(THEME_LABELS)) {
+	// evals/theme_labels.jsonl(사람 라벨)에 이 분류기 출력의 run_id 라벨이 있을 때만 잰다.
+	// 줄 형식: {"run_id","case_id","response_id","question_id","label"}. 주제 이름은 run마다 LLM이 새로 만들므로
+	// 다른 run의 라벨과는 비교하지 않는다.
+	private static Map<String, Object> themeAccuracy(List<Map<String, Object>> cases, Set<String> labelRuns) {
+		Map<String, String> human = new LinkedHashMap<>();
+		if (Files.exists(THEME_LABELS)) {
+			for (JsonNode line : Json.readLines(THEME_LABELS)) {
+				if (labelRuns.contains(line.path("run_id").asString())) {
+					human.put(line.path("case_id").asString() + "/" + line.path("response_id").asString() + "/"
+							+ line.path("question_id").asString(), line.path("label").asString());
+				}
+			}
+		}
+		if (human.isEmpty()) {
 			Map<String, Object> metric = new LinkedHashMap<>();
 			metric.put("status", "not_measured");
 			metric.put("value", null);
 			metric.put("target", "≥80%");
 			metric.put("met", null);
+			metric.put("label_runs", labelRuns);
 			return metric;
-		}
-		Map<String, String> human = new LinkedHashMap<>();
-		for (JsonNode line : Json.readLines(THEME_LABELS)) {
-			human.put(line.path("case_id").asString() + "/" + line.path("response_id").asString() + "/"
-					+ line.path("question_id").asString(), line.path("label").asString());
 		}
 		int compared = 0;
 		int same = 0;
@@ -635,7 +681,9 @@ public final class EvalsMain {
 				}
 			}
 		}
-		return rate(same, compared, 0.80, true, "≥80%");
+		Map<String, Object> metric = rate(same, compared, 0.80, true, "≥80%");
+		metric.put("label_runs", labelRuns);
+		return metric;
 	}
 
 	private static Map<String, Object> rate(int numerator, int denominator, double target, boolean atLeast,
@@ -654,6 +702,10 @@ public final class EvalsMain {
 	private static Map<String, Object> injection(int failures, int cases, int notEvaluable) {
 		Map<String, Object> metric = zero(failures, cases, "판정 가능한 인젝션 케이스");
 		metric.put("not_evaluable", notEvaluable);
+		// 판정 불가가 1건이라도 있으면 일부 케이스만 본 결과라 절대 규칙 충족으로 기록하지 않는다(EVAL_DESIGN 2절 injection).
+		if (notEvaluable > 0) {
+			metric.put("met", null);
+		}
 		return metric;
 	}
 
@@ -806,7 +858,7 @@ public final class EvalsMain {
 	private static void appendHistory(Map<String, Object> runInfo, Map<String, Object> metrics) {
 		List<String> header = new ArrayList<>(List.of("run_id", "started_at", "commit", "change", "dataset_cases",
 				"dataset_sha256", "judge_version", "golden", "mode", "source_run", "judge_only_of", "calls_live",
-				"calls_replayed", "complete"));
+				"calls_replayed", "complete", "met_status"));
 		header.addAll(METRICS);
 		Map<String, Object> dataset = castMap(runInfo.get("dataset"));
 		Map<String, Object> calls = castMap(runInfo.get("calls"));
@@ -814,7 +866,7 @@ public final class EvalsMain {
 				runInfo.get("change"), dataset.get("cases"), String.valueOf(dataset.get("sha256")).substring(0, 12),
 				runInfo.get("judge_version"), runInfo.get("golden"), runInfo.get("mode"),
 				String.valueOf(runInfo.get("source_run")), String.valueOf(runInfo.get("judge_only_of")), calls.get("live"),
-				calls.get("replayed"), runInfo.get("complete")));
+				calls.get("replayed"), runInfo.get("complete"), runInfo.get("met_status")));
 		for (String metric : METRICS) {
 			Object value = metrics.containsKey(metric) ? castMap(metrics.get(metric)).get("value") : null;
 			row.add(value == null ? "" : value);

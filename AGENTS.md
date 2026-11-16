@@ -59,7 +59,7 @@
 
 ## 4. 금지 사항 (에이전트에게 위임할 때 항상 걸린다)
 
-1. **테스트, 골든 케이스, 판정 기준 파일을 고치지 않는다.** 기존 테스트(`src/test/`, `tests/java/`(골든 테스트), `frontend/src/**/*.test.*`), `tests/harness/golden_cases.yaml`, `data/seed/`(골든 테스트 fixture), `src/passform/schemas/form.schema.json`, `src/response_analysis/schemas/request_context.schema.json`, `src/response_analysis/schemas/analyze_response.schema.json`, `src/response_analysis/prompts/`의 모든 프롬프트 파일(파일 전체), `config/rag.yaml`, `evals/evalset.jsonl`, `load/`의 목표값은 사람이 승인한다. 실패하면 테스트가 아니라 구현을 고친다. 사람이 지시한 변경과 포매터 정리는 승인된 변경으로 보되, 판정에 쓰이는 것(단언문, 케이스, 기대값, `@Disabled`, enum, 임계값)은 건드리지 않는다.
+1. **테스트, 골든 케이스, 판정 기준 파일을 고치지 않는다.** 기존 테스트(`src/test/`, `tests/java/`(골든 테스트), `frontend/src/**/*.test.*`), `tests/harness/golden_cases.yaml`, `data/seed/`(골든 테스트 fixture), `src/passform/schemas/form.schema.json`, `src/response_analysis/schemas/request_context.schema.json`, `src/response_analysis/schemas/analyze_response.schema.json`, `src/response_analysis/prompts/`의 모든 프롬프트 파일(파일 전체), `config/rag.yaml`, `evals/evalset.jsonl`, `evals/EVAL_DESIGN.md`, `evals/judge_prompt.md`, `evals/fixtures/`, `load/`의 목표값은 사람이 승인한다. 실패하면 테스트가 아니라 구현을 고친다. 사람이 지시한 변경과 포매터 정리는 승인된 변경으로 보되, 판정에 쓰이는 것(단언문, 케이스, 기대값, `@Disabled`, enum, 임계값)은 건드리지 않는다.
 2. **완료 조건을 임의로 좁히지 않는다.** `@Disabled`, skip, 케이스 삭제, 커버리지 제외 범위 확대로 통과시키지 않는다.
 3. **근거 없는 결과를 내놓지 않는다.** 통과했다면 각 케이스를 왜 통과하는지 한 줄씩 설명한다.
 4. **막히면 멈추고 보고한다.** 같은 실패로 3회차를 넘기거나, SPEC·AGENTS에 없는 판단이 필요하거나, 판정 기준 파일을 바꿔야만 통과할 수 있으면 더 진행하지 않는다. 무엇을 시도했고 어디서 막혔는지, 사람이 정해야 할 것이 무엇인지 보고한다.

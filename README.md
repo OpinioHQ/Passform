@@ -323,10 +323,12 @@ npm run dev
     java/.../golden/<기능>GoldenTest.java   # 강의 5 — 골든 테스트(JUnit, Gradle 테스트 소스 경로로 등록)
   evals/
     evalset.jsonl                    # 강의 7 — 평가 데이터셋
-    README.md                        # 강의 7 — evals 설계
+    EVAL_DESIGN.md                   # 강의 7 — evals 설계
     judge_prompt.md                  # 강의 7 — judge 프롬프트
     java/                            # 강의 7 — 러너(Java, ./gradlew evals)
-    results/YYYY-MM-DD.json          # 강의 7 — 측정 기록
+    fixtures/                        # 강의 7 — evals 전용 폼·응답
+    results/<YYYY-MM-DDTHHMM>.json   # 강의 7 — 측정 기록(실행마다)
+    results/history.csv              # 강의 7 — 실행 이력
   data/seed/                         # 예시 데이터이자 골든 테스트 fixture
 ```
 </details>

@@ -16,7 +16,7 @@
 <data>
 query: 사용자 질의
 summary_type: A | B | C | D
-theme: {"label": 주제 라벨, "count": 코드가 센 응답 수, "classified_total": 분류 대상 응답 수}   ← 유형 A~C
+theme: {"label": 주제 라벨, "count": 코드가 센 응답 수, "classified_total": 동의한 일치 응답 중 그 문항에 답이 있는 수}   ← 유형 A~C
 topic: 사용자가 찾는 의견 표현                                                            ← 유형 D
 evidence: [{"response_id": ..., "question_id": ..., "excerpt": ...}, ...]
 injection_source: 지시문이 든 응답 원문                                                   ← injection 케이스만

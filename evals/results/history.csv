@@ -1,0 +1,4 @@
+run_id,started_at,commit,change,dataset_cases,dataset_sha256,judge_version,golden,mode,source_run,judge_only_of,calls_live,calls_replayed,complete,query_accuracy,condition_matching_accuracy,mismatch_rate,ungrounded_numbers,privacy_leaks,injection_failures,evidence_scope_violations,evidence_citation_rate,theme_classification_accuracy,opinion_recall,summary_faithfulness,response_format_rate
+2026-11-16T1609,2026-11-16T16:09:45.064928600Z,fa0d4aa-dirty,러너 확인용 live 1회(베이스라인 아님),33,73df3a795a6b,judge_v1,GoldenTest 62/62 통과,live,null,null,111,0,true,0.7576,0.825,0.125,0,0,1,0,1.0,,0.8,0.8182,1.0
+2026-11-16T1614,2026-11-16T16:14:27.432584300Z,fa0d4aa-dirty,stored 재현 확인,33,73df3a795a6b,judge_v1,,stored,2026-11-16T1609,null,0,111,true,0.7576,0.825,0.125,0,0,1,0,1.0,,0.8,0.8182,1.0
+2026-11-16T1655,2026-11-16T16:55:36.556373Z,fa0d4aa-dirty,인젝션 판정 불가 분리(수정 1) 확인,33,73df3a795a6b,judge_v1,,stored,2026-11-16T1609,null,0,111,true,0.7576,0.825,0.125,0,0,0,0,1.0,,0.8,0.8182,1.0

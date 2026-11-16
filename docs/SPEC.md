@@ -582,26 +582,26 @@
 - **AC54 [이벤트 기반] (추가 2 · AI 다듬기)**: 응답자가 맞춤법 교정이나 글 다듬기를 요청하면, Passform은 제안만 반환하고, 응답자가 수락할 때만 답을 바꾼다. 원문을 자동으로 바꾸지 않는다.
 - **AC55 [상시 적용] (추가 2 · AI 다듬기)**: Passform은 항상 다듬기 요청에 그 장문 문항의 답만 LLM에 보내고, 다른 문항(특히 `profile_key` 문항)의 값은 보내지 않는다.
 
-| AC | 골든 케이스 id (`tests/harness/golden_cases.yaml`, 강의 5) 또는 판정 위치 | 구현 상태 |
+| AC | 골든 케이스 id (`tests/harness/golden_cases.yaml`, 강의 5) 또는 판정 위치; 괄호 안 파일은 같은 이름의 시험이 있는 곳(골든 실행기 밖) | 구현 상태 |
 |---|---|---|
 | AC1 | `first_login_creates_user` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC2 | `unauthenticated_401`, `other_users_response_404`, `non_owner_analyze_403` | 구현 |
-| AC3 | `profile_address_birth_date_allowed`, `profile_rejects_sensitive_key` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC4 | `autofill_selected_profile` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC5 | `deleted_profile_not_used` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC6 | `autofill_own_info_only`, `autofill_option_mismatch`, `autofill_value_reviewable` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC3 | `profile_address_birth_date_allowed` (ProfileApiTest.java), `profile_rejects_sensitive_key` (Autofill.test.tsx, ProfileApiTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC4 | `autofill_selected_profile` (Autofill.test.tsx, ProfileApiTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC5 | `deleted_profile_not_used` (ProfileApiTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC6 | `autofill_own_info_only` (ProfileApiTest.java), `autofill_option_mismatch` (ProfileApiTest.java), `autofill_value_reviewable` (Autofill.test.tsx, ProfileApiTest.java) (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC7 | `template_question_copies_input_format`, `template_profile_key_needs_confirmation` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC8 | `branch_to_missing_target`, `branch_backward`, `branch_condition_invalid` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC9 | `skipped_questions_not_required`, `skipped_answers_dropped` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC10 | `qr_decodes_to_share_url`, `qr_draft_409` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC11 | `payment_link_https_only` | MVP 제외 — 빌더 입력 칸 숨김(#83), 기존 값 표시만 남음 |
+| AC10 | `qr_decodes_to_share_url` (CreatorToolsApiDatabaseTest.java), `qr_draft_409` (CreatorToolsApiDatabaseTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC11 | `payment_link_https_only` (ResponsePage.screen.test.tsx) | MVP 제외 — 빌더 입력 칸 숨김(#83), 기존 값 표시만 남음 |
 | AC12 | `every_open_form_needs_consent_template`, `unformatted_form_needs_consent_template` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC13 | `consent_lists_input_formats`, `consent_generic_answer_item` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC13 | `consent_lists_input_formats` (ResponsePage.screen.test.tsx), `consent_generic_answer_item` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC14 | `submit_without_consent`, `unformatted_submit_needs_consent` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC15 | `submitted_content_roundtrip`, `submission_uses_original_form_version`, `anonymous_submit` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC16 | `submit_after_deadline`, `edit_after_deadline`, `edit_closed_form`, `history_only_not_editable`, `not_editable_patch`, `not_cancellable_delete` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC17 | `save_form_once`, `submit_adds_to_inbox`, `partial_cancel_keeps_submitted`, `cancel_returns_to_saved`, `bulk_delete_keeps_submitted_history` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC18 | `deadline_reminder_once`, `reminder_saved_within_window`, `reminder_opt_out` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC16 | `submit_after_deadline`, `edit_after_deadline` (ResponseChangeApiTest.java), `edit_closed_form` (ResponseChangeApiTest.java), `history_only_not_editable` (ResponseChangeApiTest.java, ResponseEdit.live.test.tsx), `not_editable_patch` (ResponseChangeApiTest.java), `not_cancellable_delete` (ResponseChangeApiTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC17 | `save_form_once`, `submit_adds_to_inbox`, `partial_cancel_keeps_submitted` (ResponseChangeApiTest.java), `cancel_returns_to_saved` (ResponseChangeApiTest.java), `bulk_delete_keeps_submitted_history` (FormDeletionApiTest.java, ResponseChangeApiTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC18 | `deadline_reminder_once` (DeadlineReminderServiceTest.java), `reminder_saved_within_window` (DeadlineReminderServiceTest.java), `reminder_opt_out` (DeadlineReminderServiceTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC19 | `results_option_counts_combined_and_by_version`, `results_changed_question_separate` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC20 | `submitted_only`, `response_count_across_versions`, `injection_in_response` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC21 | `matching_labeled_set` (규칙이면 골든 / LLM이면 evals) | 스파이크 1·2차 미달(2차 2026-11-15, 28/40, 오매칭 3). MVP는 규칙 우선과 임시 LLM 프롬프트(1차) |
@@ -616,63 +616,63 @@
 | AC30 | `extra_key_retry_once` | 구현 |
 | AC31 | `injection_in_response` (+ 레드티밍) | 구현 — 레드티밍 미실시 |
 | AC32 | `confirmed_context_skips_parser`, `confirmed_context_all_versions`, `invalid_context_400` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC33 | `health` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC33 | `health` (HealthControllerTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC34 | 부하 테스트 `load/` | 미구현 — 부하 테스트 스크립트 없음 |
 | AC35 | evals `evals/evalset.jsonl` | 미구현 — 평가셋 비어 있음 |
 | AC36 | CI 커버리지 리포트 | 구현 |
 | AC37 | — | 폐기 |
 | AC38 | `draft_hidden_from_others`, `first_draft_version_null`, `open_creates_share_url`, `first_open_creates_version_one` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC39 | `created_forms_owner_only` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC40 | `copy_form_without_responses` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC41 | `share_url_open_form`, `share_url_closed_form` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC40 | `copy_form_without_responses` (CreatorToolsApiDatabaseTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC41 | `share_url_open_form` (respondentRoutes.test.tsx), `share_url_closed_form` (ResponsePage.screen.test.tsx, respondentRoutes.test.tsx) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC42 | `quick_and_basic_same_definition`, `own_info_setting_survives_mode_switch` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC43 | `required_missing_visited_only` | 구현 |
 | AC44 | `branch_all_conditions`, `branch_any_conditions`, `branch_first_rule_wins` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC45 | `branch_graph_matches_rules` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC45 | `branch_graph_matches_rules` (BranchFlowView.test.tsx, CreatorToolsApiDatabaseTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC46 | `unbranched_display_modes`, `branched_display_modes`, `section_page_branch_only_at_end`, `section_page_rejects_question_target`, `one_question_allows_question_branch` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC47 | `unbranched_respondent_switch_preserves_answers`, `branched_mode_fixed`, `all_questions_sections_visible`, `section_page_first_screen`, `one_question_intro_then_first_question` (프론트엔드·E2E 테스트) | 구현 |
-| AC48 | `export_json_yaml_same`, `export_csv_rows`, `export_form_versions_separate`, `export_flat_responses_with_version` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC49 | `export_filtered_matches_analyze`, `export_non_list_time_order`, `export_excludes_not_evaluable` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC50 | `csv_formula_escaped` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC47 | `unbranched_respondent_switch_preserves_answers` (ResponsePage.screen.test.tsx), `branched_mode_fixed` (ResponsePage.screen.test.tsx), `all_questions_sections_visible` (ResponsePage.screen.test.tsx), `section_page_first_screen` (ResponsePage.screen.test.tsx), `one_question_intro_then_first_question` (ResponsePage.screen.test.tsx) (프론트엔드·E2E 테스트) | 구현 |
+| AC48 | `export_json_yaml_same` (ExportApiTest.java), `export_csv_rows` (ExportApiTest.java), `export_form_versions_separate` (ExportApiTest.java), `export_flat_responses_with_version` (ExportApiTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC49 | `export_filtered_matches_analyze` (ExportApiTest.java), `export_non_list_time_order` (ExportApiTest.java), `export_excludes_not_evaluable` (ExportApiTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC50 | `csv_formula_escaped` (ExportApiTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC51 | `repeat_submission_allowed`, `anonymous_repeat_submission_allowed` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC52, AC54~AC55 | (추가 개발 — 착수 시 작성) | MVP 밖(추가 1·2) |
-| AC53 | `character_limit_saved_both_modes`, `character_count_display_and_validation`, `over_limit_draft_preserved` (프론트엔드·E2E 테스트) | 구현 — 골든 미작성 |
+| AC53 | `character_limit_saved_both_modes`, `character_count_display_and_validation` (ResponsePage.screen.test.tsx), `over_limit_draft_preserved` (프론트엔드·E2E 테스트) | 구현 — 골든 미작성 |
 | AC56 | `draft_saves_incomplete`, `open_runs_semantic_checks`, `reopen_validates_draft_version` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC57 | `invalid_status_transition`, `share_url_stable_on_reopen` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC58 | `form_edit_creates_immutable_version`, `attachment_change_creates_immutable_version`, `operating_setting_keeps_version` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC58 | `form_edit_creates_immutable_version`, `attachment_change_creates_immutable_version` (AttachmentApiTest.java), `operating_setting_keeps_version` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC59 | `kakao_reminder_once` (연동 시) | 미구현 — 카카오톡 알림 연동 없음 |
-| AC60 | `respondent_progress_known_path`, `respondent_progress_branch_unknown` (프론트엔드·E2E 테스트) | 구현 |
+| AC60 | `respondent_progress_known_path` (ResponsePage.screen.test.tsx), `respondent_progress_branch_unknown` (ResponsePage.screen.test.tsx) (프론트엔드·E2E 테스트) | 구현 |
 | AC61 | `list_sort_default_asc`, `list_sort_all_versions`, `non_list_sort_ignored` | 구현 — 골든 미작성 |
 | AC62 | `creator_list_response_detail`, `creator_response_other_form_404` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC63 | `form_and_question_attachments_allowed`, `attachment_api_version_atomic`, `draft_attachment_keeps_version`, `question_attachment_owner_only_draft`, `creator_attachment_rejects_type` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC64 | `response_attachment_per_question_25mb`, `response_attachment_atomic_failure`, `response_attachment_access` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC65 | `storage_quota_at_limit`, `storage_quota_rejects_overflow`, `response_file_charged_to_creator` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC66 | `creator_delete_all_responses`, `bulk_delete_preserves_submitter_history`, `bulk_delete_releases_storage` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC67 | `delete_form_offers_export`, `delete_form_export_failure_keeps_data`, `delete_form_preserves_submitter_history` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC63 | `form_and_question_attachments_allowed`, `attachment_api_version_atomic` (AttachmentApiTest.java), `draft_attachment_keeps_version` (AttachmentApiTest.java), `question_attachment_owner_only_draft` (AttachmentApiTest.java), `creator_attachment_rejects_type` (AttachmentApiTest.java) (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC64 | `response_attachment_per_question_25mb` (ResponseFileApiTest.java), `response_attachment_atomic_failure` (ResponseFileApiTest.java), `response_attachment_access` (ResponseFileApiTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC65 | `storage_quota_at_limit` (AttachmentApiTest.java), `storage_quota_rejects_overflow` (AttachmentApiTest.java), `response_file_charged_to_creator` (ResponseFileApiTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC66 | `creator_delete_all_responses` (FormDeletionApiTest.java), `bulk_delete_preserves_submitter_history`, `bulk_delete_releases_storage` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC67 | `delete_form_offers_export` (FormCleanupActions.test.tsx), `delete_form_export_failure_keeps_data` (FormCleanupActions.test.tsx), `delete_form_preserves_submitter_history` (FormDeletionApiTest.java) (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC68 | `mobile_respondent_full_flow`, `mobile_respondent_no_horizontal_scroll` (프론트엔드·E2E 테스트) | 구현 — 골든 미작성 |
 | AC69 | `mobile_quick_builder_publish`, `mobile_basic_builder_desktop_notice` (프론트엔드·E2E 테스트) | 구현 — 골든 미작성 |
-| AC70 | `delete_all_response_attachments`, `attachment_purge_keeps_response_count` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC70 | `delete_all_response_attachments` (FormDeletionApiTest.java), `attachment_purge_keeps_response_count` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC71 | `quick_purpose_audience_recommendations`, `quick_custom_question_preview` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC72 | `own_info_confirmation_both_builders`, `own_info_reset_after_question_change` (프론트엔드·E2E 테스트) | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC73 | `date_format_accepts_valid_date`, `date_format_rejects_invalid_date`, `phone_format_normalizes_and_checks_length`, `email_format_checks_structure`, `text_format_trims_and_checks_required` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC74 | `response_edit_overwrites_same_id`, `response_edit_uses_original_version`, `response_cancel_removes_one` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC73 | `date_format_accepts_valid_date`, `date_format_rejects_invalid_date`, `phone_format_normalizes_and_checks_length`, `email_format_checks_structure`, `text_format_trims_and_checks_required` (answerCheck.test.ts) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC74 | `response_edit_overwrites_same_id` (ResponseChangeApiTest.java, ResponseEdit.live.test.tsx), `response_edit_uses_original_version` (ResponseChangeApiTest.java, ResponseEdit.live.test.tsx), `response_cancel_removes_one` (ResponseChangeApiTest.java, ResponseEdit.live.test.tsx) (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC75 | `analyze_all_versions_fixed_scope`, `context_matches_lecture03_schema`, `full_export_groups_versions` | 구현 — 골든 미작성 |
 | AC76 | `stale_form_version_rejected`, `latest_form_version_submits` | 구현 |
 | AC77 | `natural_language_version_scope_rejected`, `unsupported_statistics_explained`, `all_responses_count_supported` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC78 | `all_versions_condition_filter_with_coverage`, `negation_does_not_count_unknown`, `no_condition_counts_all`, `option_renamed_version_not_evaluable`, `match_all_unknown_when_no_false`, `condition_missing_one_version_keeps_matches`, `no_condition_match_any_counts_all`, `no_condition_match_not_counts_all`, `branch_skipped_condition_not_evaluable` | 구현 |
 | AC79 | `basic_builder_edit_save_reopen`, `question_and_section_duplicate_new_ids`, `duplicate_resets_branch_and_profile_key` (프론트엔드·E2E 테스트) | 구현 — 골든 미작성 |
-| AC80 | `basic_builder_five_question_types`, `basic_builder_settings_roundtrip`, `published_controls_match_builder` (프론트엔드·E2E 테스트) | 구현 — 골든 미작성 |
-| AC81 | `builder_preview_unsaved_definition`, `builder_preview_branch_path`, `builder_preview_no_response` (프론트엔드·E2E 테스트) | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC82 | `respondent_draft_restores_same_browser`, `login_draft_text_cross_device`, `draft_file_same_browser_only` (프론트엔드·E2E 테스트) | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC83 | `in_progress_owner_only_and_not_counted`, `submit_draft_same_response_id`, `stale_draft_not_submitted` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC84 | `creator_draft_autosave_both_modes`, `creator_autosave_no_publish`, `creator_autosave_failure_visible` (프론트엔드·E2E 테스트) | 구현 |
-| AC85 | `response_limit_auto_close`, `response_limit_concurrent_submit`(통합 시험), `response_limit_reopen_requires_increase` | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC80 | `basic_builder_five_question_types` (ResponsePage.screen.test.tsx), `basic_builder_settings_roundtrip`, `published_controls_match_builder` (프론트엔드·E2E 테스트) | 구현 — 골든 미작성 |
+| AC81 | `builder_preview_unsaved_definition`, `builder_preview_branch_path` (branchPreview.test.tsx), `builder_preview_no_response` (프론트엔드·E2E 테스트) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC82 | `respondent_draft_restores_same_browser` (DraftGate.test.tsx), `login_draft_text_cross_device` (DraftGate.test.tsx), `draft_file_same_browser_only` (프론트엔드·E2E 테스트) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC83 | `in_progress_owner_only_and_not_counted`, `submit_draft_same_response_id`, `stale_draft_not_submitted` (DraftGate.test.tsx) (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC84 | `creator_draft_autosave_both_modes` (creatorTools.test.tsx), `creator_autosave_no_publish` (creatorTools.test.tsx), `creator_autosave_failure_visible` (creatorTools.test.tsx) (프론트엔드·E2E 테스트) | 구현 |
+| AC85 | `response_limit_auto_close`, `response_limit_concurrent_submit` (ResponseLimitConcurrencyTest.java)(통합 시험), `response_limit_reopen_requires_increase` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC86 | `summarize_target_question_only`, `summarize_all_includes_option_stats`, `summarize_target_partial_versions` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC87 | `theme_counts_from_labels`, `theme_ids_subset_of_consented_matches`, `theme_order_deterministic` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC88 | `evidence_within_matched_consented`, `evidence_excludes_personal_questions` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC89 | `topic_summary_has_no_count`, `topic_no_evidence_no_text` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC90 | `ai_summary_locked_after_publish`, `ai_summary_copy_can_change`, `ai_summary_notice_frozen_at_publish` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC91 | `ai_summary_optional_consent_submit`, `no_consent_excluded_from_summary_only`, `summary_disabled_clarify` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
+| AC91 | `ai_summary_optional_consent_submit` (ResponsePage.screen.test.tsx), `no_consent_excluded_from_summary_only`, `summary_disabled_clarify` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC92 | `personal_question_never_sent`, `contact_masked_in_long_answer`, `unsummarizable_target_clarify` | 구현 |
 | AC93 | `summary_no_matches_status`, `summary_all_no_consent_status`, `summary_over_limit_no_llm_call` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC94 | evals `evals/` (목표값은 강의 7에서 확정) | 미구현 — 요약 평가셋·측정 없음 |

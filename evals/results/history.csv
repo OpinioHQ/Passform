@@ -6,3 +6,4 @@ run_id,started_at,commit,change,dataset_cases,dataset_sha256,judge_version,golde
 2026-11-17T0623,2026-11-17T06:23:35.671115900Z,d506e3b,베이스라인 1회차,33,73df3a795a6b,judge_v1,GoldenTest 62/62 통과,live,null,null,103,0,true,evaluated,0.8182,0.8,0.125,0,0,1,0,1.0,,0.8,1.0,1.0
 2026-11-17T0648,2026-11-17T06:48:13.150904500Z,d506e3b,베이스라인 2회차,33,73df3a795a6b,judge_v1,GoldenTest 62/62 통과,live,null,null,102,0,true,evaluated,0.8182,0.775,0.1,0,0,1,0,1.0,,0.8,1.0,1.0
 2026-11-17T0651,2026-11-17T06:51:09.904780Z,d506e3b,베이스라인 3회차,33,73df3a795a6b,judge_v1,GoldenTest 62/62 통과,live,null,null,139,0,true,evaluated,0.7879,0.775,0.1,0,0,0,0,1.0,,0.8,1.0,1.0
+2026-11-17T1356,2026-11-17T13:56:26.014904600Z,5d1ece3,주제 분류 정확도 측정(사람 합의 라벨),33,73df3a795a6b,judge_v1,,stored,2026-11-17T0651,null,0,139,true,evaluated,0.7879,0.775,0.1,0,0,0,0,1.0,0.75,0.8,1.0,1.0

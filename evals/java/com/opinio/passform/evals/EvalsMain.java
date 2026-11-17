@@ -342,7 +342,7 @@ public final class EvalsMain {
 			judge.judge(unit, markers, recorder, liveLlm);
 		}
 		result.put("judge_units", units);
-		result.put("classifier", classifierOutput(recorder.caseCalls(), fixture));
+		result.put("classifier", withFinalThemes(classifierOutput(recorder.caseCalls(), fixture), outputSeed));
 		result.put("calls", summarizeCalls(recorder.caseCalls()));
 		result.put("facts", facts(graded.facts(), testCase, output, graded.code(), units));
 		result.put("code_pass", codePass(graded));
@@ -641,6 +641,22 @@ public final class EvalsMain {
 		return summary;
 	}
 
+	// 분류기 출력 줄마다 그 답이 결과에서 실제로 들어간 주제(themes[].response_ids 기준)를 theme으로 붙인다.
+	// 라벨 시트의 주제 목록과 같은 출처다. 어느 주제에도 들어가지 않은 답은 theme이 null이다.
+	private static List<Map<String, Object>> withFinalThemes(List<Map<String, Object>> entries, JsonNode outputSeed) {
+		Map<String, String> themeByAnswer = new LinkedHashMap<>();
+		JsonNode summary = outputSeed == null ? null : outputSeed.path("result").path("summary");
+		for (JsonNode item : Grader.themesItems(summary)) {
+			String questionId = item.path("target").path("question_id").asString();
+			item.path("themes").forEach(theme -> theme.path("response_ids")
+				.forEach(id -> themeByAnswer.put(id.asString() + "." + questionId, theme.path("label").asString())));
+		}
+		for (Map<String, Object> entry : entries) {
+			entry.put("theme", themeByAnswer.get(entry.get("response_id") + "." + entry.get("question_id")));
+		}
+		return entries;
+	}
+
 	// evals/theme_labels.jsonl(사람 라벨)에 이 분류기 출력의 run_id 라벨이 있을 때만 잰다.
 	// 줄 형식: {"run_id","case_id","response_id","question_id","label"}. 주제 이름은 run마다 LLM이 새로 만들므로
 	// 다른 run의 라벨과는 비교하지 않는다.
@@ -675,7 +691,9 @@ public final class EvalsMain {
 				String key = result.get("id") + "/" + entry.get("response_id") + "/" + entry.get("question_id");
 				if (human.containsKey(key)) {
 					compared++;
-					if (human.get(key).equals(entry.get("label"))) {
+					// 사람은 라벨 시트의 최종 주제 목록(개수 상한을 넘은 라벨이 "기타"로 합쳐진 뒤)에서 골랐으므로
+					// 분류기 세부 라벨(label)이 아니라 그 답이 들어간 최종 주제(theme)와 비교한다(2026-11-17 수정).
+					if (human.get(key).equals(entry.get("theme"))) {
 						same++;
 					}
 				}

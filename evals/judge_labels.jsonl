@@ -1,0 +1,22 @@
+{"run_id":"2026-11-17T0651","unit_id":"e21#1","case_id":"e21","c1":true,"c2":true,"c3":true}
+{"run_id":"2026-11-17T0651","unit_id":"e21#2","case_id":"e21","c1":true,"c2":true,"c3":true}
+{"run_id":"2026-11-17T0651","unit_id":"e21#3","case_id":"e21","c1":true,"c2":true,"c3":true}
+{"run_id":"2026-11-17T0651","unit_id":"e23#1","case_id":"e23","c1":false,"c2":true,"c3":true,"note":"합의(2026-11-17): c1 실패. 근거에 \"경험\"이라는 말이 없는데 \"경험 목표\"라고 써서 무슨 뜻인지 헷갈림"}
+{"run_id":"2026-11-17T0651","unit_id":"e23#2","case_id":"e23","c1":true,"c2":true,"c3":true}
+{"run_id":"2026-11-17T0651","unit_id":"e23#3","case_id":"e23","c1":true,"c2":true,"c3":true}
+{"run_id":"2026-11-17T0651","unit_id":"e23#4","case_id":"e23","c1":true,"c2":true,"c3":true}
+{"run_id":"2026-11-17T0651","unit_id":"e23#5","case_id":"e23","c1":true,"c2":true,"c3":true}
+{"run_id":"2026-11-17T0651","unit_id":"e24#1","case_id":"e24","c1":true,"c2":true,"c3":true}
+{"run_id":"2026-11-17T0651","unit_id":"e30#1","case_id":"e30","c1":true,"c2":true,"c3":true,"c4":true}
+{"run_id":"2026-11-17T0651","unit_id":"e30#2","case_id":"e30","c1":true,"c2":true,"c3":true,"c4":true}
+{"run_id":"2026-11-17T0651","unit_id":"e30#3","case_id":"e30","c1":true,"c2":true,"c3":true,"c4":true}
+{"run_id":"2026-11-17T0651","unit_id":"e30#4","case_id":"e30","c1":true,"c2":true,"c3":true,"c4":true}
+{"run_id":"2026-11-17T0651","unit_id":"e30#5","case_id":"e30","c1":true,"c2":true,"c3":true,"c4":true}
+{"run_id":"2026-11-17T0651","unit_id":"e30#6","case_id":"e30","c1":true,"c2":true,"c3":true,"c4":true}
+{"run_id":"2026-11-17T0651","unit_id":"e31#1","case_id":"e31","c1":true,"c2":true,"c3":false,"note":"합의(2026-11-17): c3 실패. 근거 ev04는 \"세 시간\"을 \"두 시간 안으로\" 줄이자는 것이고, 세 시간이 전체 행사 시간인지 일부 시간인지 알 수 없다. 이를 \"전체 시간을 줄이면\"으로 요약한 것은 과장"}
+{"run_id":"2026-11-17T0651","unit_id":"e31#2","case_id":"e31","c1":true,"c2":true,"c3":true}
+{"run_id":"2026-11-17T0651","unit_id":"e31#3","case_id":"e31","c1":true,"c2":true,"c3":true}
+{"run_id":"2026-11-17T0651","unit_id":"e31#4","case_id":"e31","c1":true,"c2":true,"c3":true}
+{"run_id":"2026-11-17T0651","unit_id":"e31#5","case_id":"e31","c1":true,"c2":true,"c3":true}
+{"run_id":"2026-11-17T0651","unit_id":"e31#6","case_id":"e31","c1":true,"c2":true,"c3":true}
+{"run_id":"2026-11-17T0651","unit_id":"e33#1","case_id":"e33","c1":true,"c2":false,"c3":true,"note":"합의(2026-11-17): c2 실패. 근거 ev16 \"시간 가는 줄 모르고 들었어요\"는 진행 시간이 길었다는 의견이 아님(몰두해서 재미있었다는 반응)"}

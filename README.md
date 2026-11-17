@@ -369,8 +369,9 @@ npm test                          # Vitest 테스트
     EVAL_DESIGN.md                   # 강의 7 — evals 설계
     judge_prompt.md                  # 강의 7 — judge 프롬프트
     README.md                        # 강의 7 — 러너 사용법·라벨 절차
-    java/com/opinio/passform/evals/EvalsMain.java   # 강의 7 — 러너 진입점(Java, ./gradlew evals)
-    java/com/opinio/passform/evals/  # 같은 폴더: CallRecorder·Fixture·Grader·Json·Judge·Labels·MatchingEval
+    java/com/opinio/passform/evals/  # 강의 7 — 러너 코드. 강의 표준 경로 evals/run_evals.py 대신 Java로 구현(백엔드 서비스를 직접 실행하기 위해)
+      EvalsMain.java                 #   러너 진입점. 실행은 ./gradlew evals(build·test에는 포함되지 않음)
+      CallRecorder·Fixture·Grader·Json·Judge·Labels·MatchingEval.java   #   LLM 호출 기록·재생, 모의 저장소, 채점, judge, 라벨, 조건 매칭 평가
     fixtures/                        # 강의 7 — evals 전용 폼·응답
     results/<YYYY-MM-DDTHHMM>.json   # 강의 7 — 측정 기록(실행마다)
     results/history.csv              # 강의 7 — 실행 이력

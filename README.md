@@ -163,11 +163,11 @@
 
 **정상이면 이렇게 됩니다**
 
-- 응답자: "응답을 제출했어요" 화면이 뜨고, 로그인했다면 "내 폼함"에 그 폼이 "제출함"으로, "제출 내역"에 제출한 답이 보입니다.
-- 제작자: "결과 대시보드"의 "전체 응답 N건"이 넣은 응답 수와 같고, 선택지 통계가 넣은 답과 맞습니다.
-- AI 결과 탐색: "소프트웨어학과 지원자 몇 명?"의 건수가 대시보드의 학과 통계에서 소프트웨어학과 수와 같습니다. 요약의 근거 발췌가 실제로 넣은 답에서 나왔고, AI 요약에 동의하지 않은 응답은 요약에서 빠졌다고 안내됩니다.
+- 응답자: "응답을 제출했어요" 화면이 뜨고, 로그인했다면 "내 폼함"에 그 폼이 "제출함"으로, "제출 내역"에 제출한 답이 보입니다. (AC15, AC17)
+- 제작자: "결과 대시보드"의 "전체 응답 N건"이 넣은 응답 수와 같고, 선택지 통계가 넣은 답과 맞습니다. (AC19, AC20)
+- AI 결과 탐색: "소프트웨어학과 지원자 몇 명?"의 건수가 대시보드의 학과 통계에서 소프트웨어학과 수와 같습니다. 요약의 근거 발췌가 실제로 넣은 답에서 나왔고, AI 요약에 동의하지 않은 응답은 요약에서 빠졌다고 안내됩니다. (AC78, AC88, AC91)
 
-**최종 확인:** 제작자로 결과 대시보드의 "내보내기" → CSV → "파일 받기"로 받아 열면 넣은 응답이 한 줄씩 들어 있습니다.
+**최종 확인:** 제작자로 결과 대시보드의 "내보내기" → CSV → "파일 받기"로 받아 열면 넣은 응답이 한 줄씩 들어 있습니다. (AC48)
 
 **다른 입력으로 다시 해 보기**
 
@@ -183,9 +183,9 @@
 | 동아리에 바라는 점 | (비워 둠) | 면접 시간을 미리 알려 주세요. |
 
 - B·C로 더 응답한 뒤 같은 질문을 다시 해서 건수와 요약이 바뀌는지 봅니다.
-- 다른 질문: "경영학과 지원자 몇 명?", "동아리에 바라는 점 요약해줘", "경영학과 지원 동기 요약해줘", "면접 시간을 알려 달라는 의견 요약해줘"
-- AI 요약 선택 동의를 하지 않은 응답을 하나 넣고 요약을 다시 물으면, 그 응답이 요약에서 빠졌다는 안내가 보입니다.
-- 다른 폼으로: "내가 만든 폼"에서 만든 폼의 "복제"를 누르면 복사본의 편집 화면이 열립니다. 문항이나 설정을 바꿔 다시 배포해 봅니다.
+- 다른 질문: "경영학과 지원자 몇 명?", "동아리에 바라는 점 요약해줘", "경영학과 지원 동기 요약해줘", "면접 시간을 알려 달라는 의견 요약해줘" (AC78, AC86, AC89)
+- AI 요약 선택 동의를 하지 않은 응답을 하나 넣고 요약을 다시 물으면, 그 응답이 요약에서 빠졌다는 안내가 보입니다. (AC91)
+- 다른 폼으로: "내가 만든 폼"에서 만든 폼의 "복제"를 누르면 복사본의 편집 화면이 열립니다. 문항이나 설정을 바꿔 다시 배포해 봅니다. (AC38, AC40)
 
 ### 7. 제한과 알려진 오류
 
@@ -287,6 +287,40 @@ npm run dev
 
 이 가이드는 11/11~11/18 동안 서비스와 예시 폼을 유지하며, 주소나 실행 방법이 바뀌면 함께 고칩니다.
 
+### 9. 테스트와 평가 실행
+
+저장소 루트에서 실행합니다. 명령 옆 주석은 Windows PowerShell에서 쓰는 형태입니다.
+
+**백엔드 전체 테스트와 커버리지** — DB를 띄운 뒤 빌드합니다. JUnit 테스트(골든 테스트 포함)와 JaCoCo 커버리지 검사(service·domain 라인 70% 이상, AC36)가 함께 돕니다.
+
+```bash
+docker compose up -d db
+./gradlew build                   # Windows PowerShell: .\gradlew.bat build
+```
+
+**골든 테스트만** — 케이스는 `tests/harness/golden_cases.yaml`, 실행기는 `tests/java/com/opinio/passform/golden/`의 `*GoldenTest.java`입니다. 위와 같이 DB가 떠 있어야 합니다.
+
+```bash
+./gradlew test --tests '*GoldenTest'   # Windows PowerShell: .\gradlew.bat test --tests "*GoldenTest"
+```
+
+**프론트엔드** — 의존성은 8절 7)의 `npm ci`로 설치합니다. Windows에서도 명령이 같습니다.
+
+```bash
+cd frontend
+npm run lint                      # ESLint(경고 0개여야 통과)
+npm run typecheck                 # TypeScript 타입 검사
+npm test                          # Vitest 테스트
+```
+
+**AI 결과 탐색 평가(evals)** — 실제 OpenAI API를 부르므로 `./gradlew build`에는 들어가지 않습니다. OS 환경변수 `OPENAI_API_KEY`가 필요하고, `N`은 외부 호출 상한입니다(live 모드에서 필수).
+
+```bash
+./gradlew evals --args="--mode live --max-calls N"   # Windows PowerShell: .\gradlew.bat evals --args="--mode live --max-calls N"
+```
+
+결과는 실행마다 `evals/results/<run_id>.json`에, 실행 이력은 `evals/results/history.csv`에 쌓입니다. 저장한 응답으로 다시 실행하기, 사람 라벨 절차 등 자세한 사용법은 [evals/README.md](evals/README.md)를 봅니다.
+
 ---
 
 ## Github
@@ -300,8 +334,6 @@ npm run dev
   CLAUDE.md                          # 강의 4 — Claude Code에서 AGENTS.md의 공통 규칙을 불러오는 파일
   .claude/settings.json              # 강의 5 — Claude Code 도구 권한
   .claude/commands/                  # 강의 5 — 재사용 명령(check, golden)
-  .agents/skills/                    # 강의 5 — Codex 재사용 명령
-  .codex/config.toml                 # 강의 5 — Codex 권한 설정
   docs/
     research/interviews.md           # 강의 2 — 인터뷰 프로토콜과 로그
     ontology.yaml                    # 강의 2 — 미니 온톨로지
@@ -311,21 +343,34 @@ npm run dev
     spikes/<가설>.md                 # 강의 4 — 기술 타당성 스파이크
     ARCHITECTURE.md                  # 강의 6 — 아키텍처 설계서
     prompts/delegation_<기능>.md     # 강의 5 — 기능별 위임 프롬프트와 검증 루프 기록(첫 위임: condition_evaluator)
+  src/passform/schemas/form.schema.json     # 폼 정의 스키마(SPEC 3절의 정본)
   src/response_analysis/
     schemas/request_context.schema.json     # 강의 3 — 출력 스키마
+    schemas/analyze_response.schema.json    # 분석 응답 스키마
     prompts/parse_query.md           # 강의 3 — 파싱 프롬프트
+    prompts/match_conditions.md      # 조건 매칭(LLM 매처) 프롬프트
     prompts/summarize.md             # 강의 6 — 요약문 생성 프롬프트
     prompts/classify_themes.md       # 강의 6 — 주제 분류 프롬프트
-    tools/                           # 강의 6 — 도구 구현
+  src/main/java/com/opinio/passform/        # 백엔드 구현 코드(Spring Boot)
+  src/main/java/com/opinio/passform/llm/    # 강의 6 — 도구 구현(파서·조건 매처·주제 분류·요약·임베딩 클라이언트)
+  frontend/src/                      # 프론트엔드 구현 코드(React)
   config/rag.yaml                    # 강의 6 — RAG 설정(요약 근거 검색)
   tests/
     harness/golden_cases.yaml        # 강의 5 — 골든 케이스(데이터)
-    java/.../golden/<기능>GoldenTest.java   # 강의 5 — 골든 테스트(JUnit, Gradle 테스트 소스 경로로 등록)
+    java/com/opinio/passform/golden/        # 강의 5 — 골든 테스트(JUnit, Gradle 테스트 소스 경로로 등록)
+      AccessGoldenTest.java
+      AnalysisGoldenTest.java
+      ConditionEvaluatorGoldenTest.java
+      FormGoldenTest.java
+      SubmissionGoldenTest.java
+      SummaryGoldenTest.java
   evals/
     evalset.jsonl                    # 강의 7 — 평가 데이터셋
     EVAL_DESIGN.md                   # 강의 7 — evals 설계
     judge_prompt.md                  # 강의 7 — judge 프롬프트
-    java/                            # 강의 7 — 러너(Java, ./gradlew evals)
+    README.md                        # 강의 7 — 러너 사용법·라벨 절차
+    java/com/opinio/passform/evals/EvalsMain.java   # 강의 7 — 러너 진입점(Java, ./gradlew evals)
+    java/com/opinio/passform/evals/  # 같은 폴더: CallRecorder·Fixture·Grader·Json·Judge·Labels·MatchingEval
     fixtures/                        # 강의 7 — evals 전용 폼·응답
     results/<YYYY-MM-DDTHHMM>.json   # 강의 7 — 측정 기록(실행마다)
     results/history.csv              # 강의 7 — 실행 이력

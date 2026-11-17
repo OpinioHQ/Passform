@@ -3,3 +3,6 @@ run_id,started_at,commit,change,dataset_cases,dataset_sha256,judge_version,golde
 2026-11-16T1614,2026-11-16T16:14:27.432584300Z,fa0d4aa-dirty,stored 재현 확인,33,73df3a795a6b,judge_v1,,stored,2026-11-16T1609,null,0,111,true,evaluated,0.7576,0.825,0.125,0,0,1,0,1.0,,0.8,0.8182,1.0
 2026-11-16T1655,2026-11-16T16:55:36.556373Z,fa0d4aa-dirty,인젝션 판정 불가 분리(수정 1) 확인,33,73df3a795a6b,judge_v1,,stored,2026-11-16T1609,null,0,111,true,evaluated,0.7576,0.825,0.125,0,0,0,0,1.0,,0.8,0.8182,1.0
 2026-11-16T1809,2026-11-16T18:09:51.120377900Z,134f242-dirty,리뷰 반영 확인,33,73df3a795a6b,judge_v1,,stored,2026-11-16T1609,null,0,111,true,evaluated,0.7576,0.825,0.125,0,0,0,0,1.0,,0.8,0.8182,1.0
+2026-11-17T0623,2026-11-17T06:23:35.671115900Z,d506e3b,베이스라인 1회차,33,73df3a795a6b,judge_v1,GoldenTest 62/62 통과,live,null,null,103,0,true,evaluated,0.8182,0.8,0.125,0,0,1,0,1.0,,0.8,1.0,1.0
+2026-11-17T0648,2026-11-17T06:48:13.150904500Z,d506e3b,베이스라인 2회차,33,73df3a795a6b,judge_v1,GoldenTest 62/62 통과,live,null,null,102,0,true,evaluated,0.8182,0.775,0.1,0,0,1,0,1.0,,0.8,1.0,1.0
+2026-11-17T0651,2026-11-17T06:51:09.904780Z,d506e3b,베이스라인 3회차,33,73df3a795a6b,judge_v1,GoldenTest 62/62 통과,live,null,null,139,0,true,evaluated,0.7879,0.775,0.1,0,0,0,0,1.0,,0.8,1.0,1.0

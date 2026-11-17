@@ -24,6 +24,19 @@ sourceSets {
 			srcDir 'tests/java'
 		}
 	}
+	// evals 러너(AGENTS.md 7절, EVAL_DESIGN.md). 실제 LLM을 부르므로 build·test·check에 넣지 않고 ./gradlew evals로만 돈다.
+	evals {
+		java {
+			srcDir 'evals/java'
+		}
+		compileClasspath += sourceSets.main.output
+		runtimeClasspath += sourceSets.main.output
+	}
+}
+
+configurations {
+	evalsImplementation.extendsFrom implementation
+	evalsRuntimeOnly.extendsFrom runtimeOnly
 }
 
 dependencies {
@@ -102,4 +115,14 @@ tasks.named('jacocoTestCoverageVerification') {
 
 tasks.named('check') {
 	dependsOn tasks.named('jacocoTestReport'), tasks.named('jacocoTestCoverageVerification')
+}
+
+// ./gradlew evals --args="--mode stored --from <run_id>" 또는 --args="--mode live --max-calls N". 옵션은 --args="--help".
+tasks.register('evals', JavaExec) {
+	group = 'verification'
+	description = 'evals/evalset.jsonl을 실제 서비스와 LLM 경계로 실행하고 evals/results/에 기록한다(build에 포함되지 않음).'
+	classpath = sourceSets.evals.runtimeClasspath
+	mainClass = 'com.opinio.passform.evals.EvalsMain'
+	workingDir = projectDir
+	jvmArgs '-Dfile.encoding=UTF-8', '-Dstdout.encoding=UTF-8'
 }

@@ -314,7 +314,6 @@ export function BuilderPage({
       <Heading
         eyebrow="제작자 워크스페이스 / 폼 편집"
         title="폼 편집"
-        desc="질문을 구성하고, 확인한 뒤 배포할 수 있어요."
         action={actions('top')}
       />
       <div ref={messagesRef}>

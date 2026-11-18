@@ -14,6 +14,7 @@ import {
 } from '../builder/formDefinition';
 import { friendlyError } from '../builder/messages';
 import { QuestionEditor } from '../builder/QuestionEditor';
+import { ShareQr } from '../builder/ShareQr';
 import {
   addQuestionAtEnd,
   appendQuestions,
@@ -95,6 +96,8 @@ export function QuickBuilderPage({
   const [failure, setFailure] = React.useState('');
   const [problems, setProblems] = React.useState<string[]>([]);
   const [copyNote, setCopyNote] = React.useState('');
+  const [showingQr, setShowingQr] = React.useState(false);
+  const loadQr = React.useCallback(() => api.formQr(formId), [formId]);
   const pageRef = React.useRef<HTMLDivElement>(null);
   const { status, share_url: shareUrl, definition_version: version } = formState;
 
@@ -269,7 +272,7 @@ export function QuickBuilderPage({
     return (
       <div className="page-shell quick-page" ref={pageRef}>
         {heading}
-        <Panel className="quick-panel">
+        <Panel className="quick-panel quick-published">
           <Badge tone="green">배포 중{version !== null && ` · 폼 버전 ${version}`}</Badge>
           <p>배포했어요. 공유 링크로 응답을 받을 수 있어요.</p>
           {/* 배포 뒤에도 자동 저장 실패를 숨기지 않는다(코덱스 검토 2). */}
@@ -287,7 +290,19 @@ export function QuickBuilderPage({
               <Button variant="secondary" onClick={copyShareUrl}>
                 링크 복사
               </Button>
+              {/* 폼 편집 화면과 같은 QR 보기(SPEC 5절 211행: QR은 공유 링크를 담는다). */}
+              <button
+                type="button"
+                className="btn btn-secondary"
+                aria-expanded={showingQr}
+                onClick={() => setShowingQr((open) => !open)}
+              >
+                {showingQr ? 'QR 닫기' : 'QR 보기'}
+              </button>
               {copyNote && <small className="muted">{copyNote}</small>}
+              {showingQr && (
+                <ShareQr load={loadQr} label={definition.title.trim() || '제목 없는 폼'} />
+              )}
             </div>
           )}
           <div className="button-row">
@@ -312,30 +327,33 @@ export function QuickBuilderPage({
 
   const top = (
     <>
-      <ol className="quick-steps" aria-label="빠른 모드 단계">
-        {/* 단계 이름을 눌러도 그 단계로 간다(사람 결정, #58). */}
-        {STEPS.map(({ step: s, label }, index) => (
-          <li key={s} className={s === step ? 'current' : undefined}>
-            <button
-              type="button"
-              aria-current={s === step ? 'step' : undefined}
-              onClick={() => go(s)}
-              disabled={publishing}
-            >
-              {index + 1}. {label}
-            </button>
-          </li>
-        ))}
-      </ol>
-      <p className="small muted" role="status">
-        {publishing ? (
-          '배포 중…'
-        ) : leaving ? (
-          '저장 중…'
-        ) : saveText ? (
-          <span className={autosave.status === 'failed' ? 'error' : undefined}>{saveText}</span>
-        ) : null}
-      </p>
+      {/* 저장 상태는 단계 줄 오른쪽 끝에 둔다. 좁으면 다음 줄로 내려간다. */}
+      <div className="quick-top">
+        <ol className="quick-steps" aria-label="빠른 모드 단계">
+          {/* 단계 이름을 눌러도 그 단계로 간다(사람 결정, #58). */}
+          {STEPS.map(({ step: s, label }, index) => (
+            <li key={s} className={s === step ? 'current' : undefined}>
+              <button
+                type="button"
+                aria-current={s === step ? 'step' : undefined}
+                onClick={() => go(s)}
+                disabled={publishing}
+              >
+                {index + 1}. {label}
+              </button>
+            </li>
+          ))}
+        </ol>
+        <p className="small muted quick-save" role="status">
+          {publishing ? (
+            '배포 중…'
+          ) : leaving ? (
+            '저장 중…'
+          ) : saveText ? (
+            <span className={autosave.status === 'failed' ? 'error' : undefined}>{saveText}</span>
+          ) : null}
+        </p>
+      </div>
       {failure && (
         <p className="error" role="alert">
           {failure}

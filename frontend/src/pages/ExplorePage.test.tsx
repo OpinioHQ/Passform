@@ -212,6 +212,9 @@ describe('결과', () => {
     renderPage([example('ok_summarize_target')]);
     ask('지원 동기 요약해줘');
     expect(await screen.findByText('이력서용 프로젝트')).toBeTruthy();
+    // 미동의 제외 수는 요약 카드의 물음표를 눌러야 보인다.
+    const card = screen.getByText('이력서용 프로젝트').closest('.result-card') as HTMLElement;
+    fireEvent.click(within(card).getByRole('button', { name: '요약에서 뺀 이유 보기' }));
     expect(screen.getByText('AI 요약에 동의하지 않은 8건은 요약에서 뺐어요.')).toBeTruthy();
     const theme = screen.getByText('이력서용 프로젝트').closest('li') as HTMLElement;
     expect(within(theme).getByText('5건')).toBeTruthy();

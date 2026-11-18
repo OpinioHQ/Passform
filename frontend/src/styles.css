@@ -2235,21 +2235,21 @@ textarea::placeholder {
 .builder-results-hint {
   margin: 8px 0 0;
 }
+/* 접기·더 보기 버튼은 묻기 밑 버튼 목록(스크롤 칸) 바로 아래, 같은 왼쪽 선에 둔다. */
 .explore-more {
-  justify-self: stretch;
+  display: block;
+  flex: none;
   text-align: left;
   border: 0;
   background: var(--color-canvas);
   color: var(--color-ink);
   font-size: 12px;
-  padding: 4px 0;
+  margin: 0 var(--space-3) var(--space-3);
+  padding: var(--space-1) 0;
   cursor: pointer;
 }
-/* 펼친 목록을 스크롤해도 접기 버튼은 위에 붙어 보인다. */
-.assistant-col .explore-more {
-  position: sticky;
-  top: 0;
-  z-index: 1;
+.explore-presets:has(+ .explore-more) {
+  padding-bottom: var(--space-2);
 }
 /* 말풍선 아이콘과 제목을 한 줄에, 설명은 제목 글자와 같은 왼쪽 선에 맞춘다. */
 .assistant-head > div {
@@ -2305,7 +2305,8 @@ textarea::placeholder {
   border-radius: 50%;
   width: 24px;
   height: 24px;
-  margin-top: 6px;
+  margin-left: var(--space-1);
+  vertical-align: middle;
   cursor: pointer;
 }
 .explore-reasons,
@@ -2318,6 +2319,13 @@ textarea::placeholder {
 }
 .explore-matched {
   margin: 10px 0;
+}
+/* 요약 카드 제목 아래 "응답 n건 중 m건으로 요약"과 물음표. */
+.explore-basis {
+  margin: var(--space-1) 0 var(--space-3);
+}
+.explore-basis p {
+  margin: 0;
 }
 .explore-choices {
   flex-wrap: wrap;
@@ -2411,13 +2419,113 @@ textarea::placeholder {
   text-decoration: underline;
   cursor: pointer;
 }
-.form-cleanup {
-  margin-top: var(--space-3);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--color-hairline);
+/* 내가 만든 폼 카드의 삭제: 오른쪽 위 "삭제" 버튼과 아래로 펼쳐지는 목록. 고른 뒤 확인은 카드 아래쪽에 보인다. */
+.creator-card {
+  position: relative;
+}
+.form-cleanup-menu {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: 5;
+}
+.form-cleanup-trigger {
+  gap: var(--space-1);
+  font-size: 13px;
+  color: var(--color-muted);
+}
+.form-cleanup-items {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  padding: var(--space-1);
+  background: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+.form-cleanup-items button {
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  white-space: nowrap;
+  color: var(--color-ink);
+}
+.form-cleanup-items button:hover:not(:disabled),
+.form-cleanup-items button:focus-visible {
+  background: var(--color-surface-soft);
+  outline: 0;
+}
+.form-cleanup-items button:disabled {
+  color: var(--color-muted-soft);
+}
+/* 고른 뒤 확인 팝업: 제목 → 문장(14px) → 형식 선택 → 버튼(오른쪽, 주 버튼 맨 오른쪽). 블록 사이 16px, 버튼 사이 8px. */
+.cleanup-dialog h2 {
+  margin: 0 0 var(--space-4);
+  padding-right: var(--space-8);
+  font-size: 18px;
 }
 .form-cleanup-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.form-cleanup-confirm p {
+  margin: 0;
+}
+.form-cleanup-confirm p.small {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-body);
+}
+.form-cleanup-confirm p.small + p.small {
+  margin-top: calc(-1 * var(--space-3));
+  font-size: 13px;
+  color: var(--color-muted);
+}
+.form-cleanup-confirm .export-formats {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+}
+.form-cleanup-confirm .export-formats .option {
+  flex: 1 1 auto;
+  justify-content: center;
+  white-space: nowrap;
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  gap: var(--space-2);
+}
+.cleanup-dialog .form-cleanup-confirm .button-row {
+  justify-content: flex-end;
+  gap: var(--space-2);
   margin-top: var(--space-2);
+}
+.cleanup-dialog .btn {
+  margin-top: 0;
+  width: auto;
+}
+.cleanup-dialog .error {
+  margin-top: var(--space-4);
+}
+@media (max-width: 760px) {
+  /* 휴대폰에서는 버튼을 한 줄씩 꽉 채워 주 버튼을 맨 위에 둔다. */
+  .cleanup-dialog .form-cleanup-confirm .button-row {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .form-cleanup-confirm .export-formats .option {
+    padding: 0 var(--space-2);
+  }
 }
 
 /* 응답 화면은 읽기 폭을 720px로 좁혀 가운데 둔다(바깥 여백은 page-shell 그대로). */
@@ -2527,11 +2635,23 @@ input[type='file']::file-selector-button {
 .quick-page {
   min-width: 0;
 }
+/* 단계 줄(왼쪽)과 저장 상태(오른쪽)를 한 줄에 둔다. */
+.quick-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.quick-top .quick-save {
+  margin: 0;
+}
 .quick-steps {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin: 0 0 var(--space-2);
+  margin: 0;
   padding: 0;
   list-style: none;
   font-size: 13px;
@@ -2564,6 +2684,16 @@ input[type='file']::file-selector-button {
   margin: 0 0 var(--space-2);
   font-size: 18px;
   overflow-wrap: anywhere;
+}
+/* 빠른 모드 배포 완료 카드: 배지와 문장은 8px, 문장·공유 링크·버튼 사이는 16px. */
+.quick-published > * + * {
+  margin-top: var(--space-4);
+}
+.quick-published > .badge + p {
+  margin-top: var(--space-2);
+}
+.quick-published .builder-share > .builder-field {
+  margin-top: 0;
 }
 .quick-choices {
   margin: 0 0 var(--space-4);

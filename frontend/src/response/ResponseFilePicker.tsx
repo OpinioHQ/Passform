@@ -24,6 +24,7 @@ export function ResponseFilePicker({
 }) {
   return (
     <div className="response-files">
+      {/* 고른 파일은 왼쪽부터 나란히, 파일 첨부 버튼은 오른쪽 끝에 둔다(폭이 모자라면 줄바꿈). */}
       {(existing.length > 0 || picked.length > 0) && (
         <ul className="attachment-list">
           {existing.map((file) => (

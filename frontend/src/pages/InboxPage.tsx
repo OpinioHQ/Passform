@@ -90,7 +90,7 @@ export function InboxPage({ forms, problem, onOpen }: Props) {
           <Panel className="login-prompt">
             <p className="muted">로그인하면 내 폼함을 볼 수 있어요.</p>
             <Link className="btn btn-primary" to={paths.login}>
-              로그인
+              Google로 로그인
             </Link>
           </Panel>
         ) : problem === 'failed' ? (

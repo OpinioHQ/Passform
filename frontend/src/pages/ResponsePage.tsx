@@ -164,8 +164,10 @@ function AutosaveStatusLine({
         : restored
           ? `${place} 저장한 답을 불러왔어요.`
           : kind === 'account'
-            ? '답을 입력하면 계정에 자동으로 저장돼요.'
-            : '답은 이 브라우저에만 저장돼요. 저장 내용을 지우거나 다른 브라우저에서 열면 이어 쓸 수 없어요.';
+            ? ''
+            : '답은 이 브라우저에만 저장돼요. 다른 브라우저에서는 이어 쓸 수 없어요.';
+  // 로그인 사용자의 입력 전 안내는 두지 않는다. 입력하면 바로 저장 상태가 보인다(SPEC 5절 212행).
+  if (!text) return null;
   return (
     <small className="autosave-status" role="status" data-testid="autosave-status">
       {text}
@@ -743,7 +745,7 @@ function ResponseForm({
         )}
         {id in suggested && (
           <p className="field-hint autofill-suggested" data-testid={`suggested-${id}`}>
-            프로필에서 채운 값이에요. 고칠 수 있어요.
+            프로필에서 채운 값이에요.
           </p>
         )}
         {errors[id] && (
@@ -863,7 +865,7 @@ function ResponseForm({
         {editing
           ? '저장하면 제출한 답이 새 답으로 바뀌어요.'
           : consent
-            ? '제출하면 제작자에게 응답이 전달돼요.'
+            ? ''
             : '필수 동의에 체크하면 제출할 수 있어요.'}
       </span>
       <Button onClick={submit} disabled={(!editing && !consent) || submitting}>
@@ -883,18 +885,12 @@ function ResponseForm({
       const answered = allQuestions.filter((q) => isAnswered(q, answers[q.question_id])).length;
       return {
         label: `답한 문항 ${answered}/${allQuestions.length}`,
-        detail: '모든 문항을 한 화면에 보여 드려요.',
+        detail: '',
         ratio: answered / Math.max(1, allQuestions.length),
       };
     }
-    if (!started)
-      return { label: '시작 전', detail: '시작하면 지금 위치를 보여 드려요.', ratio: null };
-    if (onConsentPage)
-      return {
-        label: '마지막 단계',
-        detail: editing ? '수정한 답을 저장해 주세요.' : '동의를 확인하고 제출해 주세요.',
-        ratio: 1,
-      };
+    if (!started) return { label: '시작 전', detail: '', ratio: null };
+    if (onConsentPage) return { label: '마지막 단계', detail: '', ratio: 1 };
     const sectionsOnPath = pages
       .map((p) => p.section)
       .filter((s, i, list) => list.indexOf(s) === i);
@@ -903,7 +899,8 @@ function ResponseForm({
     if (!remainingIsKnown(pages, current, answers)) {
       return {
         label: `${sectionAt}번째 섹션 · ${section.title}${view === 'one_question' ? ` · ${current + 1}번째 문항` : ''}`,
-        detail: '남은 분량은 답에 따라 달라져요.',
+        // 남은 분량을 확정할 수 없으면 아무것도 보이지 않는다(AC60).
+        detail: '',
         ratio: null,
       };
     }
@@ -915,6 +912,26 @@ function ResponseForm({
     };
   }
   const shown = progress();
+
+  const canAutofill = !preview && sink !== null && allQuestions.some((q) => q.profile_key);
+  const autofill =
+    canAutofill && sink?.kind === 'account' ? (
+      <AutofillPanel
+        formId={form.form_id}
+        onFilled={applyAutofill}
+        onClosed={() => setOutcome('closed')}
+      />
+    ) : null;
+
+  const starting = paged && !started;
+  // 답이 지워지는 버튼이라 "다음"·"제출"과 떨어뜨려 질문 카드 아래 왼쪽에 둔다. 시작 화면에서는 두지 않는다.
+  const discardRow = !starting && sink && (restored || autosave.status !== 'idle') && (
+    <div className="draft-actions">
+      <Button variant="ghost" onClick={() => void discardDraft()}>
+        응답 전체 지우기
+      </Button>
+    </div>
+  );
 
   return (
     <>
@@ -940,9 +957,11 @@ function ResponseForm({
               <div style={{ width: `${Math.round(shown.ratio * 100)}%` }} />
             </div>
           )}
-          <small className="muted" data-testid="progress-detail">
-            {shown.detail}
-          </small>
+          {shown.detail && (
+            <small className="muted" data-testid="progress-detail">
+              {shown.detail}
+            </small>
+          )}
           {sink && (
             <AutosaveStatusLine
               kind={sink.kind}
@@ -958,11 +977,13 @@ function ResponseForm({
           {draftNotice}
         </p>
       )}
-      {files && !preview && (
+      {/* 로그인 초안을 이어 쓰는데 파일이 없으면 다른 기기에서 고른 파일을 다시 고르라고(SPEC 5절 212행, AC82),
+          파일을 고른 뒤에는 이 브라우저에만 있다고 알린다. 비로그인 초안은 이 브라우저에만 있어 재첨부 안내가 맞지 않는다. */}
+      {files && !preview && ((restored && sink?.kind === 'account') || picked.length > 0) && (
         <p className="small muted" data-testid="file-draft-notice">
-          {restored && picked.length === 0
+          {picked.length === 0
             ? '이 브라우저에 보관한 파일이 없어요. 다른 기기나 브라우저에서 첨부했다면 파일을 다시 골라 주세요.'
-            : '첨부한 파일은 제출 전까지 이 브라우저에만 보관돼요. 다른 기기나 브라우저에서 이어 쓰면 다시 골라야 해요.'}
+            : '첨부한 파일은 제출 전까지 이 브라우저에만 보관돼요.'}
         </p>
       )}
       {fileNotice && (
@@ -970,45 +991,33 @@ function ResponseForm({
           {fileNotice}
         </p>
       )}
-      {sink && (restored || autosave.status !== 'idle') && (
-        <div className="form-footer draft-actions">
-          <Button variant="ghost" onClick={() => void discardDraft()}>
-            응답 전체 지우기
-          </Button>
+      {!editing && <PaymentLink link={form.payment_link} />}
+      {canAutofill && sink?.kind !== 'account' && <AutofillLoginHint />}
+      {/* 보기 전환은 왼쪽, 내 정보로 채우기는 오른쪽 한 줄에 둔다. 프로필 목록을 펼치면 아래 줄을 다 쓴다. */}
+      {(switchable || autofill) && (
+        <div className="response-toolbar">
+          {switchable && (
+            <div className="view-switch" role="group" aria-label="보기 방식">
+              {form.display.allowed_modes.map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  className={`view-switch-btn ${view === mode ? 'active' : ''}`}
+                  aria-pressed={view === mode}
+                  onClick={() => switchView(mode)}
+                >
+                  {viewLabels[mode]}
+                </button>
+              ))}
+            </div>
+          )}
+          {autofill}
         </div>
       )}
-      {!editing && <PaymentLink link={form.payment_link} />}
-      {!preview &&
-        sink &&
-        allQuestions.some((q) => q.profile_key) &&
-        (sink.kind === 'account' ? (
-          <AutofillPanel
-            formId={form.form_id}
-            onFilled={applyAutofill}
-            onClosed={() => setOutcome('closed')}
-          />
-        ) : (
-          <AutofillLoginHint />
-        ))}
       {autofillNotice && (
         <p className="info" role="status">
           {autofillNotice}
         </p>
-      )}
-      {switchable && (
-        <div className="view-switch" role="group" aria-label="보기 방식">
-          {form.display.allowed_modes.map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              className={`view-switch-btn ${view === mode ? 'active' : ''}`}
-              aria-pressed={view === mode}
-              onClick={() => switchView(mode)}
-            >
-              {viewLabels[mode]}
-            </button>
-          ))}
-        </div>
       )}
       {formError && (
         <p className="error" role="alert">
@@ -1025,8 +1034,9 @@ function ResponseForm({
           </Panel>
         ))}
       {!paged && !editing && consentBlock()}
+      {!paged && discardRow}
       {!paged && submitRow}
-      {paged && !started && (
+      {starting && (
         <div className="form-footer">
           <Button onClick={() => setStarted(true)}>
             시작하기 <Icon name="arrow" size={16} />
@@ -1043,6 +1053,7 @@ function ResponseForm({
               renderQuestion(q, numberOf.get(q.question_id) ?? 0),
             )}
           </Panel>
+          {discardRow}
           <div className="form-footer">
             <Button
               variant="secondary"
@@ -1060,6 +1071,7 @@ function ResponseForm({
       {paged && started && onConsentPage && (
         <>
           {!editing && consentBlock()}
+          {discardRow}
           {submitRow}
         </>
       )}
@@ -1120,7 +1132,7 @@ export function ResponsePage(props: Props) {
             ? '응답자에게 보이는 모습이에요. 저장 전 내용이고, 답을 입력해도 응답이 만들어지지 않아요.'
             : props.editing
               ? '제출 당시 문항으로 답을 고칠 수 있어요.'
-              : '질문을 확인하고, 편한 속도로 답변해 주세요.'
+              : undefined
         }
         action={
           (props.onBack || props.onSaveToInbox) && (

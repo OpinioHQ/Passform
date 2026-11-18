@@ -234,9 +234,7 @@ describe('AC60 진행 표시', () => {
     const label = screen.getByTestId('progress-label').textContent ?? '';
     expect(label).not.toMatch(/\d+\/\d+/);
     expect(label).not.toMatch(/%/);
-    expect(screen.getByTestId('progress-detail').textContent).toBe(
-      '남은 분량은 답에 따라 달라져요.',
-    );
+    expect(screen.queryByTestId('progress-detail')?.textContent ?? '').toBe('');
     expect(container.querySelector('.completion .track')).toBeNull();
   });
 });

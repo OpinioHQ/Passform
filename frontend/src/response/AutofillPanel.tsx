@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { ApiError, api, googleLoginUrl } from '../api/client';
-import { Button } from '../components/UI';
+import { Button, Icon } from '../components/UI';
 import { paths } from '../routes/paths';
 import type { AutofillResult, Profile } from '../types/api';
 
@@ -75,56 +75,94 @@ export function AutofillPanel({
     }
   }
 
+  const errorLine = error && (
+    <p className="field-error" role="alert">
+      {error}
+    </p>
+  );
+
   return (
     <div className="autofill-panel">
-      {profiles === null && (
-        <Button variant="secondary" onClick={() => void load()} disabled={busy}>
-          내 정보로 채우기
-        </Button>
+      <Button variant="ghost" onClick={() => void load()} disabled={busy || profiles !== null}>
+        내 정보로 채우기
+      </Button>
+      {profiles === null && errorLine}
+      {profiles !== null && (
+        <ProfileDialog onClose={() => setProfiles(null)} busy={busy}>
+          {profiles.length === 0 ? (
+            <>
+              <p className="info">
+                저장된 프로필이 없어요.{' '}
+                <a href={paths.myProfile} target="_blank" rel="noopener noreferrer">
+                  프로필 만들기
+                </a>
+              </p>
+              <Button variant="secondary" onClick={() => void load()} disabled={busy}>
+                다시 불러오기
+              </Button>
+            </>
+          ) : (
+            <>
+              <label className="autofill-select">
+                <span className="small muted">채울 프로필</span>
+                <select value={selected} onChange={(e) => setSelected(e.target.value)} autoFocus>
+                  {profiles.map((profile) => (
+                    <option key={profile.profile_id} value={profile.profile_id}>
+                      {profile.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Button onClick={() => void fill()} disabled={busy}>
+                채우기
+              </Button>
+            </>
+          )}
+          {errorLine}
+        </ProfileDialog>
       )}
-      {profiles?.length === 0 && (
-        <>
-          <p className="info">
-            저장된 프로필이 없어요.{' '}
-            <a href={paths.myProfile} target="_blank" rel="noopener noreferrer">
-              프로필 만들기
-            </a>
-          </p>
-          <div className="button-row">
-            <Button variant="secondary" onClick={() => void load()} disabled={busy}>
-              다시 불러오기
-            </Button>
-            <Button variant="ghost" onClick={() => setProfiles(null)} disabled={busy}>
-              닫기
-            </Button>
-          </div>
-        </>
-      )}
-      {profiles && profiles.length > 0 && (
-        <div className="button-row">
-          <label className="autofill-select">
-            <span className="small muted">채울 프로필</span>
-            <select value={selected} onChange={(e) => setSelected(e.target.value)}>
-              {profiles.map((profile) => (
-                <option key={profile.profile_id} value={profile.profile_id}>
-                  {profile.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Button onClick={() => void fill()} disabled={busy}>
-            채우기
-          </Button>
-          <Button variant="ghost" onClick={() => setProfiles(null)} disabled={busy}>
-            닫기
-          </Button>
-        </div>
-      )}
-      {error && (
-        <p className="field-error" role="alert">
-          {error}
-        </p>
-      )}
+    </div>
+  );
+}
+
+/** 프로필 고르기는 화면 가운데 팝업으로 띄운다("새 폼 만들기"의 고르기 창과 같은 모양). Esc·바깥 클릭·X로 닫는다. */
+function ProfileDialog({
+  onClose,
+  busy,
+  children,
+}: {
+  onClose: () => void;
+  busy: boolean;
+  children: React.ReactNode;
+}) {
+  React.useEffect(() => {
+    const close = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !busy) onClose();
+    };
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
+  }, [onClose, busy]);
+  return (
+    <div className="modal-scrim" role="presentation" onClick={busy ? undefined : onClose}>
+      <div
+        className="modal autofill-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="내 정보로 채우기"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="modal-close"
+          onClick={onClose}
+          disabled={busy}
+          aria-label="닫기"
+        >
+          <Icon name="x" />
+        </button>
+        <h2>내 정보로 채우기</h2>
+        {children}
+      </div>
     </div>
   );
 }

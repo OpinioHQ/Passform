@@ -46,20 +46,27 @@ function CoverageBox({ response }: { response: AnalyzeOkResponse }) {
   const [open, setOpen] = React.useState(false);
   const notice = coverageNotice(response.coverage, response.matched);
   if (notice.facts.length === 0) return null;
+  const why = (
+    <button
+      type="button"
+      className="explore-why"
+      aria-label="이유 보기"
+      aria-expanded={open}
+      onClick={() => setOpen(!open)}
+    >
+      ?
+    </button>
+  );
+  const last = notice.facts.length - 1;
   return (
     <div className="explore-coverage">
-      {notice.facts.map((fact) => (
-        <p key={fact}>{fact}</p>
+      {/* 물음표는 마지막 문장 끝에 같은 줄로 붙인다. 이유는 눌러야 보인다(AGENTS.md 5절). */}
+      {notice.facts.map((fact, index) => (
+        <p key={fact}>
+          {fact}
+          {index === last && <> {why}</>}
+        </p>
       ))}
-      <button
-        type="button"
-        className="explore-why"
-        aria-label="이유 보기"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-      >
-        ?
-      </button>
       {open && (
         <ul className="explore-reasons">
           {notice.reasons.map((reason) => (
@@ -218,9 +225,12 @@ function isTopicSummary(response: AnalyzeOkResponse): boolean {
   return response.result.operation === 'summarize' && response.result.summary.topic !== null;
 }
 
-/** 결과가 나왔을 때 도우미 말풍선. 특정 의견 요약은 건수를 쓰지 않는다. */
+/**
+ * 결과가 나왔을 때 도우미 말풍선. 요약은 건수를 쓰지 않는다.
+ * 요약 카드마다 "응답 n건 중 m건으로 요약"을 보이므로 말풍선의 건수와 헷갈리지 않게 한다(사람 결정, evals e21).
+ */
 function okMessage(response: AnalyzeOkResponse): string {
-  if (!isTopicSummary(response)) {
+  if (response.result.operation !== 'summarize') {
     return `조건에 맞는 응답 ${response.result.count}건을 찾았어요. 대시보드 위 결과에서 확인해 주세요.`;
   }
   return response.result.summary?.status === 'ok'
@@ -249,6 +259,57 @@ function summaryStatusMessage(
   }
 }
 
+/**
+ * 주제 요약 카드의 "응답 n건 중 m건으로 요약". 일부만 쓴 사실은 항상 보이고 이유는 물음표를 눌러야 보인다(AGENTS.md 5절).
+ * 숫자는 서버 값만 쓴다: n = result.count, m = 그 카드 주제 count 합, 답 없음 = n − 미동의 − m.
+ */
+function SummaryBasis({
+  count,
+  used,
+  noConsent,
+}: {
+  count: number;
+  used: number;
+  noConsent: number;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const noAnswer = count - noConsent - used;
+  const reasons: string[] = [];
+  if (noConsent > 0) reasons.push(`AI 요약에 동의하지 않은 ${noConsent}건은 요약에서 뺐어요.`);
+  if (noAnswer > 0)
+    reasons.push(
+      `이 문항에 답이 없는 ${noAnswer}건(빈 답, 분기로 건너뜀, 이 문항이 없는 폼 버전)은 요약에서 뺐어요.`,
+    );
+  return (
+    <div className="explore-basis">
+      <p className="muted small">
+        응답 {count}건 중 {used}건으로 요약
+        {reasons.length > 0 && (
+          <>
+            {' '}
+            <button
+              type="button"
+              className="explore-why"
+              aria-label="요약에서 뺀 이유 보기"
+              aria-expanded={open}
+              onClick={() => setOpen(!open)}
+            >
+              ?
+            </button>
+          </>
+        )}
+      </p>
+      {open && (
+        <ul className="explore-reasons">
+          {reasons.map((reason) => (
+            <li key={reason}>{reason}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function SummaryResult({
   summary,
   count,
@@ -259,22 +320,33 @@ function SummaryResult({
   hideCounts: boolean;
 }) {
   const status = summaryStatusMessage(summary, count, hideCounts);
+  // 주제 요약 카드가 있으면 미동의 제외 수는 카드의 물음표 안에서 보인다.
+  const hasThemes = !hideCounts && summary.items.some((item) => item.type === 'themes');
   return (
     <div className="explore-summary">
       {status && <p className="explore-status">{status}</p>}
-      {summary.excluded_no_consent_count > 0 && summary.status !== 'no_consented_responses' && (
-        <p className="muted small">
-          {hideCounts
-            ? 'AI 요약에 동의하지 않은 응답은 요약에서 뺐어요.'
-            : `AI 요약에 동의하지 않은 ${summary.excluded_no_consent_count}건은 요약에서 뺐어요.`}
-        </p>
-      )}
+      {!hasThemes &&
+        summary.excluded_no_consent_count > 0 &&
+        summary.status !== 'no_consented_responses' && (
+          <p className="muted small">
+            {hideCounts
+              ? 'AI 요약에 동의하지 않은 응답은 요약에서 뺐어요.'
+              : `AI 요약에 동의하지 않은 ${summary.excluded_no_consent_count}건은 요약에서 뺐어요.`}
+          </p>
+        )}
       {summary.items.map((item) => (
         <Panel className="result-card" key={`${item.type}|${item.target.question_note}`}>
           <div className="result-card-head">
             <h3>{item.target.question_note}</h3>
             <Badge tone="blue">{versionLabel(item.target.form_versions)}</Badge>
           </div>
+          {item.type === 'themes' && !hideCounts && (
+            <SummaryBasis
+              count={count}
+              used={item.themes.reduce((sum, theme) => sum + theme.count, 0)}
+              noConsent={summary.excluded_no_consent_count}
+            />
+          )}
           {item.type === 'themes' ? (
             <ol className="explore-themes">
               {item.themes.map((theme) => (
@@ -606,9 +678,12 @@ export function ExplorePage({
               </button>
             </form>
             {presets.length > 0 && (
-              // 접기 버튼을 펼친 목록 위에 두어 항상 보이게 하고, 목록은 이 칸 안에서 스크롤한다.
-              <div className="explore-presets">
-                {mainPresets.map(presetGroup)}
+              // 목록은 이 칸 안에서 스크롤한다. 접기 버튼은 스크롤 칸 바깥 맨 아래에 두어 목록 위에 떠 보이지 않게 한다.
+              <>
+                <div className="explore-presets">
+                  {mainPresets.map(presetGroup)}
+                  {moreOptions && optionPresets.map(presetGroup)}
+                </div>
                 {optionPresets.length > 0 && (
                   <button
                     type="button"
@@ -619,8 +694,7 @@ export function ExplorePage({
                     {moreOptions ? '선택지별 응답 수 접기' : '선택지별 응답 수 더 보기'}
                   </button>
                 )}
-                {moreOptions && optionPresets.map(presetGroup)}
-              </div>
+              </>
             )}
           </Panel>
         ),

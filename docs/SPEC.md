@@ -315,7 +315,7 @@
 - `conditions`는 항상 존재한다. `[]`는 조건 없이 폼의 모든 버전에 현재 남아 있는 `submitted` 응답 전체를 대상으로 한다. `operation`도 항상 존재하고 `count`·`summarize`·`list` 중 하나이며, 동작을 확정할 수 없으면 `null`이다. 평균·비율·그룹별 집계·문항별 통계 요청을 `count`나 `summarize`로 바꿔 실행하지 않고 `missing_operation`과 지원 동작을 안내한다. 문항·선택지 전체 통계는 AI와 별개로 결과 대시보드에서 계산·표시한다.
 - `match`: `all` = 나열한 조건을 모두 만족, `any` = 하나라도 만족, `not` = 나열한 조건 중 어느 것도 만족하지 않음. 생략은 조건이 0개 또는 1개일 때 허용한다.
 - 원문 요청이 긍정·부정 조건을 섞어 단일 `match`로 표현되지 않으면 `all`·`any`·`not` 중 하나로 뜻을 바꾸지 않는다. `clarify.reason: missing_match`, `options: []`로 요청을 나누어 달라고 안내한다.
-- `sort`는 `list`에만 적용한다. 다른 `operation`과 함께 오면 정렬을 적용하거나 `sort.by`를 검증하지 않고 무시한다. `sort.by`는 각 제출 버전의 정의에서 해석한다. 어느 버전에도 문항이 없거나 같은 표현이 뜻이 다른 문항에 걸리면 되묻는다. 숫자·날짜의 값 형식 또는 선택지 정의 순서가 버전 사이에서 비교 가능해야 하며 그렇지 않으면 `unsortable_field`로 되묻는다. 버전 사이에 선택지 문구가 바뀐 문항의 정렬도 `unsortable_field`다. 일부 버전에만 문항이 없으면 그 버전 응답을 빈 정렬값처럼 맨 뒤에 놓고 `coverage.sort_unavailable_by_version: [form_version, ...]`에 알린다. `sort.order`는 `asc` 또는 `desc`이며 방향을 말하지 않으면 `asc`다. 값이 같거나 `sort`가 없으면 모든 버전을 합쳐 `response_id` 오름차순이다.
+- `sort`는 `list`에만 적용한다. 다른 `operation`과 함께 오면 정렬을 적용하거나 `sort.by`를 검증하지 않고 무시한다. 다만 이때 `sort.by`가 응답이 남은 어느 버전의 문항 문구와도 글자 그대로 같지 않거나, 어느 버전의 선택지와 같거나, 원문에서 정렬 표현("학년순으로", "학년 낮은 순")으로 쓰이지 않았으면, 파서가 조건을 `sort`에 잘못 담았을 수 있으므로 아래 파서 출력 보정대로 그 표현을 조건으로 되살린다. 정렬 표현은 정렬 기준 낱말 그 자체이거나 그 뒤에 정렬 말·조사만 붙은 꼴이므로, 정렬 기준을 품은 다른 낱말("3학년")은 조건으로 되살린다. `sort.by`는 각 제출 버전의 정의에서 해석한다. 어느 버전에도 문항이 없거나 같은 표현이 뜻이 다른 문항에 걸리면 되묻는다. 숫자·날짜의 값 형식 또는 선택지 정의 순서가 버전 사이에서 비교 가능해야 하며 그렇지 않으면 `unsortable_field`로 되묻는다. 버전 사이에 선택지 문구가 바뀐 문항의 정렬도 `unsortable_field`다. 일부 버전에만 문항이 없으면 그 버전 응답을 빈 정렬값처럼 맨 뒤에 놓고 `coverage.sort_unavailable_by_version: [form_version, ...]`에 알린다. `sort.order`는 `asc` 또는 `desc`이며 방향을 말하지 않으면 `asc`다. 값이 같거나 `sort`가 없으면 모든 버전을 합쳐 `response_id` 오름차순이다.
 - `target`·`topic`은 `summarize`에만 적용한다. 다른 `operation`과 함께 오면 `sort`처럼 검증하지 않고 무시하며 되묻지 않는다. 두 키는 응답을 거르지 않으므로 `result.count`·`response_ids`를 바꾸지 않는다. 요약할 문항 표현은 `conditions`가 아니라 `target`에 담긴다.
 - 서버는 각 응답의 제출 당시 버전에서 각 조건을 `true`·`false`·`판정 불가`로 평가한다. 해당 문항·선택지가 그 버전에 없거나 분기로 그 문항을 접하지 않았다면 판정 불가다. `all`은 하나라도 `false`면 불일치, 전부 `true`면 일치이고 그 밖에는 판정 불가다. `any`는 하나라도 `true`면 일치, 전부 `false`면 불일치이고 그 밖에는 판정 불가다. `not`은 `any` 결과를 뒤집되 판정 불가는 그대로 둔다. 조건이 없으면 모든 제출 응답이 일치한다. 판정 불가 응답은 일치 응답으로 세거나 “아닌” 응답으로 취급하지 않는다.
 - `matched[]`에는 실제 문항·선택지에 매칭된 **조건·제출 버전별** 근거를 담고 `form_version`과 문항 문구 `question_note`를 표시한다. `kind`는 `option`(선택지 일치, `option`에 선택지) / `answered`·`unanswered`(그 문항에 답했는지, `option`은 `null`)다. `coverage`는 `{total_submitted_count, not_evaluable_count, not_evaluable_by_version: [{form_version, response_count, unavailable_conditions}], sort_unavailable_by_version?, summary_unavailable_by_version?}`이며 판정 불가의 버전·조건별 이유를 담는다. `not_evaluable_by_version`에는 판정 불가 응답이 있는 버전만 담는다. `summary_unavailable_by_version: [{form_version, response_count}]`는 `summarize`의 `target` 문항이 없는 버전과 그 버전의 일치 응답 수다. 일부 버전에 해당 문항이 없어도 나머지 버전의 일치 응답은 반환한다. 어느 버전에서도 조건을 매칭할 수 없거나 같은 표현이 뜻이 다른 문항에 걸려 안전하게 특정할 수 없으면 되묻는다. AI 필터 결과를 내보낼 때도 다운로드 전에 같은 판정 불가 범위를 제작자에게 보여 준다.
@@ -604,7 +604,7 @@
 | AC18 | `deadline_reminder_once` (DeadlineReminderServiceTest.java), `reminder_saved_within_window` (DeadlineReminderServiceTest.java), `reminder_opt_out` (DeadlineReminderServiceTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC19 | `results_option_counts_combined_and_by_version`, `results_changed_question_separate` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC20 | `submitted_only`, `response_count_across_versions`, `injection_in_response` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC21 | `matching_labeled_set` (규칙이면 골든 / LLM이면 evals) | 스파이크 1·2차 미달(2차 2026-11-15, 28/40, 오매칭 3). MVP는 규칙 우선과 임시 LLM 프롬프트(1차) |
+| AC21 | `matching_labeled_set` (규칙이면 골든 / LLM이면 evals) | 미달 — evals 베이스라인(운영 매처, 2026-11-17 3회 평균) 일치 78.3%·오매칭 10.8%(목표 95%·2.5%). 스파이크 1·2차도 미달(2차 2026-11-15, 28/40, 오매칭 3). MVP는 규칙 우선과 임시 LLM 프롬프트(1차) |
 | AC22 | `unknown_condition_all_versions`, `unknown_sort_field`, `condition_missing_one_version_keeps_matches`, `option_renamed_version_not_evaluable`, `parser_dropped_condition_not_counted`, `parser_partially_dropped_condition_clarify`, `question_wording_not_dropped_condition` | 구현 |
 | AC23 | `matched_for_applicable_versions`, `coverage_for_unavailable_version`, `unavailable_version_without_unknown_omitted` | 구현 |
 | AC24 | `match_not_excludes_unknown`, `match_any_known_true_with_unknown`, `checkbox_all_requires_both_options`, `unanswered_kind_counts_blank_only`, `answered_kind_excludes_blank`, `match_all_unknown_when_no_false`, `no_condition_counts_all`, `negation_does_not_count_unknown`, `no_condition_match_any_counts_all`, `no_condition_match_not_counts_all`, `unavailable_version_without_unknown_omitted`, `branch_skipped_condition_not_evaluable`, `branch_visited_blank_is_false` | 구현 |
@@ -614,11 +614,11 @@
 | AC28 | `unsortable_long_answer`, `unsortable_text_age`, `sort_missing_version_last` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC29 | `double_negation_unanswered` | 구현 |
 | AC30 | `extra_key_retry_once` | 구현 |
-| AC31 | `injection_in_response` (+ 레드티밍) | 구현 — 레드티밍 미실시 |
+| AC31 | `injection_in_response` (+ 레드티밍) | 구현 — evals 인젝션 케이스 3회: 요약에 지시 반영 0건(e30은 1·2회차 주제 요약 미생성으로 지표상 실패, e12는 1·3회차 판정 불가). 레드티밍 실습 미실시 |
 | AC32 | `confirmed_context_skips_parser`, `confirmed_context_all_versions`, `invalid_context_400` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC33 | `health` (HealthControllerTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC34 | 부하 테스트 `load/` | 미구현 — 부하 테스트는 11/18 이후 실시 예정. 현재 배포는 소수 사용 규모라 동시 300명은 보장하지 않음(ARCHITECTURE 10절, 2026-11-08) |
-| AC35 | evals `evals/evalset.jsonl` | 미구현 — 평가셋 비어 있음 |
+| AC35 | evals `evals/evalset.jsonl` | 미달 — evals 베이스라인(2026-11-17 3회 평균) 질의 결과 일치율 80.8%(목표 90%). 평가셋 33건(AC는 100건 이상) |
 | AC36 | CI 커버리지 리포트 | 구현 |
 | AC37 | — | 폐기 |
 | AC38 | `draft_hidden_from_others`, `first_draft_version_null`, `open_creates_share_url`, `first_open_creates_version_one` | 구현 — 테스트 있음(골든 실행기 밖) |
@@ -675,6 +675,6 @@
 | AC91 | `ai_summary_optional_consent_submit` (ResponsePage.screen.test.tsx), `no_consent_excluded_from_summary_only`, `summary_disabled_clarify` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC92 | `personal_question_never_sent`, `contact_masked_in_long_answer`, `unsummarizable_target_clarify` | 구현 |
 | AC93 | `summary_no_matches_status`, `summary_all_no_consent_status`, `summary_over_limit_no_llm_call` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC94 | evals `evals/` (목표값은 강의 7에서 확정) | 미구현 — 요약 평가셋·측정 없음 |
+| AC94 | evals `evals/` (목표값은 `evals/EVAL_DESIGN.md` 1절) | 일부 미달 — evals 베이스라인(2026-11-17) 근거 인용률 100%·의견 검색 재현율 80%는 목표 충족, 주제 분류 정확도 75%(사람 라벨 44건, 목표 80%) 미달 |
 
-구현 상태: 2026-11-15 main e2f633b 기준, 코드·골든 대조 (AC34·AC59는 2026-11-17 갱신)
+구현 상태: 2026-11-15 main e2f633b 기준, 코드·골든 대조 (AC34·AC59는 2026-11-17 갱신, AC21·AC31·AC35·AC94는 2026-11-18 evals 베이스라인 `evals/results/2026-11-17T0623`·`T0648`·`T0651`과 주제 분류 정확도 `T1356`으로 갱신)

@@ -1,0 +1,1 @@
+{"case_id":"e08","category":"parser","order":1,"purpose":"parse_query","request":{"purpose":"parse_query","model":"gpt-6-luna","query":"3학년이거나 4학년인 학생 보여줘","previous_error":null},"response":"{\"conditions\":[\"3학년\",\"4학년\"],\"match\":\"any\",\"operation\":\"list\"}"}

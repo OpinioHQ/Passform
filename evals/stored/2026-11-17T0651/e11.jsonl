@@ -1,0 +1,1 @@
+{"case_id":"e11","category":"parser","order":1,"purpose":"parse_query","request":{"purpose":"parse_query","model":"gpt-6-luna","query":"지금까지 응답 몇 개 들어왔어?","previous_error":null},"response":"{\"conditions\":[],\"operation\":\"count\"}"}

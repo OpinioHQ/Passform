@@ -1,0 +1,1 @@
+{"case_id":"e26","category":"parser","order":1,"purpose":"parse_query","request":{"purpose":"parse_query","model":"gpt-6-luna","query":"경영학과이면서 홍보에 지원한 사람의 지원 동기 요약해줘","previous_error":null},"response":"{\"conditions\":[\"경영학과\",\"지원 분야 - 홍보\"],\"match\":\"all\",\"operation\":\"summarize\",\"target\":\"지원 동기\"}"}

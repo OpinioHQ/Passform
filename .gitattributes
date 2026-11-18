@@ -4,3 +4,5 @@
 # 리눅스 서버에서 그대로 실행·마운트하는 배포 파일
 /Dockerfile text eol=lf
 /deploy/** text eol=lf
+# evals 저장본은 러너가 쓴 바이트 그대로 재생한다(줄바꿈 변환 금지)
+/evals/stored/** -text

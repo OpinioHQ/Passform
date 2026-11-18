@@ -1,0 +1,1 @@
+{"case_id":"e28","category":"parser","order":1,"purpose":"parse_query","request":{"purpose":"parse_query","model":"gpt-6-luna","query":"휴대전화 번호 요약해줘","previous_error":null},"response":"{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"휴대전화 번호\"}"}

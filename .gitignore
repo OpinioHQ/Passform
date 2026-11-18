@@ -38,5 +38,6 @@ out/
 .vscode/
 
 ### evals ###
-# LLM 요청·응답 저장본(evals 러너 stored 모드). 재현이 필요할 때만 따로 공유한다.
-evals/stored/
+# LLM 요청·응답 저장본(evals 러너 stored 모드). 베이스라인 3회차(judge·주제 라벨 기준 회차)만 올리고 나머지는 따로 공유한다.
+evals/stored/*
+!evals/stored/2026-11-17T0651/

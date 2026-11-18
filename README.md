@@ -325,6 +325,10 @@ npm test                          # Vitest 테스트
 ./gradlew evals --args="--mode stored --from 2026-11-17T0651"   # Windows PowerShell: .\gradlew.bat evals --args="--mode stored --from 2026-11-17T0651"
 ```
 
+- **비교 기준:** 케이스별 출력과 호출은 `evals/results/2026-11-17T0651.json`과 같아야 합니다. 주제 분류 정확도는 사람 라벨을 반영한 뒤에 쟀으므로, 이 지표를 포함한 현재 지표 값은 `evals/results/2026-11-17T1356.json`과 비교합니다(`T0651`에서는 이 지표가 `not_measured`).
+- **줄바꿈 조건(재현을 확인한 환경):** 저장본은 Windows에서 Git 기본 설정(`core.autocrlf=true`, 프롬프트 파일을 CRLF로 체크아웃)으로 만들었고, 같은 환경에서 `requests_changed` 0, `met_status: evaluated`로 재현을 확인했습니다.
+- **다른 환경의 제한:** macOS·Linux나 `core.autocrlf=false`처럼 프롬프트를 LF로 받는 환경에서는 저장된 요청과 줄바꿈만 달라 요청 99건이 바뀐 것으로 잡히고, `hold:not_comparable`(지표 12개의 `met`이 모두 null)로 표시됩니다. 응답은 (케이스, 용도, 순서)로 재생하므로 지표 값은 같게 나옵니다(프롬프트를 LF로 바꿔 실행해 확인). 러너가 줄바꿈을 맞추도록 고치는 일은 판정 코드 변경이라 사람 승인 뒤로 미뤘습니다.
+
 결과는 실행마다 `evals/results/<run_id>.json`에, 실행 이력은 `evals/results/history.csv`에 쌓입니다. judge와 사람 라벨의 일치율은 `history.csv`의 열이 아니라 `evals/results/judge_agreement_<run_id>.json`에 있습니다(베이스라인은 `judge_agreement_2026-11-17T0651.json`). 저장한 응답으로 다시 실행하기, 사람 라벨 절차 등 자세한 사용법은 [evals/README.md](evals/README.md)를 봅니다.
 
 ---

@@ -15,7 +15,11 @@
 - `OPENAI_API_KEY`는 OS 환경변수로만 읽는다. live는 `--max-calls`(사람이 승인한 수)가 필수이고, 닿기 전에 멈춘다.
 - 베이스라인은 머지된 `main` 커밋에서 돌린다. 작업 트리에 바뀐 파일이 있으면 결과의 `commit`이 `-dirty`로 남는다.
 - live 응답은 `evals/stored/<run_id>/`에 저장된다. 저장소에는 베이스라인 3회차 `2026-11-17T0651`(judge·주제 라벨 기준 회차)만 올리고, 나머지 run은 올리지 않는다(`.gitignore`). 그 run들은 결과 파일(`results/<run_id>.json`)로만 남는다.
-- API 키 없이 재현하려면 `./gradlew evals --args="--mode stored --from 2026-11-17T0651"`을 실행한다. 지표가 `results/2026-11-17T0651.json`·`2026-11-17T1356.json`과 같고 `requests_changed`가 0이면 재현된 것이다. 실행하면 `results/`에 새 결과 파일과 `history.csv` 한 줄이 생기므로, 확인만 할 때는 커밋하지 않는다.
+- API 키 없이 재현하려면 `./gradlew evals --args="--mode stored --from 2026-11-17T0651"`을 실행한다.
+  - 비교 기준: 케이스별 출력·호출은 `results/2026-11-17T0651.json`, 주제 분류 정확도를 포함한 현재 지표 값은 사람 라벨을 반영한 `results/2026-11-17T1356.json`과 비교한다(`T0651`에서는 주제 분류 정확도가 `not_measured`). `requests_changed`가 0이고 `met_status`가 `evaluated`면 재현된 것이다.
+  - 확인한 환경: Windows, Git 기본 설정 `core.autocrlf=true`(프롬프트를 CRLF로 체크아웃). 저장된 요청의 `instructions` 99개가 CRLF를 포함하고, `PromptData`·`Judge`는 줄바꿈을 정규화하지 않으며, 러너는 요청을 문자열까지 정확히 비교한다.
+  - 제한: macOS·Linux나 `core.autocrlf=false` 등 LF 체크아웃에서는 내용 변경 없이도 `requests_changed`가 99가 되고 `hold:not_comparable`(모든 `met`이 null)로 표시된다. 지표 값은 같게 나온다(프롬프트를 LF로 바꿔 실행해 확인). 러너의 줄바꿈 정규화는 사람 승인 뒤의 후속 작업이다.
+- stored를 실행하면 `results/`에 새 결과 파일과 `history.csv` 한 줄이 생기므로, 확인만 할 때는 커밋하지 않는다.
 
 ## 결과 읽기
 

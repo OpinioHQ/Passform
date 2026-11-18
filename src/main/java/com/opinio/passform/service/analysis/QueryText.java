@@ -55,6 +55,12 @@ final class QueryText {
 			"결과", "학생", "지원자", "신청자", "참여자", "사람", "인원", "인원수", "수", "명", "명수", "명이야", "명인가요", "건", "건수", "개", "개수", "중",
 			"중에서", "의견", "내용", "답변", "답", "목록", "리스트", "명단", "요약", "정리", "나열", "정렬", "알려", "보여", "폼", "설문", "설문조사");
 
+	// sort가 있을 때 정렬 표현으로 보는 말(파서 프롬프트 32행의 방향 표현과 "순"·"기준"). 끝의 "으로"·"로"·"대로"는 떼고 본다.
+	private static final Set<String> SORT_WORDS = Set.of("순", "순서", "기준", "적은", "어린", "낮은", "많은", "높은", "오름차순",
+			"내림차순");
+
+	private static final Pattern SORT_WORD_PARTICLE = Pattern.compile("(으로|로|대로)$");
+
 	private static final List<String> NEGATIONS = List.of("아닌", "아니고", "아닌데", "제외", "제외한", "제외하고", "빼고", "뺀", "말고");
 
 	private QueryText() {
@@ -125,20 +131,36 @@ final class QueryText {
 		if (!parsed.conditions().isEmpty()) {
 			return parsed;
 		}
+		RequestContext keys = sortAsPhrase(parsed, versions);
 		boolean summarize = RequestContext.SUMMARIZE.equals(parsed.operation());
 		List<String> allWords = summarize ? summaryWords(query, versions) : actionlessTokens(query).toList();
-		List<String> words = allWords.stream().filter(word -> isConditionWord(word, parsed)).toList();
+		List<String> words = allWords.stream().filter(word -> isConditionWord(word, keys)).toList();
 		if (words.isEmpty()) {
 			return parsed;
 		}
 		boolean negated = allWords.stream().anyMatch(QueryText::isNegation);
-		if (!negated && summarize && usedPhrases(parsed).anyMatch(phrase -> !phrase.isBlank())) {
-			List<String> options = droppedOptions(query, parsed, versions);
-			if (!options.isEmpty() && conditionWordsOutside(query, options, parsed, versions).isEmpty()) {
+		if (!negated && summarize && summaryPhrases(keys).anyMatch(phrase -> !phrase.isBlank())) {
+			List<String> options = droppedOptions(query, keys, versions);
+			if (!options.isEmpty() && conditionWordsOutside(query, options, keys, versions).isEmpty()) {
 				return parsed.withRevivedConditions(options);
 			}
 		}
 		return parsed.withRevivedConditions(negated ? List.of(String.join(" ", words)) : words);
+	}
+
+	// #139: 되살리기에서 sort를 정렬 표현으로 볼 파서 출력. list의 sort는 항상 정렬 표현이다(sort.by는 뒤에서 검증한다).
+	// list가 아닌 sort는 sort.by가 응답이 남은 버전의 문항 문구와 글자 그대로 같을 때만(ListSort와 같은 기준) 정렬 표현으로 본다.
+	// 문항 문구가 아니면 파서가 조건을 쓰이지 않는 키에 잘못 넣었을 수 있으므로 sort를 없는 것으로 보고 되살린다(#44).
+	private static RequestContext sortAsPhrase(RequestContext parsed, List<VersionQuestions> versions) {
+		if (parsed.sort() == null || RequestContext.LIST.equals(parsed.operation())) {
+			return parsed;
+		}
+		boolean questionWording = versions.stream()
+			.flatMap(version -> version.questions().stream())
+			.anyMatch(question -> question.questionNote().equals(parsed.sort().by()));
+		return questionWording ? parsed
+				: new RequestContext(parsed.conditions(), parsed.match(), parsed.operation(), null, parsed.target(),
+						parsed.topic());
 	}
 
 	// 선택지 문구가 낱말 경계로 나온 자리를 지운 뒤에도 남는 조건 낱말. 선택지 바로 뒤에 붙었던 조사("3학년인"의 "인")는 뺀다.
@@ -165,7 +187,7 @@ final class QueryText {
 		if (parsed.conditions().isEmpty()) {
 			return parsed;
 		}
-		List<String> revived = droppedOptions(query, parsed, versions);
+		List<String> revived = droppedOptions(query, sortAsPhrase(parsed, versions), versions);
 		return revived.isEmpty() ? parsed : parsed.withAddedConditions(revived);
 	}
 
@@ -218,12 +240,16 @@ final class QueryText {
 		return revived;
 	}
 
+	// 원문에서 버린 조건으로 보지 않는 파서 키의 표현. sort는 sortAsPhrase를 거친 출력에 남아 있을 때 넣는다(#139).
 	private static Stream<String> usedPhrases(RequestContext context) {
+		String sortBy = context.sort() != null ? context.sort().by() : null;
+		return Stream.concat(summaryPhrases(context), Stream.ofNullable(sortBy));
+	}
+
+	// 요약에서 쓰이는 target·topic 표현.
+	private static Stream<String> summaryPhrases(RequestContext context) {
 		boolean summarize = RequestContext.SUMMARIZE.equals(context.operation());
-		boolean list = RequestContext.LIST.equals(context.operation());
-		String sortBy = list && context.sort() != null ? context.sort().by() : null;
-		return Stream.of(summarize ? context.target() : null, summarize ? context.topic() : null, sortBy)
-			.filter(Objects::nonNull);
+		return Stream.of(summarize ? context.target() : null, summarize ? context.topic() : null).filter(Objects::nonNull);
 	}
 
 	// text 안에서 phrase가 나오는 [시작, 끝). bounded면 낱말 경계에 있는 것만 센다.
@@ -301,14 +327,14 @@ final class QueryText {
 		return false;
 	}
 
-	// 그 동작에서 실제로 쓰이는 키에 담긴 표현만 버린 것이 아니다. 쓰이지 않는 키는 곧 지워진다(SPEC 311·312행).
+	// 파서 키에 담긴 표현은 버린 조건이 아니다. target·topic은 요약에서만 쓰이는 키라 요약일 때만 본다.
+	// sortAsPhrase를 거친 출력에 sort가 남아 있으면 정렬 표현이다(#139). list가 아닌 sort는 검증 없이 버리므로(SPEC 318행)
+	// 그 표현을 조건으로 되살려 되묻지 않는다. 정렬 말("순으로", "낮은 순", "기준 내림차순")도 sort가 있을 때만 정렬 표현으로 본다.
 	private static boolean coveredByParsedKeys(String token, RequestContext context) {
-		boolean summarize = RequestContext.SUMMARIZE.equals(context.operation());
-		boolean list = RequestContext.LIST.equals(context.operation());
-		String sortBy = list && context.sort() != null ? context.sort().by() : null;
-		return Stream.of(summarize ? context.target() : null, summarize ? context.topic() : null, sortBy)
-			.filter(Objects::nonNull)
-			.flatMap(phrase -> tokens(phrase).stream())
+		if (context.sort() != null && SORT_WORDS.contains(SORT_WORD_PARTICLE.matcher(token).replaceFirst(""))) {
+			return true;
+		}
+		return usedPhrases(context).flatMap(phrase -> tokens(phrase).stream())
 			.anyMatch(word -> token.contains(word) || word.contains(token));
 	}
 

@@ -604,7 +604,7 @@
 | AC18 | `deadline_reminder_once` (DeadlineReminderServiceTest.java), `reminder_saved_within_window` (DeadlineReminderServiceTest.java), `reminder_opt_out` (DeadlineReminderServiceTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC19 | `results_option_counts_combined_and_by_version`, `results_changed_question_separate` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC20 | `submitted_only`, `response_count_across_versions`, `injection_in_response` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC21 | `matching_labeled_set` (규칙이면 골든 / LLM이면 evals) | 스파이크 1·2차 미달(2차 2026-11-15, 28/40, 오매칭 3). MVP는 규칙 우선과 임시 LLM 프롬프트(1차) |
+| AC21 | `matching_labeled_set` (규칙이면 골든 / LLM이면 evals) | 미달 — evals 베이스라인(운영 매처, 2026-11-17 3회 평균) 일치 78.3%·오매칭 10.8%(목표 95%·2.5%). 스파이크 1·2차도 미달(2차 2026-11-15, 28/40, 오매칭 3). MVP는 규칙 우선과 임시 LLM 프롬프트(1차) |
 | AC22 | `unknown_condition_all_versions`, `unknown_sort_field`, `condition_missing_one_version_keeps_matches`, `option_renamed_version_not_evaluable`, `parser_dropped_condition_not_counted`, `parser_partially_dropped_condition_clarify`, `question_wording_not_dropped_condition` | 구현 — 골든 미작성 |
 | AC23 | `matched_for_applicable_versions`, `coverage_for_unavailable_version`, `unavailable_version_without_unknown_omitted` | 구현 |
 | AC24 | `match_not_excludes_unknown`, `match_any_known_true_with_unknown`, `checkbox_all_requires_both_options`, `unanswered_kind_counts_blank_only`, `answered_kind_excludes_blank`, `match_all_unknown_when_no_false`, `no_condition_counts_all`, `negation_does_not_count_unknown`, `no_condition_match_any_counts_all`, `no_condition_match_not_counts_all`, `unavailable_version_without_unknown_omitted`, `branch_skipped_condition_not_evaluable`, `branch_visited_blank_is_false` | 구현 |
@@ -614,11 +614,11 @@
 | AC28 | `unsortable_long_answer`, `unsortable_text_age`, `sort_missing_version_last` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC29 | `double_negation_unanswered` | 구현 |
 | AC30 | `extra_key_retry_once` | 구현 |
-| AC31 | `injection_in_response` (+ 레드티밍) | 구현 — 레드티밍 미실시 |
+| AC31 | `injection_in_response` (+ 레드티밍) | 구현 — evals 인젝션 케이스 3회: 요약에 지시 반영 0건(e30은 1·2회차 주제 요약 미생성으로 지표상 실패, e12는 1·3회차 판정 불가). 레드티밍 실습 미실시 |
 | AC32 | `confirmed_context_skips_parser`, `confirmed_context_all_versions`, `invalid_context_400` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC33 | `health` (HealthControllerTest.java) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC34 | 부하 테스트 `load/` | 미구현 — 부하 테스트는 11/18 이후 실시 예정. 현재 배포는 소수 사용 규모라 동시 300명은 보장하지 않음(ARCHITECTURE 10절, 2026-11-08) |
-| AC35 | evals `evals/evalset.jsonl` | 미구현 — 평가셋 비어 있음 |
+| AC35 | evals `evals/evalset.jsonl` | 미달 — evals 베이스라인(2026-11-17 3회 평균) 질의 결과 일치율 80.8%(목표 90%). 평가셋 33건(AC는 100건 이상) |
 | AC36 | CI 커버리지 리포트 | 구현 |
 | AC37 | — | 폐기 |
 | AC38 | `draft_hidden_from_others`, `first_draft_version_null`, `open_creates_share_url`, `first_open_creates_version_one` | 구현 — 테스트 있음(골든 실행기 밖) |
@@ -675,6 +675,6 @@
 | AC91 | `ai_summary_optional_consent_submit` (ResponsePage.screen.test.tsx), `no_consent_excluded_from_summary_only`, `summary_disabled_clarify` (API 골든 + 프론트엔드 확인) | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC92 | `personal_question_never_sent`, `contact_masked_in_long_answer`, `unsummarizable_target_clarify` | 구현 |
 | AC93 | `summary_no_matches_status`, `summary_all_no_consent_status`, `summary_over_limit_no_llm_call` | 구현 — 테스트 있음(골든 실행기 밖) |
-| AC94 | evals `evals/` (목표값은 강의 7에서 확정) | 미구현 — 요약 평가셋·측정 없음 |
+| AC94 | evals `evals/` (목표값은 `evals/EVAL_DESIGN.md` 1절) | 일부 미달 — evals 베이스라인(2026-11-17) 근거 인용률 100%·의견 검색 재현율 80%는 목표 충족, 주제 분류 정확도 75%(사람 라벨 44건, 목표 80%) 미달 |
 
-구현 상태: 2026-11-15 main e2f633b 기준, 코드·골든 대조 (AC34·AC59는 2026-11-17 갱신)
+구현 상태: 2026-11-15 main e2f633b 기준, 코드·골든 대조 (AC34·AC59는 2026-11-17 갱신, AC21·AC31·AC35·AC94는 2026-11-18 evals 베이스라인 `evals/results/2026-11-17T0623`·`T0648`·`T0651`과 주제 분류 정확도 `T1356`으로 갱신)

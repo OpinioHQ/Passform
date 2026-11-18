@@ -1,6 +1,6 @@
 # Passform 아키텍처
 
-> **11/18 전 사람이 확정한다.** `☐`는 아직 안 정한 것이고, "제안"은 확정 전의 안이다. 강의 6 지침의 절 구성(1~9절)을 따르고, SPEC 25행이 아키텍처로 넘긴 저장 방식을 10절에 더했다.
+> 11/18 `main` 기준으로 구현과 맞춰 정리했다. 남은 미정은 이슈 #66에서 11/19 이후 정한다: `config/rag.yaml` 1행의 초안 안내와 "임시" 주석, `analyze_response.schema.json` 82행 설명, 임시 매칭 프롬프트 `match_conditions.md`. 강의 6 지침의 절 구성(1~9절)을 따르고, SPEC 25행이 아키텍처로 넘긴 저장 방식을 10절에 더했다.
 
 ## 1. 한눈에 보는 데이터 흐름
 
@@ -10,22 +10,22 @@
 
 ## 2. 구성 요소
 
-파일명은 시험 데모 기준의 계획이다. 구현하면서 실제 이름으로 고친다.
+파일명은 11/18 `main` 기준 실제 이름이다.
 
 | 구성 요소 | 하는 일 | 출처 | 상태 |
 |---|---|---|---|
 | `domain/analysis/ConditionEvaluator` | 참·거짓·판정 불가, all/any/not | 강의 5 | main에 있음, 수용됨 |
-| `src/response_analysis/prompts/parse_query.md`, `schemas/request_context.schema.json` | 파서 프롬프트와 스키마 | 강의 3 | main에 있음. v3 결정 대기 |
+| `src/response_analysis/prompts/parse_query.md`, `schemas/request_context.schema.json` | 파서 프롬프트와 스키마 | 강의 3 | main에 있음. `prompt_version` 2 |
 | `src/passform/schemas/form.schema.json` | 폼 정의 | 강의 4 | 저장소에 있음 |
-| `llm/QueryParser` | 자연어 → `RequestContext`, 재검증, 형식 오류 1회 재호출 | 강의 3·6 | MVP |
-| `domain/analysis/QueryGuard` | 범위·통계 원문 규칙 | 강의 6 | MVP |
-| `service/ConditionMatchingService`, `llm/ConditionLlmMatcher` | 규칙 우선, 못 푼 조건만 LLM. 프롬프트는 임시본(`src/response_analysis/prompts/match_conditions.md`), AC21 미충족 | 스파이크 | MVP |
-| `domain/form/ResponsePathCalculator` | 분기 경로. 제출 검증과 판정이 공유 | 강의 4 | MVP |
-| `service/AnalysisService` | 순서 고정 흐름 | 강의 6 | MVP |
-| `service/SummaryService`, `llm/ThemeClassifier`, `llm/SummaryWriter` | 요약 | 강의 6 | MVP |
-| `service/SubmissionService`, `domain/form/AnswerValidator` | 제출 재검증 | 강의 4 | MVP |
-| `llm/LlmClient`, `OpenAiClient` | 외부 호출 경계. 테스트는 모의 객체 | AGENTS 5절 | MVP |
-| `frontend/` | React, TypeScript, Tailwind | 강의 4 | 아직 미추적. 이슈 E1에서 커밋 |
+| `llm/QueryParser`(인터페이스, 구현 `llm/OpenAiQueryParser`) | 자연어 → `RequestContext` 원문 | 강의 3·6 | 구현 |
+| `service/analysis/QueryText`, `service/analysis/ClarifyRules` | 범위·통계·되살리기 원문 규칙(`QueryText`), 되묻기 표(`ClarifyRules`) | 강의 6 | 구현 |
+| `llm/RuleFirstConditionMatcher`(규칙 매칭은 `domain/analysis/LiteralMatcher`), `llm/LlmConditionMatcher` | 규칙 우선, 못 푼 조건만 LLM. 프롬프트는 임시본(`src/response_analysis/prompts/match_conditions.md`). AC21 미달: evals 베이스라인(2026-11-17) 일치 78.3%·오매칭 10.8%(목표 95%·2.5%) | 스파이크 | 구현 |
+| `domain/form/ResponsePathCalculator` | 분기 경로. 제출 검증과 판정이 공유 | 강의 4 | 구현 |
+| `service/analysis/AnalysisService` | 순서 고정 흐름. 파서 출력 스키마 재검증, 형식 오류 1회 재호출(`parse`) | 강의 6 | 구현 |
+| `service/analysis/SummaryService`, `llm/ThemeClassifier`, `llm/SummaryWriter` | 요약 | 강의 6 | 구현 |
+| `service/SubmissionService`, `domain/form/AnswerValidator` | 제출 재검증 | 강의 4 | 구현 |
+| `llm/LlmClient`, `llm/OpenAiClient` | 외부 호출 경계. 테스트는 모의 객체 | AGENTS 5절 | 구현 |
+| `frontend/` | React, TypeScript, Tailwind | 강의 4 | 구현 |
 
 **오케스트레이션:** workflow. 별도 프레임워크 없이 함수 조합(5절).
 
@@ -47,13 +47,13 @@
 
 `ConditionMatch`, `AnswerChunk`, `ThemeLabel`은 구현 타입이다(온톨로지 클래스 아님). `AnswerChunk`는 Response의 답 하나를 검색 단위로 본 것이고, `ThemeLabel`은 응답 하나에 붙은 주제 라벨이다.
 
-**구현 위치** (이름은 구현하면서 실제 이름으로 고친다)
+**구현 위치**
 
-- parse_query → `llm/QueryParser`
-- match_conditions → `service/ConditionMatchingService`, `llm/ConditionLlmMatcher`
-- filter_responses → `domain/analysis/ConditionEvaluator.evaluate(conditions, match, matching, responses)`. 코드의 입력은 `ResponseRecord`, 출력은 `EvaluationResult`이고 `count`가 `Result.filtered_response_count`다
+- parse_query → `llm/QueryParser`(구현 `llm/OpenAiQueryParser`)
+- match_conditions → `llm/RuleFirstConditionMatcher`(규칙 매칭은 `domain/analysis/LiteralMatcher`), `llm/LlmConditionMatcher`
+- filter_responses → `AnalysisService`가 `service/analysis/PathAwareEvaluation`을 부르고, 이것이 분기 경로를 나눠 `domain/analysis/ConditionEvaluator.evaluate(conditions, match, matching, responses)`를 부른다. 코드의 입력은 `ResponseRecord`, 출력은 `EvaluationResult`이고 `count`가 `Result.filtered_response_count`다
 - classify_themes → `llm/ThemeClassifier`
-- search_evidence → `service/SummaryService`와 임베딩 클라이언트
+- search_evidence → `service/analysis/SummaryService`와 `llm/EmbeddingClient`(구현 `llm/OpenAiClient`)
 - write_summary → `llm/SummaryWriter`
 
 **쓰기 도구 없음.** 모델 출력으로 데이터가 바뀌는 경로가 없어 사용자 승인 단계가 없다. 분석은 읽기만 하며, 분석 경로가 DB에 쓰지 않음을 테스트로 확인한다.
@@ -64,15 +64,16 @@
 
 - 대상: 일치하고 AI 요약에 동의한 응답의 주관식 답. 답 1개 = 1청크.
 - 저장소: 없음. 요청마다 임베딩한다. 대상이 조건마다 다르고 응답 원문 임베딩을 남기지 않으려는 선택이다.
-- 검색 파라미터: 주제 `top_k 3`, `min_score 0.2` / 의견 `top_k 3`, `min_score 0.35`. **둘 다 임시값이다.**
+- 검색 파라미터: 주제 `top_k 3`, `min_score 0.2` / 의견 `top_k 3`, `min_score 0.35`. 값은 11/05 그대로이고 서버가 `config/rag.yaml`을 그대로 읽는다(`llm/RagConfiguration`). 11/17 evals 베이스라인에서 근거 인용률 100%·의견 검색 재현율 80%로 목표를 충족했다. 주제 분류 정확도 75%(목표 80%) 미달의 원인은 검색값이 아니라 분류 방식이라(`evals/EVAL_DESIGN.md` 5절 오류 G, 백로그 6번) 값을 바꾸지 않았다. `rag.yaml` 주석의 "임시" 정리는 #66에서 한다.
 - **검색에 맡기지 않고 코드로 강제:** 대상 응답, 건수, 주제별 개수와 순서, 동의 제외, 개인정보 문항 제외(AC87, AC88, AC92).
 
 ## 5. 오케스트레이션 — workflow로 충분
 
 - 왜: 작업이 선형이다. 숫자를 코드가 정해야 해서 에이전트 루프를 쓸 이유가 없고, 멀티 에이전트는 조율 비용만 늘린다.
 - 멈춤 조건: 되묻기 또는 응답 한 번. 재시도는 파서 형식 오류 1회뿐이다.
-- 호출 상한(구조적): 파서 2회, 매처 1회, 분류 = 응답 수 / 50(요청당 300건 상한), 요약문 = 문항 수 × 주제 상한. ☐ 요청 단위 강제 카운터를 둘지.
-- 타임아웃: 연결 10초, 읽기 60초(시험 데모).
+- 호출 상한(구조적): 파서 최대 2회(`AnalysisService.parse`), 매처는 규칙으로 못 푼 조건만 LLM에 보내고 못 푼 버전 묶음마다 1회(`RuleFirstConditionMatcher`), 분류는 50건 묶음(`ThemeClassifier`), 동의 응답이 300건을 넘으면 LLM 호출 전에 `too_many_responses`(`SummaryService`), 주제 상한 6(`ThemeTally`), 요약문 = 문항 수 × 주제 상한.
+- **결정(2026-11-18, 사용자):** 요청 단위 강제 카운터는 두지 않는다. 위 구조적 상한과 10절 OpenAI 하드 한도로 막고, 사용자별 요청 횟수 제한은 없다.
+- 타임아웃: 연결 10초, 읽기 60초(`llm/OpenAiClient.java:45-46`, `llm/OpenAiQueryParser.java:61-62`).
 
 ## 6. 실패 처리
 
@@ -103,7 +104,7 @@ AGENTS 3절 절대 규칙과 같은 문장이다.
 
 - 호출마다 용도, 모델, 소요 시간, 토큰을 구조화 로그로 남긴다. **응답 원문은 남기지 않는다.**
 - 분석 요청마다 `form_id`, 경로(query/context), 상태, 사유, 건수, 소요 시간을 남긴다.
-- ☐ 임베딩 토큰은 시험 데모 로그에 안 남았다. 응답의 `usage` 필드를 확인해 고친다.
+- 임베딩 호출도 `OpenAiClient.post`의 같은 `llm_call` 로그에 남는다. 임베딩 응답의 `usage`는 필드 이름이 달라(`prompt_tokens`·`total_tokens`) `input_tokens`·`output_tokens`는 -1로 찍히고 `total_tokens`만 값이 남는다. 필드 이름 맞추기는 11/19 이후.
 
 ## 9. 비범위
 
@@ -129,54 +130,55 @@ SPEC 4절 비포함과 같다. 주관식 내용으로 `count`·`list` 거르기,
 - 조건 판정은 어차피 코드에서 한다. 응답마다 제출 버전과 분기 경로로 참·거짓·판정 불가를 가리므로, 답변 테이블로 나눠도 읽어서 코드로 판정한다.
 - 측정(2026-11-04, 이 노트북, 요청 1건, 분기 경로 계산과 동시 접속 제외): 5,000건 기준 읽기 87ms, JSON 해석과 조건 평가 27ms, 건수 2ms, 제출 1건 저장 1ms. LLM 호출(1~13초)에 비해 작다.
 - 약점: 폼 하나의 응답을 매번 전부 읽는다. AC34(동시 300명)는 안 쟀다. 분석·통계 지연이 문제가 되면 캐시나 집계 테이블을 더한다.
-- `jsonb`를 고른 이유: DB가 JSON 문법을 검사하고 나중에 SQL 집계가 가능하다. **시험 데모는 `text`로만 동작을 확인했으니, Hibernate·Jackson 3 매핑은 첫 구현 때 먼저 확인한다.** 매핑이 안 되면 엔티티는 문자열로 받고 서비스에서 변환한다. 그래도 안 되어 `text`로 바꿔야 하면 결정이 달라지므로 사람에게 먼저 알린다.
-- Flyway를 고른 이유: 동료 데이터가 생기면 `ddl-auto`를 쓸 수 없다. `build.gradle`에 의존성을 추가해야 한다.
+- `jsonb`를 고른 이유: DB가 JSON 문법을 검사하고 나중에 SQL 집계가 가능하다. 구현에서 `jsonb`로 매핑된다(`@JdbcTypeCode(SqlTypes.JSON)`, `Form`·`FormVersion`·`Response`).
+- Flyway를 고른 이유: 동료 데이터가 생기면 `ddl-auto`를 쓸 수 없다. 의존성(`build.gradle`)과 마이그레이션(`src/main/resources/db/migration`)이 있다.
 
 **제약과 읽기 규칙**
 
-- 유일 제약: `saved_forms(user, form)`(AC17), `notifications(user, form, type)`(AGENTS 5절), `form_versions(form, version)`, `forms.slug`, 소셜 제공사·고유 ID. 로그인 작성 중 응답은 폼당 하나(SPEC 206행, Flyway 부분 인덱스).
+- 유일 제약: `saved_forms(user, form)`(AC17), `notifications(user, form, type)`(AGENTS 5절), `form_versions(form, version)`, `forms.slug`, 소셜 제공사·고유 ID. 로그인 작성 중 응답은 폼당 하나(SPEC 213행, Flyway 부분 인덱스).
 - 결과·분석·내보내기는 한 곳에서 응답을 읽고, `submitted`이면서 제작자가 삭제하지 않은 응답만 다룬다(AC20).
-- AI 요약 고지는 첫 배포 때 `forms`에 기록해 고정한다. 복사본은 자기 첫 배포 때 새로 기록한다(SPEC 158행, AC90).
+- AI 요약 고지는 첫 배포 때 `forms`에 기록해 고정한다. 복사본은 자기 첫 배포 때 새로 기록한다(SPEC 165행, AC90).
 
-**삭제 규칙 (T12에서 구현, SPEC 224행, AC66, AC67)**
+**삭제 규칙 (T12에서 구현, SPEC 231행, AC66, AC67)**
 
 - 받은 응답 전체 삭제: 한 트랜잭션에서 로그인 응답은 제작자 삭제 시각을 기록하고 이력에 쓸 폼 제목·문항 문구를 복사한다. 비로그인 응답은 지운다.
-- 폼 삭제: 위와 같이 처리하고 폼 정의와 버전을 지운다. 이력이 `form_id`를 돌려주므로(SPEC 192행) `forms` 행은 삭제 시각과 함께 남긴다. 공유 링크는 404다.
+- 폼 삭제: 위와 같이 처리하고 폼 정의와 버전을 지운다. 이력이 `form_id`를 돌려주므로(SPEC 199행) `forms` 행은 삭제 시각과 함께 남긴다. 공유 링크는 404다.
 - 제출 때 복사하지 않는 이유: 버전 정의가 불변이라 삭제 때 복사해도 같고, 매번 복사하면 500MB 사용량에 중복으로 잡힐 수 있다.
-- ☐ 폼 삭제 뒤 `saved_forms`를 내 폼함에 어떻게 보일지. SPEC에 없어 T12 착수 전에 사람이 정한다.
+- **결정(#63, 사람):** 폼을 삭제하면 그 폼을 내 폼함에서 뺀다(`SavedFormRepository.deleteByFormId`, `FormDeletionService.deleteForm`에서 호출).
 
-**파일 (제안, 팀원 확인)**
+**파일**
 
-- 업로드는 SPEC 5절대로 서버가 `multipart/form-data`로 받아 검증한 뒤 S3에 저장한다. 응답과 파일을 함께 저장해야 하기 때문이다(SPEC 222행).
+- 업로드는 SPEC 5절대로 서버가 `multipart/form-data`로 받아 검증한 뒤 S3에 저장한다. 응답과 파일을 함께 저장해야 하기 때문이다(SPEC 229행).
 - 다운로드는 서버가 권한을 확인한 뒤 Presigned URL로 넘긴다.
+- 버킷 값이 없으면 `UnconfiguredFileStorage`를 써서 앱은 뜨고 파일 기능만 503이다(`FileStorageConfig`, `application.properties`).
+- 배포 서버는 S3를 설정해 첨부가 동작한다(2026-11-18 사용자 확인).
 
 **배포**
 
 - **결정(2026-11-05, 사용자):** 도메인 하나를 사서 프론트는 `app.<도메인>`(Vercel, 루트 `frontend/`), 백엔드는 `api.<도메인>`(AWS)로 둔다. 소셜 로그인은 Google이다.
 - 이유: 도메인이 아예 다르면 세션 쿠키가 제3자 쿠키가 되어 Safari 등에서 로그인이 깨질 수 있다. Vercel 프록시는 요청이 120초로 제한되고, 업로드 본문 한도와 `vercel.app` 승인 가능 여부를 확인하지 못했다. 백엔드 HTTPS에 어차피 도메인이 필요하다.
-- 세션 쿠키는 `Secure`, `SameSite=Lax`. CORS는 `app.<도메인>` 출처만 허용하고 자격 증명을 허용한다. CSRF는 켜 두고, 로그인 없는 응답 제출(SPEC 188행)까지 확인한다.
+- 세션 쿠키는 `Secure`, `SameSite=Lax`. CORS는 `app.<도메인>` 출처만 허용하고 자격 증명을 허용한다. CSRF는 켜 두고, 로그인 없는 응답 제출(SPEC 195행)까지 확인한다.
 - Google 콜백은 `https://api.<도메인>/login/oauth2/code/google`, 권한은 `openid`, `email`, `profile`만 쓴다. 등록하지 않은 Google 계정으로 로그인되는지 직접 확인한다.
 - **결정(2026-11-08, 사용자):** 도메인은 `passform.kr`이다. 프론트 `https://app.passform.kr`, 백엔드 `https://api.passform.kr`.
 - **결정(2026-11-08, 사용자):** EC2 1대(서울, Ubuntu 24.04, t3.small)에 docker compose로 백엔드, Postgres, Caddy(자동 HTTPS)를 둔다. DB 포트는 밖에 열지 않는다. DB는 하루 1회 백업한다. 동료 소수가 일주일 쓰는 규모를 가정했고, 동시 300명(AC34)은 보장하지 못한다. 설정은 `deploy/`, 절차는 `deploy/README.md`.
 - **결정(2026-11-08, 사용자, SSM 제안 대체):** 비밀값(DB 비밀번호, `GOOGLE_CLIENT_ID`·`GOOGLE_CLIENT_SECRET`, `OPENAI_API_KEY`)은 서버의 `deploy/.env`(권한 600)에만 두고 compose가 컨테이너 환경변수로 넘긴다. 저장소, 이슈, PR, 로그, `VITE_` 변수, Vercel 설정에 넣지 않는다. 프론트의 공개 값(`VITE_USE_API`, `VITE_API_BASE_URL`)은 `frontend/.env.production`에 둔다.
 - CSRF 쿠키 도메인은 `passform.kr`로 넣는다. 정한 값 `.passform.kr`과 같은 뜻이지만(RFC 6265는 앞 점을 무시한다) Tomcat이 앞 점을 거부해 모든 요청이 실패하기 때문이다. Caddy 뒤에서 Google 콜백이 `https`로 만들어지도록 `SERVER_FORWARD_HEADERS_STRATEGY=native`를 쓴다.
 - OpenAI: 프로젝트 전용 키를 쓰고 프로젝트 한도에서 "Enforce a hard limit"을 켠다. 켜지 않으면 호출이 멈추지 않는다. 초과 시 오는 429 `project_spend_limit_exceeded`는 `503 llm_unavailable`로 처리한다. 시연 중 멈추지 않도록 한도를 넉넉히 잡는다.
-- 첫 폼을 배포하기 전에 SPEC 362행대로 OpenAI 프로젝트의 데이터 위치와 공유 설정을 확인한다. 고지는 첫 배포 때 고정되기 때문이다.
-- 도메인 구입 완료. E9 첫날 Google 로그인 왕복을 먼저 시험한다.
+- 첫 폼을 배포하기 전에 SPEC 369행대로 OpenAI 프로젝트의 데이터 위치와 공유 설정을 확인한다. 고지는 첫 배포 때 고정되기 때문이다.
 - 시험 데모의 `demo` 프로필과 `X-Demo-User`는 배포에 쓰지 않는다.
 
 **폼 스키마 결정 (리뷰에서 팀 확정)**
 
-| # | 내용 | 제안 | 이유 |
+| # | 내용 | 결정 | 이유 |
 |---|---|---|---|
 | F1 | 분기의 제출 표현. SPEC은 `go_to(section_id/question_id/submit)`만 적음 | `{"submit": true}` | 시드와 같은 객체 형태. 문자열과 섞이면 파싱이 갈린다 |
 | F2 | `settings.ai_summary`, `response_limit` | 선택. 없으면 꺼짐, 제한 없음 | 시드에 없고, 시드는 잠겨 있다 |
 | F3 | 형식 검증에 넣을 것 | 선택지 중복 금지, 단답·장문에 선택지 금지, 입력 형식은 단답만, 글자 수는 단답·장문만 | 초안에서도 틀린 구조는 저장하지 않는다 |
-| F4 | 의미 검증(배포 때 서버가 함) | 분기 대상 존재·뒤쪽, 조건 문항·선택지 존재, 보기 방식 조합, 동의 템플릿, 문항 1개 이상, 선택형 선택지 1개 이상, 문항 문구 비어 있지 않음, 섹션·문항 ID 중복 없음 | SPEC 174행. 초안은 미완성이어도 저장. 문항 수·문구·선택지·ID 위반은 맞는 오류 코드가 없어 `schema_invalid`(사람 결정, PR #78) |
+| F4 | 의미 검증(배포 때 서버가 함) | 분기 대상 존재·뒤쪽, 조건 문항·선택지 존재, 보기 방식 조합, 동의 템플릿, 문항 1개 이상, 선택형 선택지 1개 이상, 문항 문구 비어 있지 않음, 섹션·문항 ID 중복 없음 | SPEC 181행. 초안은 미완성이어도 저장. 문항 수·문구·선택지·ID 위반은 맞는 오류 코드가 없어 `schema_invalid`(사람 결정, PR #78) |
 
 **골든 구조 (리뷰에서 팀 확정)**
 
-| # | 내용 | 제안 | 근거 |
+| # | 내용 | 결정 | 근거 |
 |---|---|---|---|
 | G1 | `golden_cases.yaml` 안에서 기능 나누기 | `cases`는 조건 평가 전용으로 두고 기능별 최상위 키 추가(`analysis_cases`, `submission_cases` 등) | 현재 하니스는 `cases`만 읽어 전부 평가 함수 케이스로 처리한다(`ConditionEvaluatorGoldenTest.java:228`). 다른 최상위 키는 읽지 않는다 |
 | G2 | 실행 수준 | `form_cases`, `submission_cases`, `analysis_cases`, `summary_cases`는 service 수준. LLM과 저장소는 모의 객체. `access_cases`는 MockMvc에 실제 service, 모의 저장소, 모의 LLM을 붙여 실행 | HTTP 상태 매핑은 advice에서만 하므로 service 수준에는 상태 코드가 없고, 소유권은 service가 판정하므로 service를 모의 객체로 두면 판정이 시험되지 않는다. 모의 저장소로는 동시성을 판정할 수 없어 동시 제출은 T3 완료 조건에서 따로 시험한다 |

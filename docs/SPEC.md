@@ -605,7 +605,7 @@
 | AC19 | `results_option_counts_combined_and_by_version`, `results_changed_question_separate` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC20 | `submitted_only`, `response_count_across_versions`, `injection_in_response` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC21 | `matching_labeled_set` (규칙이면 골든 / LLM이면 evals) | 미달 — evals 베이스라인(운영 매처, 2026-11-17 3회 평균) 일치 78.3%·오매칭 10.8%(목표 95%·2.5%). 스파이크 1·2차도 미달(2차 2026-11-15, 28/40, 오매칭 3). MVP는 규칙 우선과 임시 LLM 프롬프트(1차) |
-| AC22 | `unknown_condition_all_versions`, `unknown_sort_field`, `condition_missing_one_version_keeps_matches`, `option_renamed_version_not_evaluable`, `parser_dropped_condition_not_counted`, `parser_partially_dropped_condition_clarify`, `question_wording_not_dropped_condition` | 구현 — 골든 미작성 |
+| AC22 | `unknown_condition_all_versions`, `unknown_sort_field`, `condition_missing_one_version_keeps_matches`, `option_renamed_version_not_evaluable`, `parser_dropped_condition_not_counted`, `parser_partially_dropped_condition_clarify`, `question_wording_not_dropped_condition` | 구현 |
 | AC23 | `matched_for_applicable_versions`, `coverage_for_unavailable_version`, `unavailable_version_without_unknown_omitted` | 구현 |
 | AC24 | `match_not_excludes_unknown`, `match_any_known_true_with_unknown`, `checkbox_all_requires_both_options`, `unanswered_kind_counts_blank_only`, `answered_kind_excludes_blank`, `match_all_unknown_when_no_false`, `no_condition_counts_all`, `negation_does_not_count_unknown`, `no_condition_match_any_counts_all`, `no_condition_match_not_counts_all`, `unavailable_version_without_unknown_omitted`, `branch_skipped_condition_not_evaluable`, `branch_visited_blank_is_false` | 구현 |
 | AC25 | `ambiguous_single_choice`, `checkbox_all_ok`, `ambiguous_question_meaning_across_versions` | 구현 |

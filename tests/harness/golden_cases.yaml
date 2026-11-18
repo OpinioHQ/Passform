@@ -996,6 +996,79 @@ analysis_cases:
       조건 1개, match 없음이라 AC26대로 되묻지 않는다. 3학년은 ra01(버전 2), ra09(버전 3)이고 q2가 모든 버전에 있어 판정 불가가 없다(사람 판단).
       count의 response_ids는 null이라 ID는 판정하지 않는다.
 
+  # ---------------------------------------------------------------- 2·3순위 (X2 #67)
+  #   기대값은 사람이 SPEC 본문을 근거로 정했다. 에이전트는 상황(질의·파서 출력·매칭)을 제시하고 입력과 형식을 옮겼다.
+  - name: unknown_sort_field
+    ac: [AC22]
+    type: 금지 행동
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      query: 전체 응답을 키순으로 보여줘
+      parser_outputs:
+        - {conditions: [], operation: list, sort: {by: 키, order: asc}}
+      matching: []
+    expect_reason: unknown_condition
+    expect_options:
+      - {form_version: 1, question_id: q1, question_note: 학과, options: [소프트웨어학과, 컴퓨터공학과]}
+      - {form_version: 1, question_id: q2, question_note: 학년, options: [1학년, 2학년, 3학년, 4학년]}
+      - {form_version: 2, question_id: q1, question_note: 학과, options: [소프트웨어학과, 컴퓨터공학과, 전자공학과]}
+      - {form_version: 2, question_id: q2, question_note: 학년, options: [1학년, 2학년, 3학년, 4학년]}
+      - {form_version: 3, question_id: q2, question_note: 학년, options: [1학년, 2학년, 3학년, 4학년]}
+    expect_parser_calls: 1
+    note: >-
+      SPEC AC22 테스트(폼에 없는 "키" 정렬 → unknown_condition). sort.by가 어느 버전에도 없으므로 정렬 없이 목록을 내지 않고 되묻는다.
+      후보는 표 6행대로 버전별 선택형 문항 전체이며, unknown_condition_all_versions와 같은 기준이다(사람 판단).
+      파서 출력은 스키마에 맞아 재호출하지 않는다.
+
+  - name: list_sort_default_asc
+    ac: [AC61]
+    type: 정상
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      query: 전체 응답을 학년순으로 보여줘
+      parser_outputs:
+        - {conditions: [], operation: list, sort: {by: 학년, order: asc}}
+      matching: []
+    expect_parser_calls: 1
+    expect_count: 9
+    expect_response_ids: [ra04, ra05, ra02, ra07, ra08, ra01, ra09, ra03, ra06]
+    expect_not_evaluable_count: 0
+    note: >-
+      방향 없는 "학년순"을 asc로 바꾸는 것은 파서 프롬프트 32행 규칙이고, 스키마가 sort.order를 필수로 두어 방향 없는 출력은 코드에 오지 않는다.
+      그래서 파서가 asc를 채운 출력을 넣고, 골든은 세 버전을 합친 학년 선택지 순서의 오름차순과 동률 처리(response_id 오름차순)를 검사한다(사람 판단).
+      "방향 없음 → asc" 변환 자체는 파서 품질이라 evals에서 잰다. 2학년 ra02(v1)·ra07(v3)·ra08(v2)은 제출 시각 순서(ra02, ra08, ra07)와 달라 동률 처리 오류가 드러난다.
+
+  - name: non_list_sort_ignored
+    ac: [AC61]
+    type: 경계
+    input:
+      fixture: data/seed/forms/form_b_mixed.json
+      query: 전체 응답 수를 자기소개 순으로 알려줘
+      parser_outputs:
+        - {conditions: [], operation: count, sort: {by: 자기소개, order: asc}}
+      matching: []
+    expect_parser_calls: 1
+    expect_count: 14
+    expect_not_evaluable_count: 0
+    note: >-
+      SPEC AC61 테스트(count + 정렬할 수 없는 문항의 sort → 정렬 관련 clarify 없이 같은 count). 자기소개(q4)는 long_answer라 list였다면 unsortable_field다.
+      count에 붙은 sort는 검증하지 않고 버린다(SPEC 318행, parse_query.md 실패 모드 11번). 조건이 없어 제출 응답 14건이 모두 일치하고 rb15·rb16은 세지 않는다.
+
+  - name: analyze_all_versions_fixed_scope
+    ac: [AC75]
+    type: 정상
+    input:
+      fixture: data/seed/forms/form_a_versions.json
+      context: {conditions: [], operation: count}
+      parser_outputs: []
+      matching: []
+    expect_parser_calls: 0
+    expect_count: 9
+    expect_not_evaluable_count: 0
+    note: >-
+      SPEC AC75 테스트(conditions: []의 count는 모든 제출 버전 합계). 버전 1의 2건, 버전 2의 3건, 버전 3의 4건을 합친다.
+      분석 API에는 버전을 지정하는 입력이 없어 "대시보드에서 버전 1 통계를 연 상태"는 이 케이스로 나타내지 않는다. 확정 context라 파서를 부르지 않는다.
+
 form_cases:
   - name: every_open_form_needs_consent_template
     ac: [AC12]

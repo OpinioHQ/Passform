@@ -37,6 +37,8 @@ final class QueryText {
 
 	private static final Pattern WORD_BREAK = Pattern.compile("[\\p{P}\\p{S}]");
 
+	private static final Pattern WHITESPACE = Pattern.compile("\\s+");
+
 	// 알려진 동작어만 꼬리에서 뗀다. 모르는 "~줘"는 조건으로 남겨 되묻는다(SPEC 334행).
 	private static final Pattern ACTION_TAIL = Pattern.compile("(알려|보여|세어|정리해|요약해|나열해|찾아|뽑아)(줘|주세요|줄래요|줄래|주라)$");
 
@@ -55,11 +57,21 @@ final class QueryText {
 			"결과", "학생", "지원자", "신청자", "참여자", "사람", "인원", "인원수", "수", "명", "명수", "명이야", "명인가요", "건", "건수", "개", "개수", "중",
 			"중에서", "의견", "내용", "답변", "답", "목록", "리스트", "명단", "요약", "정리", "나열", "정렬", "알려", "보여", "폼", "설문", "설문조사");
 
-	// sort가 있을 때 정렬 표현으로 보는 말(파서 프롬프트 32행의 방향 표현과 "순"·"기준"). 끝의 "으로"·"로"·"대로"는 떼고 본다.
-	private static final Set<String> SORT_WORDS = Set.of("순", "순서", "기준", "적은", "어린", "낮은", "많은", "높은", "오름차순",
-			"내림차순");
+	// #139 정렬 표현의 모양. sort가 있을 때만 쓴다. 조사는 낱말 끝에 붙을 때만 허용한다.
+	private static final String SORT_PARTICLES = "(으로|로|대로|이|가|은|는|을|를|의|에)?";
 
-	private static final Pattern SORT_WORD_PARTICLE = Pattern.compile("(으로|로|대로)$");
+	private static final String SORT_SUFFIX = "(순|순서|기준|오름차순|내림차순)";
+
+	// 그 자체로 정렬 말인 낱말("순으로", "순서대로", "기준", "내림차순으로").
+	private static final Pattern SORT_WORD = Pattern.compile("^" + SORT_SUFFIX + SORT_PARTICLES + "$");
+
+	// 정렬 기준 낱말 뒤에 붙을 수 있는 꼬리("학년순으로"의 "순으로", "나이가"의 "가").
+	private static final Pattern SORT_TAIL = Pattern.compile("^" + SORT_SUFFIX + "?" + SORT_PARTICLES + "$");
+
+	// 방향 말(파서 프롬프트의 방향 표현). "낮은순"처럼 붙었거나, 바로 다음 낱말이 "순"·"순서"일 때만 정렬 말이다.
+	private static final Pattern DIRECTION = Pattern.compile("^(적은|어린|낮은|많은|높은)((순|순서)" + SORT_PARTICLES + ")?$");
+
+	private static final Pattern DIRECTION_STEP = Pattern.compile("^(순|순서)" + SORT_PARTICLES + "$");
 
 	private static final List<String> NEGATIONS = List.of("아닌", "아니고", "아닌데", "제외", "제외한", "제외하고", "빼고", "뺀", "말고");
 
@@ -96,6 +108,7 @@ final class QueryText {
 			.toList();
 		List<String> positive = new ArrayList<>();
 		boolean negated = false;
+		boolean[] sortPhrase = sortPhraseWords(words, context);
 		for (int index = 0; index < words.size(); index++) {
 			String word = words.get(index);
 			if (isNegation(word)) {
@@ -103,7 +116,7 @@ final class QueryText {
 				continue;
 			}
 			boolean beforeBareNegation = index + 1 < words.size() && NEGATIONS.contains(words.get(index + 1));
-			if (!beforeBareNegation && isConditionWord(word, context)) {
+			if (!beforeBareNegation && !sortPhrase[index] && isConditionWord(word, context)) {
 				positive.add(word);
 			}
 		}
@@ -131,10 +144,10 @@ final class QueryText {
 		if (!parsed.conditions().isEmpty()) {
 			return parsed;
 		}
-		RequestContext keys = sortAsPhrase(parsed, versions);
+		RequestContext keys = sortAsPhrase(query, parsed, versions);
 		boolean summarize = RequestContext.SUMMARIZE.equals(parsed.operation());
 		List<String> allWords = summarize ? summaryWords(query, versions) : actionlessTokens(query).toList();
-		List<String> words = allWords.stream().filter(word -> isConditionWord(word, keys)).toList();
+		List<String> words = conditionWords(allWords, keys);
 		if (words.isEmpty()) {
 			return parsed;
 		}
@@ -149,18 +162,104 @@ final class QueryText {
 	}
 
 	// #139: 되살리기에서 sort를 정렬 표현으로 볼 파서 출력. list의 sort는 항상 정렬 표현이다(sort.by는 뒤에서 검증한다).
-	// list가 아닌 sort는 sort.by가 응답이 남은 버전의 문항 문구와 글자 그대로 같을 때만(ListSort와 같은 기준) 정렬 표현으로 본다.
-	// 문항 문구가 아니면 파서가 조건을 쓰이지 않는 키에 잘못 넣었을 수 있으므로 sort를 없는 것으로 보고 되살린다(#44).
-	private static RequestContext sortAsPhrase(RequestContext parsed, List<VersionQuestions> versions) {
+	// list가 아닌 sort는 아래를 모두 만족할 때만 정렬 표현으로 본다(SPEC 318행). 하나라도 어긋나면 파서가 조건을 쓰이지
+	// 않는 키에 잘못 넣었을 수 있으므로 sort를 없는 것으로 보고 되살린다(#44).
+	// - sort.by가 응답이 남은 버전의 문항 문구와 글자 그대로 같다(ListSort와 같은 기준, 앞뒤 공백은 뗀다)
+	// - sort.by가 어느 버전의 선택지와도 같지 않다(같은 글자의 선택지 조건을 가리지 않게)
+	// - 원문에 정렬 표시가 있다("학년순으로", "학년 낮은 순", "학년 기준"). 문항 이름만 있으면("학년 몇 명") 조건일 수 있다
+	private static RequestContext sortAsPhrase(String query, RequestContext parsed, List<VersionQuestions> versions) {
 		if (parsed.sort() == null || RequestContext.LIST.equals(parsed.operation())) {
 			return parsed;
 		}
-		boolean questionWording = versions.stream()
-			.flatMap(version -> version.questions().stream())
-			.anyMatch(question -> question.questionNote().equals(parsed.sort().by()));
-		return questionWording ? parsed
+		String by = parsed.sort().by().strip();
+		List<VersionQuestions.Question> questions = versions.stream().flatMap(version -> version.questions().stream()).toList();
+		boolean questionWording = questions.stream().anyMatch(question -> question.questionNote().strip().equals(by));
+		boolean option = questions.stream()
+			.flatMap(question -> question.options().stream())
+			.anyMatch(choice -> choice.strip().equals(by));
+		boolean marked = hasSortMark(actionlessTokens(query).toList(), sortByWords(by));
+		return questionWording && !option && marked ? parsed
 				: new RequestContext(parsed.conditions(), parsed.match(), parsed.operation(), null, parsed.target(),
 						parsed.topic());
+	}
+
+	// sort.by를 이루는 낱말과 띄어쓰기를 뺀 전체("소속 학과" → 소속, 학과, 소속학과).
+	private static List<String> sortByWords(String by) {
+		List<String> words = new ArrayList<>(tokens(by));
+		String compact = WHITESPACE.matcher(by).replaceAll("");
+		if (!compact.isEmpty() && !words.contains(compact)) {
+			words.add(compact);
+		}
+		return words;
+	}
+
+	// 낱말이 정렬 기준 낱말로 시작하고 그 뒤에 정렬 말·조사만 붙은 꼴이면 1(꼬리 없음 또는 조사만), 정렬 말이 붙었으면 2,
+	// 아니면 0. 앞에 다른 글자가 붙으면("3학년") 정렬 기준이 아니다.
+	private static int sortByForm(String word, List<String> byWords) {
+		int form = 0;
+		for (String by : byWords) {
+			if (!by.isEmpty() && word.startsWith(by)) {
+				Matcher tail = SORT_TAIL.matcher(word.substring(by.length()));
+				if (tail.matches()) {
+					form = Math.max(form, tail.group(1) != null ? 2 : 1);
+				}
+			}
+		}
+		return form;
+	}
+
+	// 원문에 정렬 기준이 정렬 표현으로 쓰였는가: "학년순으로", 또는 "학년" 바로 뒤에 정렬 말("학년 순으로", "학년 낮은 순").
+	private static boolean hasSortMark(List<String> words, List<String> byWords) {
+		for (int index = 0; index < words.size(); index++) {
+			int form = sortByForm(words.get(index), byWords);
+			if (form == 2 || form == 1 && sortWordAt(words, index + 1)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// index 자리의 낱말이 정렬 말인가. 띄어 쓴 방향 말은 다음 낱말이 "순"·"순서"일 때만 정렬 말이다("낮은 순"은 맞고
+	// "높은 순위"는 아니다).
+	private static boolean sortWordAt(List<String> words, int index) {
+		if (index >= words.size()) {
+			return false;
+		}
+		String word = words.get(index);
+		if (SORT_WORD.matcher(word).matches()) {
+			return true;
+		}
+		Matcher direction = DIRECTION.matcher(word);
+		if (!direction.matches()) {
+			return false;
+		}
+		return direction.group(2) != null
+				|| index + 1 < words.size() && DIRECTION_STEP.matcher(words.get(index + 1)).matches();
+	}
+
+	// 낱말마다 정렬 표현인지. sort가 없으면 모두 아니다. 정렬 기준 낱말(꼴이 맞을 때만)과 정렬 말만 정렬 표현이다.
+	private static boolean[] sortPhraseWords(List<String> words, RequestContext context) {
+		boolean[] sortPhrase = new boolean[words.size()];
+		if (context.sort() == null) {
+			return sortPhrase;
+		}
+		List<String> byWords = sortByWords(context.sort().by().strip());
+		for (int index = 0; index < words.size(); index++) {
+			sortPhrase[index] = sortByForm(words.get(index), byWords) > 0 || sortWordAt(words, index);
+		}
+		return sortPhrase;
+	}
+
+	// 조건으로 되살릴 낱말: 일반어도, 정렬 표현도, target·topic에 담긴 표현도 아닌 낱말.
+	private static List<String> conditionWords(List<String> words, RequestContext context) {
+		boolean[] sortPhrase = sortPhraseWords(words, context);
+		List<String> conditions = new ArrayList<>();
+		for (int index = 0; index < words.size(); index++) {
+			if (!sortPhrase[index] && isConditionWord(words.get(index), context)) {
+				conditions.add(words.get(index));
+			}
+		}
+		return conditions;
 	}
 
 	// 선택지 문구가 낱말 경계로 나온 자리를 지운 뒤에도 남는 조건 낱말. 선택지 바로 뒤에 붙었던 조사("3학년인"의 "인")는 뺀다.
@@ -174,9 +273,16 @@ final class QueryText {
 				}
 			}
 		}
-		return summaryWords(rest.toString(), versions).stream()
-			.filter(word -> !OPTION_PARTICLES.contains(word) && isConditionWord(word, parsed))
-			.toList();
+		List<String> words = summaryWords(rest.toString(), versions);
+		boolean[] sortPhrase = sortPhraseWords(words, parsed);
+		List<String> conditions = new ArrayList<>();
+		for (int index = 0; index < words.size(); index++) {
+			String word = words.get(index);
+			if (!sortPhrase[index] && !OPTION_PARTICLES.contains(word) && isConditionWord(word, parsed)) {
+				conditions.add(word);
+			}
+		}
+		return conditions;
 	}
 
 	// SPEC 334행: 파서가 조건 일부를 버렸으면 원문에 글자 그대로 있는 선택지 문구를 되살린다. 조건이 하나라도 있을 때만 본다.
@@ -187,7 +293,7 @@ final class QueryText {
 		if (parsed.conditions().isEmpty()) {
 			return parsed;
 		}
-		List<String> revived = droppedOptions(query, sortAsPhrase(parsed, versions), versions);
+		List<String> revived = droppedOptions(query, sortAsPhrase(query, parsed, versions), versions);
 		return revived.isEmpty() ? parsed : parsed.withAddedConditions(revived);
 	}
 
@@ -327,14 +433,11 @@ final class QueryText {
 		return false;
 	}
 
-	// 파서 키에 담긴 표현은 버린 조건이 아니다. target·topic은 요약에서만 쓰이는 키라 요약일 때만 본다.
-	// sortAsPhrase를 거친 출력에 sort가 남아 있으면 정렬 표현이다(#139). list가 아닌 sort는 검증 없이 버리므로(SPEC 318행)
-	// 그 표현을 조건으로 되살려 되묻지 않는다. 정렬 말("순으로", "낮은 순", "기준 내림차순")도 sort가 있을 때만 정렬 표현으로 본다.
+	// target·topic에 담긴 표현은 버린 조건이 아니다. 요약에서만 쓰이는 키라 요약일 때만 본다. 의견 표현은 꼴이 다양해
+	// ("부담된다는" ↔ "부담된다") 포함으로 비교한다. sort는 포함으로 보면 "3학년"이 "학년"에 덮이므로(#139)
+	// 낱말 모양으로 따로 본다(sortPhraseWords).
 	private static boolean coveredByParsedKeys(String token, RequestContext context) {
-		if (context.sort() != null && SORT_WORDS.contains(SORT_WORD_PARTICLE.matcher(token).replaceFirst(""))) {
-			return true;
-		}
-		return usedPhrases(context).flatMap(phrase -> tokens(phrase).stream())
+		return summaryPhrases(context).flatMap(phrase -> tokens(phrase).stream())
 			.anyMatch(word -> token.contains(word) || word.contains(token));
 	}
 

@@ -1,0 +1,1 @@
+{"case_id":"e20","category":"parser","order":1,"purpose":"parse_query","request":{"purpose":"parse_query","model":"gpt-6-luna","query":"자기소개 요약해줘","previous_error":null},"response":"{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"자기소개\"}"}

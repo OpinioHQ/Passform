@@ -1,0 +1,1 @@
+{"case_id":"e06","category":"parser","order":1,"purpose":"parse_query","request":{"purpose":"parse_query","model":"gpt-6-luna","query":"관심 분야로 디자인을 고른 학생 보여줘","previous_error":null},"response":"{\"conditions\":[\"관심 분야 - 디자인\"],\"operation\":\"list\"}"}

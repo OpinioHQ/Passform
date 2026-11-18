@@ -14,7 +14,8 @@
 
 - `OPENAI_API_KEY`는 OS 환경변수로만 읽는다. live는 `--max-calls`(사람이 승인한 수)가 필수이고, 닿기 전에 멈춘다.
 - 베이스라인은 머지된 `main` 커밋에서 돌린다. 작업 트리에 바뀐 파일이 있으면 결과의 `commit`이 `-dirty`로 남는다.
-- live 응답은 `evals/stored/<run_id>/`에 저장된다. 이 폴더는 저장소에 올리지 않는다(`.gitignore`).
+- live 응답은 `evals/stored/<run_id>/`에 저장된다. 저장소에는 베이스라인 3회차 `2026-11-17T0651`(judge·주제 라벨 기준 회차)만 올리고, 나머지 run은 올리지 않는다(`.gitignore`). 그 run들은 결과 파일(`results/<run_id>.json`)로만 남는다.
+- API 키 없이 재현하려면 `./gradlew evals --args="--mode stored --from 2026-11-17T0651"`을 실행한다. 지표가 `results/2026-11-17T0651.json`·`2026-11-17T1356.json`과 같고 `requests_changed`가 0이면 재현된 것이다. 실행하면 `results/`에 새 결과 파일과 `history.csv` 한 줄이 생기므로, 확인만 할 때는 커밋하지 않는다.
 
 ## 결과 읽기
 

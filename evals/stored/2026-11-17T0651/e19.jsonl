@@ -1,0 +1,1 @@
+{"case_id":"e19","category":"parser","order":1,"purpose":"parse_query","request":{"purpose":"parse_query","model":"gpt-6-luna","query":"관심 분야를 비워 두지 않은 학생 수","previous_error":null},"response":"{\"conditions\":[\"관심 분야 - 응답\"],\"operation\":\"count\"}"}

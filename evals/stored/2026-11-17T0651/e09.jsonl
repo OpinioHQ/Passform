@@ -1,0 +1,1 @@
+{"case_id":"e09","category":"parser","order":1,"purpose":"parse_query","request":{"purpose":"parse_query","model":"gpt-6-luna","query":"기획과 디자인을 둘 다 고른 학생 수","previous_error":null},"response":"{\"conditions\":[\"기획\",\"디자인\"],\"match\":\"all\",\"operation\":\"count\"}"}

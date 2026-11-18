@@ -319,7 +319,13 @@ npm test                          # Vitest 테스트
 ./gradlew evals --args="--mode live --max-calls N"   # Windows PowerShell: .\gradlew.bat evals --args="--mode live --max-calls N"
 ```
 
-결과는 실행마다 `evals/results/<run_id>.json`에, 실행 이력은 `evals/results/history.csv`에 쌓입니다. 저장한 응답으로 다시 실행하기, 사람 라벨 절차 등 자세한 사용법은 [evals/README.md](evals/README.md)를 봅니다.
+**API 키 없이 베이스라인 재현(stored 모드)** — 저장해 둔 LLM 응답을 다시 재생합니다. 저장소에는 베이스라인 3회차 `2026-11-17T0651`(judge·주제 라벨 기준 회차)의 저장본만 있습니다(`evals/stored/2026-11-17T0651/`). 1·2회차는 결과 파일로만 남깁니다.
+
+```bash
+./gradlew evals --args="--mode stored --from 2026-11-17T0651"   # Windows PowerShell: .\gradlew.bat evals --args="--mode stored --from 2026-11-17T0651"
+```
+
+결과는 실행마다 `evals/results/<run_id>.json`에, 실행 이력은 `evals/results/history.csv`에 쌓입니다. judge와 사람 라벨의 일치율은 `history.csv`의 열이 아니라 `evals/results/judge_agreement_<run_id>.json`에 있습니다(베이스라인은 `judge_agreement_2026-11-17T0651.json`). 저장한 응답으로 다시 실행하기, 사람 라벨 절차 등 자세한 사용법은 [evals/README.md](evals/README.md)를 봅니다.
 
 ---
 
@@ -374,7 +380,12 @@ npm test                          # Vitest 테스트
       CallRecorder·Fixture·Grader·Json·Judge·Labels·MatchingEval.java   #   LLM 호출 기록·재생, 모의 저장소, 채점, judge, 라벨, 조건 매칭 평가
     fixtures/                        # 강의 7 — evals 전용 폼·응답
     results/<YYYY-MM-DDTHHMM>.json   # 강의 7 — 측정 기록(실행마다)
-    results/history.csv              # 강의 7 — 실행 이력
+    results/history.csv              # 강의 7 — 실행 이력(judge 일치율은 이 파일의 열이 아니라 아래 judge_agreement 파일에 있음)
+    results/judge_agreement_<run_id>.json  # 강의 7 — judge와 사람 라벨(judge_labels.jsonl)의 기준별 일치율
+    results/labels/                  # 강의 7 — 사람 라벨 시트(judge 라벨·주제 라벨, 합의본은 *_consensus.csv)
+    judge_labels.jsonl               # 강의 7 — judge 검증용 사람 라벨
+    theme_labels.jsonl               # 강의 7 — 주제 분류 정확도용 사람 라벨
+    stored/2026-11-17T0651/          # 강의 7 — 베이스라인 3회차의 LLM 요청·응답 저장본(stored 재현용, 다른 run은 올리지 않음)
   data/seed/                         # 예시 데이터이자 골든 테스트 fixture
 ```
 </details>

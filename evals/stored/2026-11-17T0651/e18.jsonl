@@ -1,0 +1,1 @@
+{"case_id":"e18","category":"parser","order":1,"purpose":"parse_query","request":{"purpose":"parse_query","model":"gpt-6-luna","query":"경영학과에 다니는 학생 수","previous_error":null},"response":"{\"conditions\":[\"경영학과\"],\"operation\":\"count\"}"}

@@ -1,0 +1,1 @@
+{"case_id":"e15","category":"parser","order":1,"purpose":"parse_query","request":{"purpose":"parse_query","model":"gpt-6-luna","query":"학과별 평균 학년 알려줘","previous_error":null},"response":"{\"conditions\":[],\"operation\":\"summarize\",\"topic\":\"학과별 평균 학년\"}"}

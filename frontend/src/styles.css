@@ -1492,6 +1492,103 @@ textarea::placeholder {
   line-height: 1.6;
   margin-bottom: var(--space-8);
 }
+/* hero 오른쪽 그림(글자 없음, src/landing/HeroAnimation.tsx). 좁은 화면은 글자·버튼 아래.
+   흑백 토큰만 쓰고 완료 표시만 초록. 파란 포인트는 위 알약 한 곳에만 둔다. */
+.landing-hero-copy {
+  min-width: 0;
+}
+.landing-art {
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 1 / 1;
+  margin: var(--space-12) auto 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.landing-art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+}
+.landing-art-card {
+  fill: var(--color-canvas);
+  stroke: var(--color-hairline);
+  stroke-width: 1;
+  filter: drop-shadow(var(--shadow-md));
+}
+.landing-art-crease {
+  stroke: var(--color-hairline);
+  stroke-width: 1;
+}
+.landing-art-line {
+  fill: var(--color-surface-strong);
+}
+.landing-art-field {
+  fill: var(--color-surface-soft);
+  stroke: var(--color-hairline);
+  stroke-width: 1;
+}
+.landing-art-fill {
+  fill: var(--color-muted-soft);
+}
+.landing-art-mark {
+  fill: var(--color-canvas);
+  stroke: var(--color-hairline);
+  stroke-width: 1.5;
+}
+.landing-art-mark-on {
+  fill: none;
+  stroke: var(--color-ink);
+  stroke-width: 1.5;
+}
+.landing-art-ink {
+  fill: var(--color-ink);
+}
+.landing-art-tick {
+  fill: none;
+  stroke: var(--color-ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.landing-art-label {
+  fill: var(--color-canvas);
+}
+.landing-art-plane,
+.landing-art-plane-shade {
+  stroke: var(--color-ink);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.landing-art-plane {
+  fill: var(--color-canvas);
+}
+.landing-art-plane-shade {
+  fill: var(--color-surface-soft);
+}
+.landing-art-trail {
+  fill: var(--color-hairline-strong);
+}
+.landing-art-done {
+  fill: none;
+  stroke: var(--color-success);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@media (min-width: 1024px) {
+  .landing-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: var(--space-12);
+    align-items: center;
+  }
+  .landing-art {
+    margin: 0;
+    justify-self: end;
+  }
+}
 .landing-feature-grid {
   padding: 0 var(--landing-gutter) var(--space-section);
   display: grid;
@@ -1711,6 +1808,10 @@ textarea::placeholder {
   }
   .landing-hero p {
     font-size: 16px;
+  }
+  .landing-art {
+    max-width: 320px;
+    margin-top: var(--space-8);
   }
   .landing-feature-grid {
     padding-bottom: var(--space-12);

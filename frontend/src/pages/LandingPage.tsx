@@ -1,4 +1,5 @@
 import { Button, Icon, Panel } from '../components/UI';
+import { LazyHeroAnimation } from '../landing/LazyHeroAnimation';
 export function LandingPage({
   onStart,
   onCreate,
@@ -11,25 +12,28 @@ export function LandingPage({
   return (
     <div className="landing-page">
       <section className="landing-hero">
-        <div className="overline">YOUR FORMS, ALL IN ONE PLACE</div>
-        <h1>
-          폼의 시작부터,
-          <br />
-          마지막 답변까지.
-        </h1>
-        <p>
-          받은 폼은 놓치지 않고, 만든 폼은 더 명료하게.
-          <br />
-          작성부터 제출, 응답 탐색까지 Passform에서 이어가세요.
-        </p>
-        <div className="button-row">
-          <Button onClick={onStart}>
-            Passform 시작하기 <Icon name="arrow" size={16} />
-          </Button>
-          <Button variant="secondary" onClick={onExplore}>
-            서비스 둘러보기
-          </Button>
+        <div className="landing-hero-copy">
+          <div className="overline">YOUR FORMS, ALL IN ONE PLACE</div>
+          <h1>
+            폼의 시작부터,
+            <br />
+            마지막 답변까지.
+          </h1>
+          <p>
+            받은 폼은 놓치지 않고, 만든 폼은 더 명료하게.
+            <br />
+            작성부터 제출, 응답 탐색까지 Passform에서 이어가세요.
+          </p>
+          <div className="button-row">
+            <Button onClick={onStart}>
+              Passform 시작하기 <Icon name="arrow" size={16} />
+            </Button>
+            <Button variant="secondary" onClick={onExplore}>
+              서비스 둘러보기
+            </Button>
+          </div>
         </div>
+        <LazyHeroAnimation />
       </section>
       <div className="landing-feature-grid">
         <Panel>

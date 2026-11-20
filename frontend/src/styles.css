@@ -1465,19 +1465,19 @@ textarea::placeholder {
   gap: var(--space-2);
   border-radius: var(--radius-pill);
   background: var(--color-surface-card);
-  color: var(--color-accent-ink);
+  color: var(--color-body);
   padding: 4px 12px;
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.02em;
 }
-/* 홈의 포인트 색(brand-accent)은 이 한 곳에만 쓴다. */
+/* 홈은 흑백으로 둔다: 알약 글씨는 body, 점은 ink(11/20 결정, 파랑 포인트 없음). */
 .landing-hero .overline::before {
   content: '';
   width: 6px;
   height: 6px;
   border-radius: var(--radius-pill);
-  background: var(--color-accent);
+  background: var(--color-ink);
 }
 .landing-hero h1 {
   font-size: 56px;

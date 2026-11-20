@@ -1577,6 +1577,81 @@ textarea::placeholder {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+/* 홈 등장 효과: 열릴 때 한 번(왼쪽 글자 순서대로), 기능 카드는 화면에 처음 들어올 때 한 번.
+   opacity·transform만 움직이고, 숨기는 것은 애니메이션 시작 상태뿐이다(효과가 안 돌아도 다 보인다).
+   마우스를 올렸을 때의 효과는 두지 않는다. */
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* 기능 카드: 더 아래(36px)에서 천천히 떠오른다. */
+@keyframes landing-rise-far {
+  from {
+    opacity: 0;
+    transform: translateY(36px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes landing-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* 튕김 없이 처음엔 빠르고 끝에서 천천히 멈춘다. */
+.landing-rise {
+  animation: landing-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.landing-hero h1 .landing-rise {
+  display: inline-block;
+}
+.landing-rise-1 {
+  animation-delay: 150ms;
+}
+.landing-rise-2 {
+  animation-delay: 300ms;
+}
+.landing-rise-3 {
+  animation-delay: 450ms;
+}
+.landing-rise-4 {
+  animation-delay: 600ms;
+}
+/* 나중에 불러온 그림이 빈 자리에 들어올 때(빈 자리는 data-motion="loading"). 글자가 거의 다 나온 뒤 옅게. */
+.landing-art:not([data-motion='loading']) {
+  animation: landing-fade 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both;
+}
+/* 기능 카드: 화면 아래로 다가오면 시작 상태로 멈춰 두고(landing-reveal-wait), 20% 들어오면 재생한다. */
+.landing-reveal > .panel {
+  animation: landing-rise-far 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.landing-reveal > .panel:nth-child(2) {
+  animation-delay: 200ms;
+}
+.landing-reveal > .panel:nth-child(3) {
+  animation-delay: 400ms;
+}
+.landing-reveal-wait > .panel {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-rise,
+  .landing-reveal > .panel,
+  .landing-art:not([data-motion='loading']) {
+    animation: none;
+  }
+}
 @media (min-width: 1024px) {
   .landing-hero {
     display: grid;

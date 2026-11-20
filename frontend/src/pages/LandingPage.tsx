@@ -1,4 +1,6 @@
 import { Button, Icon, Panel } from '../components/UI';
+import { LazyHeroAnimation } from '../landing/LazyHeroAnimation';
+import { useRevealOnce } from '../landing/useRevealOnce';
 export function LandingPage({
   onStart,
   onCreate,
@@ -8,30 +10,40 @@ export function LandingPage({
   onCreate: () => void;
   onExplore: () => void;
 }) {
+  const features = useRevealOnce<HTMLDivElement>();
   return (
     <div className="landing-page">
       <section className="landing-hero">
-        <div className="overline">YOUR FORMS, ALL IN ONE PLACE</div>
-        <h1>
-          폼의 시작부터,
-          <br />
-          마지막 답변까지.
-        </h1>
-        <p>
-          받은 폼은 놓치지 않고, 만든 폼은 더 명료하게.
-          <br />
-          작성부터 제출, 응답 탐색까지 Passform에서 이어가세요.
-        </p>
-        <div className="button-row">
-          <Button onClick={onStart}>
-            Passform 시작하기 <Icon name="arrow" size={16} />
-          </Button>
-          <Button variant="secondary" onClick={onExplore}>
-            서비스 둘러보기
-          </Button>
+        {/* 등장 효과: landing-rise-N 순서로 한 번 떠오른다(CSS만, 움직임 줄이기면 없음). */}
+        <div className="landing-hero-copy">
+          <div className="overline landing-rise">YOUR FORMS, ALL IN ONE PLACE</div>
+          <h1>
+            <span className="landing-rise landing-rise-1">폼의 시작부터,</span>
+            <br />
+            <span className="landing-rise landing-rise-2">마지막 답변까지.</span>
+          </h1>
+          <p className="landing-rise landing-rise-3">
+            받은 폼은 놓치지 않고, 만든 폼은 더 명료하게.
+            <br />
+            작성부터 제출, 응답 탐색까지 Passform에서 이어가세요.
+          </p>
+          <div className="button-row landing-rise landing-rise-4">
+            <Button onClick={onStart}>
+              Passform 시작하기 <Icon name="arrow" size={16} />
+            </Button>
+            <Button variant="secondary" onClick={onExplore}>
+              서비스 둘러보기
+            </Button>
+          </div>
         </div>
+        <LazyHeroAnimation />
       </section>
-      <div className="landing-feature-grid">
+      <div
+        ref={features.ref}
+        className={`landing-feature-grid${features.stage === 'idle' ? '' : ' landing-reveal'}${
+          features.stage === 'ready' ? ' landing-reveal-wait' : ''
+        }`}
+      >
         <Panel>
           <div className="overline">01 · 응답자를 위해</div>
           <h2>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import {
   animate,
@@ -12,6 +12,7 @@ import {
   useTransform,
   type MotionValue,
 } from 'motion/react';
+import { useMediaQuery } from './useMediaQuery';
 
 /*
  * 홈 hero 오른쪽 그림: 제목 "폼의 시작부터, 마지막 답변까지."를 글자 없이 옮긴 반복 장면.
@@ -92,26 +93,6 @@ const TRAIL = Array.from({ length: TRAIL_DOTS }, (_, i) => {
   const s = ((i + 0.6) / TRAIL_DOTS) * 0.88;
   return { ...bezier(s), at: flightTimeAt(s) };
 });
-
-function hasMatchMedia() {
-  return typeof window !== 'undefined' && typeof window.matchMedia === 'function';
-}
-
-/** matchMedia가 없는 환경(jsdom 등)에서는 null. */
-function useMediaQuery(query: string): boolean | null {
-  const subscribe = useCallback(
-    (onChange: () => void) => {
-      if (!hasMatchMedia()) return () => undefined;
-      const list = window.matchMedia(query);
-      list.addEventListener('change', onChange);
-      return () => list.removeEventListener('change', onChange);
-    },
-    [query],
-  );
-  return useSyncExternalStore(subscribe, () =>
-    hasMatchMedia() ? window.matchMedia(query).matches : null,
-  );
-}
 
 interface PieceHandle {
   el: SVGGElement;

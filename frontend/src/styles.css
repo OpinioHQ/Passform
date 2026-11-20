@@ -1492,16 +1492,17 @@ textarea::placeholder {
   line-height: 1.6;
   margin-bottom: var(--space-8);
 }
-/* hero 오른쪽 그림(글자 없음, src/landing/HeroAnimation.tsx). 좁은 화면은 글자·버튼 아래.
+/* hero 오른쪽 그림(글자 없음, src/landing/HeroAnimation.tsx). 1024px 미만에서는 두지 않는다
+   (LazyHeroAnimation이 같은 기준으로 불러오지도 않고, 여기서는 첫 그리기 깜빡임만 막는다).
    흑백 토큰만 쓰고 완료 표시만 초록. 파란 포인트는 위 알약 한 곳에만 둔다. */
 .landing-hero-copy {
   min-width: 0;
 }
 .landing-art {
+  display: none;
   width: 100%;
   max-width: 420px;
   aspect-ratio: 1 / 1;
-  margin: var(--space-12) auto 0;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -1660,7 +1661,7 @@ textarea::placeholder {
     align-items: center;
   }
   .landing-art {
-    margin: 0;
+    display: block;
     justify-self: end;
   }
 }
@@ -1883,10 +1884,6 @@ textarea::placeholder {
   }
   .landing-hero p {
     font-size: 16px;
-  }
-  .landing-art {
-    max-width: 320px;
-    margin-top: var(--space-8);
   }
   .landing-feature-grid {
     padding-bottom: var(--space-12);

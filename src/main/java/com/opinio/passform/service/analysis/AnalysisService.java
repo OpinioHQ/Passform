@@ -96,8 +96,10 @@ public class AnalysisService {
 			}
 			statistics = QueryText.asksStatistics(query, versions);
 			// 스키마 재검증 뒤, 표 3행 전에 보정한다(SPEC 334행). 조건이 있으면 선택지 문구를, 없으면 남는 낱말을 되살린다.
+			// 파서가 비운 target은 되살리기보다 먼저 원문에서 찾는다(fillTarget).
 			context = statistics ? parsed.get()
-					: QueryText.reviveDroppedConditions(query, QueryText.reviveDroppedOptions(query, parsed.get(), versions),
+					: QueryText.reviveDroppedConditions(query,
+							QueryText.reviveDroppedOptions(query, QueryText.fillTarget(query, parsed.get(), versions), versions),
 							versions);
 		}
 		else {
@@ -142,8 +144,8 @@ public class AnalysisService {
 	// 표 3행부터 조건 평가까지다(analyze_api.md 2절). 되묻기면 clarify만 채워 돌려준다.
 	private Evaluated evaluate(Form form, String query, boolean statistics, RequestContext requested,
 			Candidates candidates) {
-		RequestContext context = requested.withoutUnusedKeys();
 		List<VersionQuestions> versions = candidates.versions();
+		RequestContext context = withTargetOptions(requested.withoutUnusedKeys(), versions);
 		Optional<ClarifyView> clarify = ClarifyRules.beforeMatching(query, context, aiSummaryEnabled(form), statistics,
 				versions);
 		if (clarify.isPresent()) {
@@ -169,6 +171,19 @@ public class AnalysisService {
 		MatchMode mode = context.match() == null ? null : MatchMode.valueOf(context.match().toUpperCase(Locale.ROOT));
 		return new Evaluated(null, context, pathAwareEvaluation.evaluate(context.conditions(), mode, matches, records, definitions),
 				sort);
+	}
+
+	// target이 문항 문구를 포함하고 나머지에 선택지 문구가 있으면 그 문구를 조건으로 되살린다({query}·{context}·내보내기 공통).
+	private static RequestContext withTargetOptions(RequestContext context, List<VersionQuestions> versions) {
+		if (context.target() == null) {
+			return context;
+		}
+		List<String> added = TargetMatching.resolve(context.target(), versions)
+			.options()
+			.stream()
+			.filter(option -> !context.conditions().contains(option))
+			.toList();
+		return added.isEmpty() ? context : context.withAddedConditions(added);
 	}
 
 	// 없거나 삭제된 폼은 404, 남의 폼은 403이다.

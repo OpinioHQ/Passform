@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -258,12 +257,12 @@ final class ClarifyRules {
 		return Optional.of(new ClarifyView("unsummarizable_field", message, summarizableOptions(versions)));
 	}
 
-	// target은 문항 문구 완전 일치로 찾는다.
+	// target은 요약 실행과 같은 매칭(TargetMatching)으로 찾는다: 완전 일치가 없을 때만 포함으로 찾는다.
 	private static List<QuestionOption> targetMatches(RequestContext context, List<VersionQuestions> versions) {
 		if (context.target() == null) {
 			return List.of();
 		}
-		return questionOptions(versions, question -> Objects.equals(question.questionNote(), context.target().strip()));
+		return questionOptions(versions, TargetMatching.resolve(context.target(), versions)::isTarget);
 	}
 
 	private static List<QuestionOption> summarizableOptions(List<VersionQuestions> versions) {

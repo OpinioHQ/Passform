@@ -55,7 +55,12 @@ final class QueryText {
 	// 동작어와 일반어. 이것만 남으면 조건이 없는 요청이다.
 	private static final Set<String> GENERIC = Set.of("전체", "전부", "모든", "모두", "총", "다", "응답", "응답자", "응답수", "제출", "제출자",
 			"결과", "학생", "지원자", "신청자", "참여자", "사람", "인원", "인원수", "수", "명", "명수", "명이야", "명인가요", "건", "건수", "개", "개수", "중",
-			"중에서", "의견", "내용", "답변", "답", "목록", "리스트", "명단", "요약", "정리", "나열", "정렬", "알려", "보여", "폼", "설문", "설문조사");
+			"중에서", "의견", "내용", "답변", "답", "목록", "리스트", "명단", "요약", "정리", "나열", "정렬", "알려", "보여", "폼", "설문", "설문조사", "문항", "항목", "번호");
+
+	// 되살리기에서 조건으로 보지 않는 빈도·질문 말과 누적 말(사람이 정한 목록). 범위를 좁히는 말(오늘, 최근 등)은 넣지 않는다.
+	// 이 폼의 선택지 문구와 같으면 조건으로 되살린다.
+	private static final Set<String> FILLERS = Set.of("가장", "제일", "많이", "자주", "나온", "뭐야", "뭐지", "어때", "지금까지", "현재까지",
+			"들어왔어", "받았어", "모였어");
 
 	// #139 정렬 표현의 모양. sort가 있을 때만 쓴다. 조사는 낱말 끝에 붙을 때만 허용한다.
 	private static final String SORT_PARTICLES = "(으로|로|대로|이|가|은|는|을|를|의|에)?";
@@ -147,7 +152,7 @@ final class QueryText {
 		RequestContext keys = sortAsPhrase(query, parsed, versions);
 		boolean summarize = RequestContext.SUMMARIZE.equals(parsed.operation());
 		List<String> allWords = summarize ? summaryWords(query, versions) : actionlessTokens(query).toList();
-		List<String> words = conditionWords(allWords, keys);
+		List<String> words = withoutFillers(conditionWords(allWords, keys), versions);
 		if (words.isEmpty()) {
 			return parsed;
 		}
@@ -282,7 +287,131 @@ final class QueryText {
 				conditions.add(word);
 			}
 		}
-		return conditions;
+		return withoutFillers(conditions, versions);
+	}
+
+	// 빈도·질문 말과 누적 말을 뺀다. 이 폼의 선택지 문구와 같은 낱말은 남긴다.
+	private static List<String> withoutFillers(List<String> words, List<VersionQuestions> versions) {
+		Set<String> options = choiceOptions(versions);
+		return words.stream().filter(word -> !FILLERS.contains(word) || options.contains(word)).toList();
+	}
+
+	private static Set<String> choiceOptions(List<VersionQuestions> versions) {
+		return versions.stream()
+			.flatMap(version -> version.questions().stream())
+			.filter(VersionQuestions.Question::isChoice)
+			.flatMap(question -> question.options().stream())
+			.collect(Collectors.toSet());
+	}
+
+	// 파서가 summarize의 target을 비웠을 때 원문에서 문항을 찾아 채운다({query}에만, 되살리기보다 먼저. SPEC 341행).
+	// topic이 문항 문구 그 자체(띄어쓰기·조사 무시)면 topic을 target으로 옮긴다. 아니면 원문에 문항 문구 전체가 낱말 경계로
+	// 나오는 자리를 찾는다(띄어쓰기·조사 무시). 조건·sort.by·선택지로 쓰인 자리는 뺀다. 모든 문항(선택형·개인정보 포함)과
+	// 비교하고, 요약 가능 여부는 뒤의 되묻기 표가 판정한다(AC92). 문항이 둘 이상 걸리면 그 문구들을 잇는 원문 구간을 넣는다.
+	static RequestContext fillTarget(String query, RequestContext parsed, List<VersionQuestions> versions) {
+		if (!RequestContext.SUMMARIZE.equals(parsed.operation()) || parsed.target() != null && !parsed.target().isBlank()) {
+			return parsed;
+		}
+		List<String> notes = versions.stream()
+			.flatMap(version -> version.questions().stream())
+			.map(VersionQuestions.Question::questionNote)
+			.filter(note -> !note.isBlank())
+			.distinct()
+			.toList();
+		if (parsed.topic() != null) {
+			String topic = compact(parsed.topic());
+			for (String note : notes) {
+				String compactNote = compact(note);
+				if (!compactNote.isEmpty() && topic.startsWith(compactNote)
+						&& (topic.length() == compactNote.length() || OPTION_PARTICLES.contains(topic.substring(compactNote.length())))) {
+					return new RequestContext(parsed.conditions(), parsed.match(), parsed.operation(), parsed.sort(), note, null);
+				}
+			}
+		}
+		List<int[]> used = new ArrayList<>();
+		Stream.concat(parsed.conditions().stream(), Stream.ofNullable(parsed.sort() != null ? parsed.sort().by() : null))
+			.flatMap(phrase -> Stream.concat(Stream.of(phrase), LiteralMatcher.split(phrase)
+				.stream()
+				.flatMap(split -> Stream.of(split.question(), split.value()))))
+			.filter(phrase -> !phrase.isBlank())
+			.forEach(phrase -> used.addAll(spans(query, phrase, false)));
+		choiceOptions(versions).stream()
+			.filter(option -> !option.isBlank())
+			.forEach(option -> used.addAll(spans(query, option, true)));
+		List<Found> found = longestOnly(notes.stream()
+			.flatMap(note -> looseSpans(query, note).stream().map(span -> new Found(note, span)))
+			.filter(entry -> used.stream().noneMatch(span -> span[0] < entry.span()[1] && entry.span()[0] < span[1]))
+			.toList());
+		if (found.isEmpty()) {
+			return parsed;
+		}
+		List<String> foundNotes = found.stream().map(Found::phrase).distinct().toList();
+		String target = foundNotes.size() == 1 ? foundNotes.get(0)
+				: query.substring(found.stream().mapToInt(entry -> entry.span()[0]).min().orElseThrow(),
+						found.stream().mapToInt(entry -> entry.span()[1]).max().orElseThrow());
+		return new RequestContext(parsed.conditions(), parsed.match(), parsed.operation(), parsed.sort(), target,
+				parsed.topic());
+	}
+
+	// 원문에서 찾은 문구와 그 자리 [시작, 끝).
+	record Found(String phrase, int[] span) {
+	}
+
+	// 더 긴 문구가 찾은 자리 안에 든 짧은 문구는 뺀다("보호자 이름" 안의 "이름"). 자리 순서대로다.
+	static List<Found> longestOnly(List<Found> found) {
+		return found.stream()
+			.filter(entry -> found.stream()
+				.noneMatch(other -> other.phrase().length() > entry.phrase().length() && other.span()[0] <= entry.span()[0]
+						&& other.span()[1] >= entry.span()[1]))
+			.sorted(java.util.Comparator.comparingInt(entry -> entry.span()[0]))
+			.toList();
+	}
+
+	static List<int[]> boundedSpans(String text, String phrase) {
+		return spans(text, phrase, true);
+	}
+
+	static void blank(StringBuilder text, int[] span) {
+		for (int index = span[0]; index < span[1]; index++) {
+			text.setCharAt(index, ' ');
+		}
+	}
+
+	// target의 나머지에 선택지 문구와 일반어·조사만 있는가. 찾은 선택지 문구는 자리 순서대로 options에 담는다.
+	static boolean onlyOptionsAndGeneric(String rest, List<VersionQuestions> versions, List<String> options) {
+		List<Found> found = longestOnly(choiceOptions(versions).stream()
+			.filter(option -> !option.isBlank() && !isGeneric(option))
+			.flatMap(option -> spans(rest, option, true).stream().map(span -> new Found(option, span)))
+			.toList());
+		StringBuilder remaining = new StringBuilder(rest);
+		for (Found entry : found) {
+			blank(remaining, entry.span());
+			if (!options.contains(entry.phrase())) {
+				options.add(entry.phrase());
+			}
+		}
+		return tokens(remaining.toString()).stream().allMatch(word -> OPTION_PARTICLES.contains(word) || isGeneric(word));
+	}
+
+	// 띄어쓰기를 무시하고 문구 전체가 낱말 경계로 나오는 자리. 뒤에 조사가 붙어도 된다.
+	private static List<int[]> looseSpans(String text, String phrase) {
+		List<String> words = tokens(phrase);
+		if (words.isEmpty()) {
+			return List.of();
+		}
+		Pattern pattern = Pattern.compile(words.stream().map(Pattern::quote).collect(Collectors.joining("\\s*")));
+		List<int[]> spans = new ArrayList<>();
+		Matcher matcher = pattern.matcher(text);
+		while (matcher.find()) {
+			if (startsWord(text, matcher.start()) && endsWord(text, matcher.end())) {
+				spans.add(new int[] { matcher.start(), matcher.end() });
+			}
+		}
+		return spans;
+	}
+
+	private static String compact(String text) {
+		return EDGE_PUNCTUATION.matcher(WHITESPACE.matcher(text).replaceAll("")).replaceAll("");
 	}
 
 	// SPEC 334행: 파서가 조건 일부를 버렸으면 원문에 글자 그대로 있는 선택지 문구를 되살린다. 조건이 하나라도 있을 때만 본다.

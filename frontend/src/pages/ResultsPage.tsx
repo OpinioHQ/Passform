@@ -11,12 +11,13 @@ import type {
   VersionQuestion,
   VersionResults,
   VersionTextQuestion,
+  ResponseDetail,
+  ResponseList,
 } from '../types/api';
+import { ListResult } from './ListResult';
+import { versionLabel } from './versionLabel';
 
-/** 화면 문구는 "폼 버전 1"로 쓴다(AGENTS 5절). */
-export function versionLabel(versions: number[]): string {
-  return `폼 버전 ${versions.join('·')}`;
-}
+export { versionLabel } from './versionLabel';
 
 function sameVersions(left: number[], right: number[]): boolean {
   return left.length === right.length && left.every((version, i) => version === right[i]);
@@ -205,17 +206,48 @@ export interface DashboardSlots {
 }
 
 /**
+ * 응답별 보기(AC19, AC62)에 쓰는 것. 둘 다 있어야 탭이 보인다.
+ * `formId`가 있으면 응답마다 상세 링크가 붙는다(`ListResult`).
+ */
+export interface ResponseViewProps {
+  loadResponseList?: () => Promise<ResponseList>;
+  loadResponse?: (responseId: string) => Promise<ResponseDetail>;
+  formId?: string;
+}
+
+type ResponseListState =
+  | { state: 'idle' }
+  | { state: 'loading' }
+  | { state: 'ready'; ids: string[] }
+  | { state: 'failed' };
+
+/**
  * 결과 대시보드(SPEC 234행, AC19). 숫자는 서버가 센 값을 그대로 보인다.
  * 탭 → 고른 보기의 응답 수 → (문항 카드 | 탐색 도우미) 순서다.
+ * 응답별 보기는 모든 버전의 응답을 오래된 제출부터 보인다(사람 결정). 목록은 그 탭을 처음 열 때 한 번만 읽는다.
  */
 export function ResultsDashboard({
   results,
   aiResult,
   aside,
-}: { results: FormResults } & DashboardSlots) {
-  const [view, setView] = React.useState<'combined' | number>('combined');
+  loadResponseList,
+  loadResponse,
+  formId,
+}: { results: FormResults } & DashboardSlots & ResponseViewProps) {
+  const [view, setView] = React.useState<'combined' | 'responses' | number>('combined');
+  const [list, setList] = React.useState<ResponseListState>({ state: 'idle' });
   const selected =
-    view === 'combined' ? undefined : results.versions.find((v) => v.form_version === view);
+    typeof view === 'number' ? results.versions.find((v) => v.form_version === view) : undefined;
+  const openResponses = () => {
+    setView('responses');
+    if (!loadResponseList || list.state !== 'idle') return;
+    setList({ state: 'loading' });
+    loadResponseList().then(
+      (loaded) => setList({ state: 'ready', ids: loaded.response_ids }),
+      () => setList({ state: 'failed' }),
+    );
+  };
+  const empty = results.versions.length === 0;
   return (
     <div className="results-dashboard">
       <div className="tab-bar" role="tablist" aria-label="보기">
@@ -232,6 +264,9 @@ export function ResultsDashboard({
             onSelect={() => setView(v.form_version)}
           />
         ))}
+        {loadResponseList && loadResponse && (
+          <ViewTab label="응답별 보기" selected={view === 'responses'} onSelect={openResponses} />
+        )}
       </div>
       {/* 폼 전체 제출 응답 수는 어느 탭에서나 보인다(SPEC 53행, AC19). 버전 탭은 그 버전 수를 덧붙인다. */}
       <p className="results-count">
@@ -247,11 +282,34 @@ export function ResultsDashboard({
       </p>
       <div className={`explore-grid ${aside ? 'with-assistant' : ''}`}>
         <div className="explore-left">
-          {aiResult}
-          {results.versions.length === 0 && (
+          {/* AI 목록의 "응답 1"과 응답별 보기의 "응답 1"은 다른 응답이라 이 탭에서는 AI 결과를 숨긴다(사람 결정). */}
+          {view !== 'responses' && aiResult}
+          {empty && (
             <Panel className="result-card">
               <p className="muted">아직 제출된 응답이 없어요.</p>
             </Panel>
+          )}
+          {view === 'responses' && loadResponse && (
+            <>
+              {list.state === 'loading' && (
+                <Panel className="result-card">
+                  <p className="muted">응답 목록을 불러오는 중이에요.</p>
+                </Panel>
+              )}
+              {list.state === 'failed' && (
+                <Panel className="result-card">
+                  <p className="error" role="alert">
+                    응답 목록을 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.
+                  </p>
+                </Panel>
+              )}
+              {/* 0건이면 위의 안내 하나만 보인다. */}
+              {list.state === 'ready' && list.ids.length > 0 && (
+                <Panel className="result-card">
+                  <ListResult ids={list.ids} loadResponse={loadResponse} formId={formId} />
+                </Panel>
+              )}
+            </>
           )}
           {view === 'combined' &&
             combinedCards(results.combined).map(({ kind, question: q }) =>

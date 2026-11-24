@@ -27,6 +27,7 @@ import type {
   PublicForm,
   ResponseAnswer,
   ResponseDetail,
+  ResponseList,
   ResponseHistoryDetail,
   ResponseHistoryItem,
   ResponseDraft,
@@ -271,6 +272,7 @@ export const api = {
   cancelResponse: (responseId: string) =>
     request<void>(`/me/responses/${segment(responseId)}`, { method: 'DELETE' }),
   results: (formId: string) => request<FormResults>(`/forms/${segment(formId)}/results`),
+  responseList: (formId: string) => request<ResponseList>(`/forms/${segment(formId)}/responses`),
   responseDetail: (formId: string, responseId: string) =>
     request<ResponseDetail>(`/forms/${segment(formId)}/responses/${segment(responseId)}`),
   exportForm,

@@ -5,10 +5,13 @@ export function LandingPage({
   onStart,
   onCreate,
   onExplore,
+  onTour,
 }: {
   onStart: () => void;
   onCreate: () => void;
   onExplore: () => void;
+  /** "서비스 둘러보기". 없으면 onExplore를 쓴다. */
+  onTour?: () => void;
 }) {
   const features = useRevealOnce<HTMLDivElement>();
   return (
@@ -31,7 +34,7 @@ export function LandingPage({
             <Button onClick={onStart}>
               Passform 시작하기 <Icon name="arrow" size={16} />
             </Button>
-            <Button variant="secondary" onClick={onExplore}>
+            <Button variant="secondary" onClick={onTour ?? onExplore}>
               서비스 둘러보기
             </Button>
           </div>

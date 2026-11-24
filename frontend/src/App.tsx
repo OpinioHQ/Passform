@@ -1,7 +1,8 @@
 import { Route, Routes, useNavigate } from 'react-router-dom';
+import { useLiveApi } from './api/client';
 import { AppLayout } from './components/AppLayout';
 import { DemoDataProvider } from './demo/DemoDataContext';
-import { demoForm } from './demo/data';
+import { landingTargets } from './landing/landingTargets';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -26,11 +27,13 @@ import {
 
 function LandingRoute() {
   const navigate = useNavigate();
+  const targets = landingTargets(useLiveApi, import.meta.env.VITE_EXAMPLE_FORM_SLUG);
   return (
     <LandingPage
       onStart={() => navigate(paths.myForms)}
       onCreate={() => navigate(paths.newForm)}
-      onExplore={() => navigate(paths.formExplore(demoForm.form_id))}
+      onTour={() => navigate(targets.tour)}
+      onExplore={() => navigate(targets.explore)}
     />
   );
 }

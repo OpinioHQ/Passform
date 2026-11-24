@@ -47,7 +47,7 @@ export function AppLayout() {
         <Outlet context={context} />
       </main>
       <footer className="footer">
-        <span>© 2026 Passform · 디자인 기반 프론트엔드 스캐폴드</span>
+        <span>© 2026 Passform</span>
         <button onClick={() => navigate(paths.home)}>서비스 소개</button>
       </footer>
     </div>

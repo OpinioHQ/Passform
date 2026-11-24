@@ -73,6 +73,9 @@ class ApiExceptionHandlerTest {
 			Map.entry(ErrorCode.STORAGE_QUOTA_EXCEEDED, HttpStatus.CONFLICT),
 			Map.entry(ErrorCode.ATTACHMENT_REMOVED, HttpStatus.GONE),
 			Map.entry(ErrorCode.STORAGE_UNAVAILABLE, HttpStatus.SERVICE_UNAVAILABLE),
+			Map.entry(ErrorCode.INVALID_EXPERIENCE, HttpStatus.BAD_REQUEST),
+			Map.entry(ErrorCode.ALREADY_RATED, HttpStatus.CONFLICT),
+			Map.entry(ErrorCode.SURVEY_CLOSED, HttpStatus.CONFLICT),
 			Map.entry(ErrorCode.NOT_OPEN, HttpStatus.CONFLICT));
 
 	@Autowired

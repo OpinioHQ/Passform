@@ -17,7 +17,7 @@ import jakarta.persistence.LockModeType;
 
 public interface ResponseRepository extends JpaRepository<Response, UUID> {
 
-	// 결과·분석·내보내기가 응답을 읽는 한 곳이다(AC20). submitted이면서 제작자가 삭제하지 않은 응답만 돌려준다.
+	// 결과·분석·내보내기가 응답을 읽는 곳이다(AC20). 응답 상세 한 건은 아래 findSubmittedNotDeleted가 같은 조건으로 읽는다. submitted이면서 제작자가 삭제하지 않은 응답만 돌려준다.
 	// 순서는 버전 → 제출 시각 → ID다. 분석 입력은 Response.toResponseRecord()로 바꾼다.
 	@Query("""
 			select r from Response r
@@ -27,6 +27,16 @@ public interface ResponseRepository extends JpaRepository<Response, UUID> {
 			order by r.formVersion, r.submittedAt, r.id
 			""")
 	List<Response> findSubmittedNotDeletedByFormId(@Param("formId") UUID formId);
+
+	// 응답 상세(AC62)가 한 건만 읽는다. 대상 조건은 위 메서드와 같아야 한다(AC20). 다른 폼의 응답은 없는 응답이다.
+	@Query("""
+			select r from Response r
+			where r.id = :responseId
+			  and r.formId = :formId
+			  and r.status = com.opinio.passform.domain.analysis.ResponseStatus.SUBMITTED
+			  and r.creatorDeletedAt is null
+			""")
+	Optional<Response> findSubmittedNotDeleted(@Param("formId") UUID formId, @Param("responseId") UUID responseId);
 
 	// 선착순 인원과 비교하는 현재 제출 응답 수다(SPEC 5절 176행). 위 메서드와 같은 범위를 센다.
 	@Query("""

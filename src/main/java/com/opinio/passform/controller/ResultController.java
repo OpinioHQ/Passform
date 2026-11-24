@@ -10,6 +10,7 @@ import com.opinio.passform.domain.error.DomainException;
 import com.opinio.passform.domain.error.ErrorCode;
 import com.opinio.passform.domain.result.FormResults;
 import com.opinio.passform.domain.result.ResponseDetail;
+import com.opinio.passform.domain.result.ResponseList;
 import com.opinio.passform.service.CurrentUserService;
 import com.opinio.passform.service.ResultService;
 
@@ -30,6 +31,13 @@ public class ResultController {
 	public FormResults results(@PathVariable String formId) {
 		UUID userId = currentUser.requireUserId();
 		return results.results(userId, formIdOf(formId));
+	}
+
+	// 응답별 보기의 목록. 권한·404는 아래 응답 상세와 같다.
+	@GetMapping("/forms/{formId}/responses")
+	public ResponseList responses(@PathVariable String formId) {
+		UUID userId = currentUser.requireUserId();
+		return results.responses(userId, formIdOf(formId));
 	}
 
 	// 응답 ID 형식이 틀려도 소유권(403)을 먼저 판정하도록 null로 넘기고, service가 없는 응답(404)으로 처리한다.

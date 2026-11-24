@@ -167,6 +167,8 @@ export function FormResultsRoute() {
     (responseId: string) => api.responseDetail(formId, responseId),
     [formId],
   );
+  // 응답별 보기 탭을 처음 열 때만 부른다(대시보드가 정한다).
+  const loadResponseList = React.useCallback(() => api.responseList(formId), [formId]);
   const eyebrow = '제작자 워크스페이스 / 결과 대시보드';
   if (!useLiveApi) return <Waiting eyebrow={eyebrow} title="결과 대시보드" message={demoOnly} />;
   if (result.state === 'ready') {
@@ -179,7 +181,15 @@ export function FormResultsRoute() {
         loadResponse={loadResponse}
         onBuilder={() => navigate(paths.editForm(formId))}
         results={result.data}
-        renderDashboard={(slots) => <ResultsDashboard results={result.data} {...slots} />}
+        renderDashboard={(slots) => (
+          <ResultsDashboard
+            results={result.data}
+            {...slots}
+            loadResponseList={loadResponseList}
+            loadResponse={loadResponse}
+            formId={formId}
+          />
+        )}
       />
     );
   }

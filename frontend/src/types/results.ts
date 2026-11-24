@@ -79,3 +79,10 @@ export interface ResponseDetail {
   content: ResponseContentItem[];
   attachments: ResponseAttachment[];
 }
+/**
+ * `GET /forms/{form_id}/responses`. 결과 대시보드의 응답별 보기가 쓴다.
+ * 대상은 결과와 같고, 순서는 `submitted_at` 오름차순 → `response_id` 오름차순이다.
+ */
+export interface ResponseList {
+  response_ids: string[];
+}

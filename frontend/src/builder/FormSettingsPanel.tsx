@@ -175,9 +175,7 @@ export function FormSettingsPanel({
         />{' '}
         AI 요약 사용
       </label>
-      {firstPublished && (
-        <small className="muted">AI 요약 사용 여부는 첫 배포 뒤에는 바꿀 수 없어요.</small>
-      )}
+      <small className="muted">AI 요약 사용 여부는 첫 배포 뒤에는 바꿀 수 없어요.</small>
       <ConsentField
         templates={templates}
         selectedId={def.consent_template_id}

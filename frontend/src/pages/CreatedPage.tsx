@@ -4,6 +4,7 @@ import { formatKst } from '../builder/deadline';
 import { ShareQr } from '../builder/ShareQr';
 import { statusLabel } from '../builder/messages';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
+import { displayTitle } from '../formTitle';
 import type { CreatorFormSummary, StorageUsage } from '../types/api';
 import { type CleanupKind, FormCleanupActions } from './FormCleanupActions';
 
@@ -111,7 +112,7 @@ export function CreatedPage({
       <div className="creator-grid">
         {forms.map((form) => {
           const label = statusLabel(form.status, form.deadline, now);
-          const name = form.title.trim() || '제목 없는 폼';
+          const name = displayTitle(form.title.trim());
           const showingQr = qrFor === form.form_id;
           return (
             <Panel className="creator-card" key={form.form_id}>
@@ -121,7 +122,7 @@ export function CreatedPage({
                 >
                   {label}
                 </Badge>
-                <h2>{form.title.trim() || '제목 없는 폼'}</h2>
+                <h2>{displayTitle(form.title.trim())}</h2>
               </div>
               <div className="creator-metrics">
                 <div>
@@ -154,7 +155,7 @@ export function CreatedPage({
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  aria-label={`${form.title.trim() || '제목 없는 폼'} 편집`}
+                  aria-label={`${displayTitle(form.title.trim())} 편집`}
                   onClick={() => onEdit(form.form_id)}
                 >
                   <Icon name="edit" size={16} /> 폼 편집
@@ -173,7 +174,7 @@ export function CreatedPage({
                 <button
                   type="button"
                   className="btn btn-primary"
-                  aria-label={`${form.title.trim() || '제목 없는 폼'} 결과`}
+                  aria-label={`${displayTitle(form.title.trim())} 결과`}
                   onClick={() => onResults(form.form_id)}
                 >
                   결과 보기 <Icon name="arrow" size={16} />

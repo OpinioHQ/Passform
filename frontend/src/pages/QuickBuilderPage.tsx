@@ -27,6 +27,7 @@ import {
 } from '../builder/quickMode';
 import { Badge, Button, Heading, Panel } from '../components/UI';
 import { QUESTION_TYPE_LABELS } from '../components/questionTypeLabels';
+import { displayTitle } from '../formTitle';
 import type {
   ConsentTemplate,
   CreatorFormDefinition,
@@ -300,9 +301,7 @@ export function QuickBuilderPage({
                 {showingQr ? 'QR 닫기' : 'QR 보기'}
               </button>
               {copyNote && <small className="muted">{copyNote}</small>}
-              {showingQr && (
-                <ShareQr load={loadQr} label={definition.title.trim() || '제목 없는 폼'} />
-              )}
+              {showingQr && <ShareQr load={loadQr} label={displayTitle(definition.title.trim())} />}
             </div>
           )}
           <div className="button-row">

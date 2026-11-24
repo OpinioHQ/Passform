@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { responseAttachmentUrl, useLiveApi } from '../api/client';
 import { Badge, Button, Heading, Panel } from '../components/UI';
+import { displayTitle } from '../formTitle';
 import { paths } from '../routes/paths';
 import type {
   AnswerValue,
@@ -71,7 +72,7 @@ function Detail({ detail, linkOf }: { detail: ResponseHistoryDetail; linkOf: Fil
       <div className="history-success">
         <span className="success-icon">✓</span>
         <div>
-          <h2>{detail.form_title}</h2>
+          <h2>{displayTitle(detail.form_title)}</h2>
           <p className="muted">
             제출 당시 문항 · 폼 버전 {detail.form_version} · {seoulTime(detail.submitted_at)} 제출
             {detail.updated_at && ` · ${seoulTime(detail.updated_at)} 수정`}
@@ -206,7 +207,7 @@ export function HistoryPage({
                 className={`history-choice ${x.response_id === selectedId ? 'active' : ''}`}
                 onClick={() => onSelect(x.response_id)}
               >
-                <strong>{x.form_title}</strong>
+                <strong>{displayTitle(x.form_title)}</strong>
                 <span>{seoulTime(x.submitted_at)}</span>
                 <Badge tone="green">제출 완료</Badge>
               </button>

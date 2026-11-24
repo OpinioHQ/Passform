@@ -10,6 +10,7 @@ import {
   type InboxOrder,
   type InboxTab,
 } from '../inbox/inboxView';
+import { displayTitle } from '../formTitle';
 import { paths } from '../routes/paths';
 import type { SavedFormSummary } from '../types/api';
 import { deadlineText } from './ResponsePage';
@@ -126,7 +127,7 @@ export function InboxPage({ forms, problem, onOpen }: Props) {
                         <Badge tone="green">제출함</Badge>
                       )}
                     </div>
-                    <h3>{f.title}</h3>
+                    <h3>{displayTitle(f.title)}</h3>
                     <div className="muted small">{deadlineText(f.deadline)}</div>
                   </div>
                   <Button

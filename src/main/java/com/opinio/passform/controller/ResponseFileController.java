@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -25,6 +26,7 @@ import com.opinio.passform.domain.error.DomainException;
 import com.opinio.passform.domain.error.ErrorCode;
 import com.opinio.passform.domain.response.Answer;
 import com.opinio.passform.service.CurrentUserService;
+import com.opinio.passform.service.ExperienceSurveyService;
 import com.opinio.passform.service.ResponseChangeService.EditCommand;
 import com.opinio.passform.service.ResponseChangeService.EditedResponse;
 import com.opinio.passform.service.ResponseFileService;
@@ -42,20 +44,30 @@ public class ResponseFileController {
 
 	private final CurrentUserService currentUser;
 
+	private ExperienceSurveyService experience;
+
 	public ResponseFileController(ResponseFileService files, CurrentUserService currentUser) {
 		this.files = files;
 		this.currentUser = currentUser;
 	}
 
+	// 사용 경험 평가(SPEC 4절 61행). JSON 제출과 같이, 빈이 없는 시험 문맥에서는 지금 응답 모양 그대로다.
+	@Autowired(required = false)
+	public void setExperience(ExperienceSurveyService experience) {
+		this.experience = experience;
+	}
+
 	@PostMapping(path = "/forms/{formId}/responses", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@ResponseStatus(HttpStatus.CREATED)
-	public SubmissionResponse submit(@PathVariable String formId, @Valid @RequestPart("data") SubmissionRequest request,
+	public Object submit(@PathVariable String formId, @Valid @RequestPart("data") SubmissionRequest request,
 			@RequestPart(name = "files", required = false) List<MultipartFile> parts,
 			@RequestParam(name = "file_question_ids", required = false) List<String> questionIds) {
-		SubmitCommand command = new SubmitCommand(parseId(formId), currentUser.findUserId().orElse(null),
+		UUID id = parseId(formId);
+		SubmitCommand command = new SubmitCommand(id, currentUser.findUserId().orElse(null),
 				request.formVersion(), answersOf(request.answers()), request.consentAgreed(), request.aiSummaryAgreed(),
 				request.draftResponseId());
-		return SubmissionResponse.from(files.submit(command, uploads(parts, questionIds)));
+		SubmissionResponse response = SubmissionResponse.from(files.submit(command, uploads(parts, questionIds)));
+		return SubmissionController.withExperience(experience, id, response);
 	}
 
 	@PatchMapping(path = "/me/responses/{responseId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

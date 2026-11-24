@@ -50,6 +50,9 @@ final class QueryText {
 			"랑", "이랑", "에", "로", "으로", "에서", "라고", "이라고", "인데", "이고", "고", "이며", "이거나", "거나", "이나", "나", "인지", "이면",
 			"면", "인가", "들");
 
+	// 조건을 설명하는 문항 문구와 조건값 사이("학년이 3학년", "소속 학과 소프트웨어학과").
+	private static final Pattern CONDITION_GAP = Pattern.compile("(이|가|은|는)?\\s+");
+
 	private static final Pattern TRAILING_PARTICLE =Pattern.compile("(들|을|를|은|는|이|가|의|도|만|에)$");
 
 	// 동작어와 일반어. 이것만 남으면 조건이 없는 요청이다.
@@ -341,6 +344,7 @@ final class QueryText {
 		List<Found> found = longestOnly(notes.stream()
 			.flatMap(note -> looseSpans(query, note).stream().map(span -> new Found(note, span)))
 			.filter(entry -> used.stream().noneMatch(span -> span[0] < entry.span()[1] && entry.span()[0] < span[1]))
+			.filter(entry -> !describesCondition(query, entry, parsed, versions))
 			.toList());
 		if (found.isEmpty()) {
 			return parsed;
@@ -390,7 +394,28 @@ final class QueryText {
 				options.add(entry.phrase());
 			}
 		}
-		return tokens(remaining.toString()).stream().allMatch(word -> OPTION_PARTICLES.contains(word) || isGeneric(word));
+		return onlyParticlesAndGeneric(remaining.toString());
+	}
+
+	static boolean onlyParticlesAndGeneric(String rest) {
+		return tokens(rest).stream().allMatch(word -> OPTION_PARTICLES.contains(word) || isGeneric(word));
+	}
+
+	// 문항 문구 바로 뒤가 (조사 +) 조건값이면 그 문구는 조건을 설명한 말이지 요약 대상이 아니다("소속 학과가 소프트웨어학과인").
+	// 조건값은 파서가 낸 조건과 그 문구 문항의 선택지다.
+	private static boolean describesCondition(String query, Found entry, RequestContext parsed,
+			List<VersionQuestions> versions) {
+		Matcher gap = CONDITION_GAP.matcher(query).region(entry.span()[1], query.length());
+		if (!gap.lookingAt()) {
+			return false;
+		}
+		String next = query.substring(gap.end());
+		return Stream.concat(parsed.conditions().stream(), versions.stream()
+			.flatMap(version -> version.questions().stream())
+			.filter(question -> question.questionNote().equals(entry.phrase()))
+			.flatMap(question -> question.options().stream()))
+			.filter(value -> !value.isBlank())
+			.anyMatch(next::startsWith);
 	}
 
 	// 띄어쓰기를 무시하고 문구 전체가 낱말 경계로 나오는 자리. 뒤에 조사가 붙어도 된다.

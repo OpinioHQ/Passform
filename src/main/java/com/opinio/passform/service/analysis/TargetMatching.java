@@ -48,14 +48,18 @@ final class TargetMatching {
 		}
 		Set<String> notes = new LinkedHashSet<>();
 		found.forEach(entry -> notes.add(entry.phrase()));
-		// 문항을 찾은 결과가 되묻기(여러 문항·요약할 수 없는 문항)면 나머지는 보지 않는다.
-		boolean clarifies = notes.size() > 1
-				|| questions.stream().filter(question -> notes.contains(question.questionNote())).anyMatch(question -> !question.isSummarizable());
-		if (clarifies) {
-			return new Resolution(Set.copyOf(notes), List.of());
-		}
 		StringBuilder rest = new StringBuilder(text);
 		found.forEach(entry -> QueryText.blank(rest, entry.span()));
+		// 여러 문항 문구를 이은 target은 그 사이에 조사·일반어만 있어야 한다. 다른 낱말(선택지 포함)이 끼면 그 낱말이
+		// 조건인지 확정할 수 없으므로 문항을 찾지 못한 것으로 본다("지원 동기와 홍보 참여 동기"). 남은 것이 조사뿐이면 되묻기로 간다.
+		if (notes.size() > 1) {
+			return QueryText.onlyParticlesAndGeneric(rest.toString()) ? new Resolution(Set.copyOf(notes), List.of())
+					: Resolution.NONE;
+		}
+		// 요약할 수 없는 문항이면 되묻기로 가므로 나머지는 보지 않는다.
+		if (questions.stream().filter(question -> notes.contains(question.questionNote())).anyMatch(question -> !question.isSummarizable())) {
+			return new Resolution(Set.copyOf(notes), List.of());
+		}
 		List<String> options = new ArrayList<>();
 		if (!QueryText.onlyOptionsAndGeneric(rest.toString(), versions, options)) {
 			return Resolution.NONE;

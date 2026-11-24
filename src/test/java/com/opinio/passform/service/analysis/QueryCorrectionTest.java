@@ -396,6 +396,108 @@ class QueryCorrectionTest {
 		assertThat(context.topic()).isEqualTo("강연이 좋았다");
 	}
 
+	// PR #156 리뷰 반영
+	// 리뷰 1 — target에서 되살린 선택지(긍정 조건)는 파서의 not·any와 한 match로 묶지 않는다(SPEC 317행, AC26).
+
+	@Test
+	void 리뷰1_not에_target의_선택지를_묶지_않고_missing_match로_되묻는다() {
+		AnalyzeView view = ask(FORM_SUMMARY, "경영학과 아닌 홍보 지원자의 지원 동기 요약해줘",
+				"{\"conditions\":[\"경영학과\"],\"match\":\"not\",\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}");
+
+		assertThat(reason(view)).isEqualTo("missing_match");
+		assertThat(view.clarify().message()).contains("'아닌'");
+		assertThat(view.result()).isNull();
+		verify(summaries, never()).summarize(any(), anyList(), anyList());
+	}
+
+	@Test
+	void 리뷰1_any에_target의_선택지를_묶지_않고_missing_match로_되묻는다() {
+		AnalyzeView view = ask(FORM_SUMMARY, "경영학과이거나 소프트웨어학과인 홍보 지원자의 지원 동기 요약해줘",
+				"{\"conditions\":[\"경영학과\",\"소프트웨어학과\"],\"match\":\"any\",\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}");
+
+		assertThat(reason(view)).isEqualTo("missing_match");
+		assertThat(view.result()).isNull();
+		verify(summaries, never()).summarize(any(), anyList(), anyList());
+	}
+
+	@Test
+	void 리뷰1_all이면_target의_선택지를_더해_함께_만족하는_응답만_요약한다() {
+		AnalyzeView view = ask(FORM_SUMMARY, "소프트웨어학과인 홍보 지원자의 지원 동기 요약해줘",
+				"{\"conditions\":[\"소프트웨어학과\"],\"match\":\"all\",\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}");
+
+		assertThat(view.status()).isEqualTo("ok");
+		assertThat(summarized().conditions()).containsExactly("소프트웨어학과", "홍보");
+		assertThat(view.result().count()).isEqualTo(1);
+	}
+
+	// 리뷰 5 — {context}는 보낸 조건대로 센다. target 나머지의 선택지를 조건으로 더하지 않는다(SPEC 319행).
+
+	@Test
+	void 리뷰5_context의_target_나머지_선택지는_조건으로_더하지_않고_unknown_condition이다() {
+		AnalyzeView view = service(FORM_SUMMARY).analyze(new AnalyzeCommand(OWNER, FORM_ID.toString(),
+				"{\"context\":{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}}"));
+
+		assertThat(reason(view)).isEqualTo("unknown_condition");
+		verify(summaries, never()).summarize(any(), anyList(), anyList());
+	}
+
+	@Test
+	void 리뷰5_context에_그_선택지가_조건으로_있으면_지원_동기를_요약한다() {
+		AnalyzeView view = service(FORM_SUMMARY).analyze(new AnalyzeCommand(OWNER, FORM_ID.toString(),
+				"{\"context\":{\"conditions\":[\"홍보\"],\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}}"));
+
+		assertThat(view.status()).isEqualTo("ok");
+		assertThat(summarized().conditions()).containsExactly("홍보");
+	}
+
+	// 리뷰 2 — 조건을 설명하는 문항 문구("소속 학과가 소프트웨어학과인")는 target으로 쓰지 않는다.
+
+	@Test
+	void 리뷰2_소속_학과가_소프트웨어학과인_사람들은_target을_채우지_않고_요약한다() {
+		AnalyzeView view = ask(FORM_SUMMARY, "소속 학과가 소프트웨어학과인 사람들 요약해줘",
+				"{\"conditions\":[\"소프트웨어학과\"],\"operation\":\"summarize\"}");
+
+		assertThat(view.status()).isEqualTo("ok");
+		RequestContext context = summarized();
+		assertThat(context.target()).isNull();
+		assertThat(context.conditions()).containsExactly("소프트웨어학과");
+		assertThat(view.result().count()).isEqualTo(4);
+	}
+
+	@Test
+	void 리뷰2_학년이_3학년인_응답은_target을_채우지_않고_요약한다() {
+		AnalyzeView view = ask(FORM_EVAL_SUMMARY, "학년이 3학년인 응답 요약해줘",
+				"{\"conditions\":[\"3학년\"],\"operation\":\"summarize\"}");
+
+		assertThat(view.status()).isEqualTo("ok");
+		RequestContext context = summarized();
+		assertThat(context.target()).isNull();
+		assertThat(context.conditions()).containsExactly("3학년");
+		assertThat(view.result().count()).isEqualTo(7);
+	}
+
+	// 리뷰 3 — 여러 문항 문구를 이은 target 사이에 다른 낱말이 끼면 문항을 찾지 못한 것으로 본다.
+
+	@Test
+	void 리뷰3_버전마다_문구가_다른_문항을_이은_target_사이의_선택지는_버리지_않는다() {
+		List<VersionQuestions> versions = List.of(motiveVersion(1, "지원 동기"), motiveVersion(2, "참여 동기"));
+		RequestContext parsed = new RequestContext(List.of(), null, "summarize", null, null, null);
+
+		RequestContext filled = QueryText.fillTarget("지원 동기와 홍보 참여 동기 요약해줘", parsed, versions);
+
+		assertThat(TargetMatching.resolve(filled.target(), versions).notes()).isEmpty();
+		assertThat(TargetMatching.resolve("지원 동기와 참여 동기", versions).notes()).containsExactlyInAnyOrder("지원 동기",
+				"참여 동기");
+	}
+
+	private static VersionQuestions motiveVersion(int formVersion, String motiveNote) {
+		return VersionQuestions.of(formVersion, Map.of("sections", List.of(Map.of("section_id", "s1", "questions",
+				List.of(Map.of("question_id", "q7", "question_note", "지원 분야", "question_type", "multiple_choice", "options",
+						List.of("기획", "홍보")),
+						Map.of("question_id", "q9", "question_note", motiveNote, "question_type", "long_answer", "options",
+								List.of()))))));
+	}
+
 	@SuppressWarnings("unchecked")
 	private static List<VersionQuestions> formSummaryVersions() {
 		try {

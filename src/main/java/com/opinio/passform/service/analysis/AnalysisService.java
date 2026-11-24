@@ -145,9 +145,15 @@ public class AnalysisService {
 	private Evaluated evaluate(Form form, String query, boolean statistics, RequestContext requested,
 			Candidates candidates) {
 		List<VersionQuestions> versions = candidates.versions();
-		RequestContext context = withTargetOptions(requested.withoutUnusedKeys(), versions);
+		RequestContext context = requested.withoutUnusedKeys();
+		// target 나머지의 선택지 문구를 조건으로 되살리는 것은 {query}에만 한다. {context}·내보내기는 보낸 대로 본다(SPEC 319행).
+		List<String> targetOptions = query == null ? List.of() : targetOptions(context, versions);
+		boolean unjoinableTarget = !targetOptions.isEmpty() && !joinsWithAll(context);
+		if (!targetOptions.isEmpty() && !unjoinableTarget) {
+			context = context.withAddedConditions(targetOptions);
+		}
 		Optional<ClarifyView> clarify = ClarifyRules.beforeMatching(query, context, aiSummaryEnabled(form), statistics,
-				versions);
+				versions, unjoinableTarget);
 		if (clarify.isPresent()) {
 			return new Evaluated(AnalyzeView.clarify(context, clarify.get()), context, null, null);
 		}
@@ -173,17 +179,22 @@ public class AnalysisService {
 				sort);
 	}
 
-	// target이 문항 문구를 포함하고 나머지에 선택지 문구가 있으면 그 문구를 조건으로 되살린다({query}·{context}·내보내기 공통).
-	private static RequestContext withTargetOptions(RequestContext context, List<VersionQuestions> versions) {
+	// target이 문항 문구를 포함하고 나머지에 선택지 문구가 있으면 그 문구를 조건으로 되살린다({query}만, SPEC 338행).
+	private static List<String> targetOptions(RequestContext context, List<VersionQuestions> versions) {
 		if (context.target() == null) {
-			return context;
+			return List.of();
 		}
-		List<String> added = TargetMatching.resolve(context.target(), versions)
+		return TargetMatching.resolve(context.target(), versions)
 			.options()
 			.stream()
 			.filter(option -> !context.conditions().contains(option))
 			.toList();
-		return added.isEmpty() ? context : context.withAddedConditions(added);
+	}
+
+	// 되살린 선택지는 긍정 조건이다. 파서의 match가 all이거나 없을 때만 기존 조건과 한 match로 묶인다.
+	// not·any에 붙이면 뜻이 뒤집히거나 넓어지므로 되묻는다(SPEC 317행, AC26, AGENTS 3절 3·4항).
+	private static boolean joinsWithAll(RequestContext context) {
+		return context.match() == null || "all".equals(context.match());
 	}
 
 	// 없거나 삭제된 폼은 404, 남의 폼은 403이다.

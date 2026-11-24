@@ -36,6 +36,12 @@ final class ClarifyRules {
 	// 표 3~5행: 매칭 전에 판정한다. query는 {context}면 null이고, statistics는 {query}의 원문 판정 결과다.
 	static Optional<ClarifyView> beforeMatching(String query, RequestContext context, boolean aiSummaryEnabled,
 			boolean statistics, List<VersionQuestions> versions) {
+		return beforeMatching(query, context, aiSummaryEnabled, statistics, versions, false);
+	}
+
+	// unjoinableTarget: target에서 되살린 선택지(긍정 조건)를 파서의 not·any와 한 match로 묶을 수 없다.
+	static Optional<ClarifyView> beforeMatching(String query, RequestContext context, boolean aiSummaryEnabled,
+			boolean statistics, List<VersionQuestions> versions, boolean unjoinableTarget) {
 		List<String> operations = aiSummaryEnabled ? List.of(RequestContext.COUNT, RequestContext.LIST, RequestContext.SUMMARIZE)
 				: List.of(RequestContext.COUNT, RequestContext.LIST);
 		if (statistics) {
@@ -53,7 +59,11 @@ final class ClarifyRules {
 					"이 폼은 배포할 때 AI 요약을 켜지 않아 요약할 수 없어요. 배포 후에는 바꿀 수 없으니, 필요하면 폼을 복사해 새로 정해 주세요. 응답 수나 응답 목록은 볼 수 있어요.",
 					List.of(RequestContext.COUNT, RequestContext.LIST)));
 		}
-		if (query != null && QueryText.mixesNegation(query, context, versions)) {
+		if (unjoinableTarget && !"not".equals(context.match())) {
+			return Optional.of(new ClarifyView("missing_match",
+					"'또는'으로 묶은 조건과 다른 조건이 섞인 요청은 한 번에 처리할 수 없어요. 조건별로 나누어 물어봐 주세요.", List.of()));
+		}
+		if (unjoinableTarget || query != null && QueryText.mixesNegation(query, context, versions)) {
 			return Optional.of(new ClarifyView("missing_match",
 					"'아닌' 조건과 다른 조건이 섞인 요청은 한 번에 처리할 수 없어요. 조건별로 나누어 물어봐 주세요.", List.of()));
 		}
@@ -262,7 +272,12 @@ final class ClarifyRules {
 		if (context.target() == null) {
 			return List.of();
 		}
-		return questionOptions(versions, TargetMatching.resolve(context.target(), versions)::isTarget);
+		TargetMatching.Resolution resolution = TargetMatching.resolve(context.target(), versions);
+		// target 나머지의 선택지 문구가 조건에 없으면 문항을 찾은 것으로 보지 않는다. {context}는 보낸 조건대로 센다(SPEC 319행).
+		if (!context.conditions().containsAll(resolution.options())) {
+			return List.of();
+		}
+		return questionOptions(versions, resolution::isTarget);
 	}
 
 	private static List<QuestionOption> summarizableOptions(List<VersionQuestions> versions) {

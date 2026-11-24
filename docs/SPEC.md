@@ -54,11 +54,11 @@
 | AI 기반 대시보드 필터링·답변 | 자연어를 강의 3의 `RequestContext`(`conditions`·`match`·`operation`·`sort`·`target`·`topic`)로 구조화한다. 해당 폼의 모든 제출 버전을 대상으로 조건에 맞는 응답의 `count`·`list`·`summarize`, 목록 정렬·되묻기를 제공한다. 요약은 전체 요약(A)·특정 문항(B)·빈도 질문(C)·특정 의견(D)이다. 주관식 답에 LLM이 붙인 주제 라벨을 코드가 세어 개수 순으로 보여 주고 근거 응답을 인용하며, 특정 의견 요약은 개수를 반환하지 않는다. AI 요약은 배포 때 켠 폼에서, AI 요약에 동의한 응답만 사용한다. 각 버전의 제출 당시 문항으로 조건을 판정하고 판정 불가 응답 수를 알린다. 건수와 주제별 개수는 코드가 계산한다 | 로그 1·2·8, 관찰 1(⑦ 응답 확인, ⑧ 시트 정렬·필터, 주관식 응답 확인·코멘트 3~5분; 자연어 방식은 설계 가설); 전체 버전 검색·AI 요약 동의는 제품 정책 |
 | 내보내기(JSON·YAML·CSV) | 전체 응답 또는 AI 필터 결과를 내보낸다. 여러 버전의 응답은 출처 버전을 표시하고 JSON·YAML에는 각 버전의 폼 정의를 포함한다 | 로그 2(엑셀 연동 불편), 로그 8(엑셀로 옮겨 직접 가공), 관찰 1(응답 탭·시트 병행); 버전 구분은 제품 정책 |
 
-### 테스트 기간 한정 — 사용 경험 평가(별도 패치)
+### 테스트 기간 한정 — 사용 경험 평가
 
-- 실제 응답 제출이 성공한 뒤 제출 완료 화면에 완료 사실을 먼저 보여 주고 선택형 사용 경험 평가를 표시한다. 평가를 건너뛰거나 평가 저장에 실패해도 원래 응답의 제출 완료 상태는 바뀌지 않는다. 테스트 기간에만 노출한다.
-- 문항은 "이번 폼을 작성하는 과정은 얼마나 쉬웠나요?"(매우 어려움 / 어려움 / 보통 / 쉬움 / 매우 쉬움)와 "어떤 점을 개선하면 좋을까요?"(자유 서술) 두 개만 두며 모두 선택 사항이다.
-- 평가는 원래 폼 정의·응답 내용과 분리해 저장하고, 제작자의 결과 통계·AI 분석·내보내기와 `response_count`에 포함하지 않는다. 제출 1건당 평가 1회만 집계하며 측정 기준은 `docs/PROBLEM.md` 5절을 따른다. 구현은 별도 패치로 진행한다.
+- 새 응답 제출(로그인·비로그인 모두)이 성공한 뒤 제출 완료 화면에 완료 사실을 먼저 보여 주고 선택형 사용 경험 평가를 표시한다. 제출 후 수정·빌더 미리보기·가짜 데이터 모드에는 표시하지 않는다. 평가를 건너뛰거나 평가 저장에 실패해도 원래 응답의 제출 완료 상태는 바뀌지 않으며, 건너뛴 평가를 다시 띄우지 않는다. 서버 설정 `passform.experience-survey.enabled`(환경변수 `EXPERIENCE_SURVEY_ENABLED`, 기본 `false`)를 테스트 기간에만 켠다. 꺼져 있으면 화면에 보이지 않고 서버도 평가 저장을 거부한다.
+- 문항은 "이번 폼을 작성하는 과정은 얼마나 쉬웠나요?"(매우 어려움 / 어려움 / 쉬움 / 매우 쉬움, 값 `very_hard`·`hard`·`easy`·`very_easy`)와 "어떤 점을 개선하면 좋을까요?"(자유 서술, 최대 1000자) 두 개만 두며 모두 선택 사항이다. 두 문항을 모두 비운 평가는 저장하지 않는다.
+- 평가는 원래 폼 정의·응답 내용과 분리해 별도 표에 저장하고, 제작자의 결과 통계·AI 분석·내보내기·저장 공간 사용량과 `response_count`에 포함하지 않으며 제작자 화면에 보이지 않는다. 평가 글은 LLM·임베딩 등 외부로 보내지 않는다. 본인 확인은 일회용 표로 한다: 설정이 켜졌을 때 새 응답 제출의 `201`에 그 응답 전용 무작위 값 `experience_token`을 주고, 서버는 표의 해시만 저장해 평가 저장 때 비교한다. 표는 제출 처리가 끝난 뒤 따로 만들며, 만들다 실패하면 표 없이(`null`) 제출 성공을 그대로 돌려준다. 저장 API `POST /forms/{form_id}/responses/{response_id}/experience`(공개, CSRF 필요)의 입력은 `{token, ease?, improvement?}`이고 출력은 `201` / `400 {error: "invalid_experience"}`(값 범위·길이 초과·두 문항 모두 빈 값) / `404`(없는 응답·다른 폼의 응답·틀린 표를 구분하지 않음) / `409 {error: "already_rated" | "survey_closed"}`(이미 평가함·설정 꺼짐)이다. 제출 1건당 평가 1회만 저장·집계하고, 응답이 취소·삭제되면 평가는 연결만 끊긴 채 남는다. 측정 기준은 `docs/PROBLEM.md` 5절, 켜기·끄기와 집계·삭제 절차는 `docs/experience_survey.md`를 따른다.
 
 ### 캡디 추가 개발 — 시간이 남으면, 이 순서로
 
@@ -192,7 +192,7 @@
 | 엔드포인트 | 인증 | 입력 | 출력 |
 |---|---|---|---|
 | `GET /f/{slug}` · `GET /forms/{form_id}` | 공개 | — | `{form_id, definition_version, title, note, note_attachments, deadline, sections, display: {default_mode, allowed_modes}, payment_link, consent: {items, purpose, retention, refusal_notice, ai_summary}}` — 최신 버전. `consent.ai_summary`는 AI 요약을 켠 폼에서만 고지 객체 `{provider, processing_country, items, purpose, retention, refusal_effect, checked_on}`이고 아니면 `null`. 분기 규칙이 없으면 `allowed_modes: ["one_question", "all_questions"]`, 있으면 `[default_mode]` / `404`(초안·삭제된 폼) / `409 {error: "form_closed"}` |
-| `POST /forms/{form_id}/responses` | 공개 | 파일 없으면 JSON `{form_version, answers: [{question_id, value}], consent_agreed: true, ai_summary_agreed?, draft_response_id?}`(`ai_summary_agreed`는 선택, 기본 `false`); 파일이 있으면 같은 값의 JSON 부분과 각 파일의 `question_id`를 담은 `multipart/form-data`. `draft_response_id`는 로그인한 본인의 작성 중 응답에만 사용 | `201 {response_id, form_version, status: "submitted", content, attachments, submitted_at, updated_at: null}` / `400 {error: "consent_required" \| "required_missing" \| "invalid_input_format_value" \| "invalid_option" \| "character_limit_exceeded" \| "invalid_file_type", question_ids?}`(`invalid_option`은 선택지 밖 값) / `413 {error: "file_too_large"}`(문항별 25MB 초과) / `404`(삭제된 폼 또는 본인 소유가 아닌 초안 ID) / `409 {error: "form_closed" \| "form_version_changed" \| "storage_quota_exceeded"}` |
+| `POST /forms/{form_id}/responses` | 공개 | 파일 없으면 JSON `{form_version, answers: [{question_id, value}], consent_agreed: true, ai_summary_agreed?, draft_response_id?}`(`ai_summary_agreed`는 선택, 기본 `false`); 파일이 있으면 같은 값의 JSON 부분과 각 파일의 `question_id`를 담은 `multipart/form-data`. `draft_response_id`는 로그인한 본인의 작성 중 응답에만 사용 | `201 {response_id, form_version, status: "submitted", content, attachments, submitted_at, updated_at: null, experience_token}`(`experience_token`은 사용 경험 평가 설정이 켜졌을 때만 그 응답 전용 일회용 표이고 아니면 `null`, 4절 사용 경험 평가) / `400 {error: "consent_required" \| "required_missing" \| "invalid_input_format_value" \| "invalid_option" \| "character_limit_exceeded" \| "invalid_file_type", question_ids?}`(`invalid_option`은 선택지 밖 값) / `413 {error: "file_too_large"}`(문항별 25MB 초과) / `404`(삭제된 폼 또는 본인 소유가 아닌 초안 ID) / `409 {error: "form_closed" \| "form_version_changed" \| "storage_quota_exceeded"}` |
 | `GET /me/forms/{form_id}/response-draft` | 로그인 | — | `{response_id, form_version, form_definition, answers: [{question_id, value}], saved_at}` — 작성 시작 버전의 문항을 포함한 본인의 작성 중 답만 / `404`(초안 없음) |
 | `PUT /me/forms/{form_id}/response-draft` | 로그인 | `{form_version, answers: [{question_id, value}]}` — 미완성 답 허용 | `200` 또는 첫 저장 `201 {response_id, status: "in_progress", saved_at}` / `409 {error: "form_closed" \| "form_version_changed" \| "storage_quota_exceeded"}` |
 | `DELETE /me/forms/{form_id}/response-draft` | 로그인 | — | `204` — 본인의 미제출 답만 지움 |
@@ -577,6 +577,11 @@
 - **AC36 [상시 적용]**: 핵심 도메인 로직(프로필·자동채우기·폼 정의·분기·응답·알림·분석·내보내기의 service·domain 계층)의 라인 테스트 커버리지는 항상 70% 이상이다.
   - 판정: CI의 커버리지 리포트(JaCoCo)
 
+### 사용 경험 평가 (테스트 기간 한정)
+
+- **AC95 [이벤트 기반] (테스트 기간 한정)**: 사용 경험 평가 설정이 켜진 동안 응답자가 새 응답을 제출하면, Passform은 제출 완료 사실을 먼저 보인 뒤 선택형 평가 두 문항을 받는다. 평가는 그 제출의 일회용 표로만 한 번 저장되고, 건너뛰거나 저장에 실패해도 제출은 그대로이며, 응답이 지워지면 연결만 끊긴 채 남는다. 평가는 결과 통계·AI 분석·내보내기·`response_count`에 들어가지 않고 제작자에게 보이지 않는다.
+  - 테스트: 설정 켬 → 제출 `201`에 `experience_token`, DB에는 해시만 / 끔 → `null`, 평가 저장 `409 survey_closed` / 표 발급 실패에도 제출 `201` / 틀린 표·다른 폼의 응답·없는 응답 → `404` / 같은 제출의 두 번째 평가 → `409 already_rated` / 두 문항 모두 빈 값·범위 밖 값·1001자 → `400 invalid_experience` / 응답 취소·비로그인 응답 전체 삭제 뒤 평가 행이 남고 `response_id`가 `null` / 평가 전후 결과의 `response_count`·통계와 내보내기 행 수 불변 / 화면: 표가 있을 때만 두 문항 표시, 평가 저장 실패에도 "응답을 제출했어요" 유지
+
 ### 캡디 추가 개발 (초안 — 착수할 때 확정하고 골든 케이스를 쓴다)
 
 - **AC52 [이벤트 기반] (추가 1 · 캘린더)**: 사용자가 캘린더의 한 달을 열면, Passform은 내 폼함에 저장한 폼 중 `deadline`이 있는 폼을 Asia/Seoul 기준 마감 날짜에 `state`와 함께 보여 준다.
@@ -677,5 +682,6 @@
 | AC92 | `personal_question_never_sent`, `contact_masked_in_long_answer`, `unsummarizable_target_clarify` | 구현 |
 | AC93 | `summary_no_matches_status`, `summary_all_no_consent_status`, `summary_over_limit_no_llm_call` | 구현 — 테스트 있음(골든 실행기 밖) |
 | AC94 | evals `evals/` (목표값은 `evals/EVAL_DESIGN.md` 1절) | 일부 미달 — evals 베이스라인(2026-11-17) 근거 인용률 100%·의견 검색 재현율 80%는 목표 충족, 주제 분류 정확도 75%(사람 라벨 44건, 목표 80%) 미달 |
+| AC95 | (ExperienceSurveyApiTest.java, ExperienceSurveyRealServerTest.java, ResponsePage.experience.test.tsx) | 구현 — 테스트 있음(골든 실행기 밖). 테스트 기간에만 설정을 켬 |
 
 구현 상태: 2026-11-15 main e2f633b 기준, 코드·골든 대조 (AC34·AC59는 2026-11-17 갱신, AC21·AC31·AC35·AC94는 2026-11-18 evals 베이스라인 `evals/results/2026-11-17T0623`·`T0648`·`T0651`과 주제 분류 정확도 `T1356`으로 갱신)

@@ -28,7 +28,8 @@ import com.opinio.passform.domain.attachment.Attachment;
 import com.opinio.passform.repository.AttachmentRepository;
 import com.opinio.passform.repository.ResponseRepository;
 
-// 결과 통계와 응답 상세(SPEC 5절 234·236행). 응답은 findSubmittedNotDeletedByFormId로만 읽는다(AC20).
+// 결과 통계와 응답 상세(SPEC 5절 234·236행). 응답은 findSubmittedNotDeletedByFormId로 읽고,
+// 상세 한 건만 같은 조건의 findSubmittedNotDeleted로 읽는다(AC20).
 @Service
 public class ResultService {
 
@@ -85,11 +86,11 @@ public class ResultService {
 	@Transactional(readOnly = true)
 	public ResponseDetail response(UUID userId, UUID formId, UUID responseId) {
 		requireOwnedForm(userId, formId);
-		Response response = responses.findSubmittedNotDeletedByFormId(formId)
-			.stream()
-			.filter(candidate -> candidate.getId().equals(responseId))
-			.findFirst()
-			.orElseThrow(ResultService::notFound);
+		// 형식이 틀린 응답 ID(null)는 조회 없이 없는 응답이다.
+		if (responseId == null) {
+			throw notFound();
+		}
+		Response response = responses.findSubmittedNotDeleted(formId, responseId).orElseThrow(ResultService::notFound);
 		List<Map<String, Object>> files = attachments.findByResponseIdOrderByCreatedAtAscIdAsc(responseId)
 			.stream()
 			.map(ResultService::attachmentItem)

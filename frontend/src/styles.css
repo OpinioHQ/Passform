@@ -161,7 +161,7 @@ h3 {
   align-items: center;
   gap: var(--space-8);
   position: relative;
-  z-index: 5;
+  z-index: 10;
 }
 .brand {
   display: flex;

@@ -125,3 +125,53 @@ SELECT count(*) AS "남은 평가 행 수" FROM experience_ratings;  -- 0이어�
 
 - 서버 백업은 같은 서버에 하루 1번 만들고 만든 지 8일이 지나면 지운다(처리방침 5절). 지운 날로부터 8일이 지나면 백업에서도 평가가 사라진다.
 - 지운 날짜를 2절 표의 비고나 이 문서에 적는다.
+
+### 개별 삭제 요청
+
+집계 전에 응답자가 1절 문의처로 자기 평가를 지워 달라고 하면, 로그인한 채 제출한 응답의 평가만 처리한다(처리방침 7절). 평가 표에는 사용자 ID가 없으므로 요청한 Google 이메일 → `users` → `responses`(그 폼, `user_id` 일치) → `experience_ratings`(`response_id` 일치) 순으로 찾는다. 제작자가 받은 응답을 지운 로그인 응답은 행이 남아 연결이 유지되므로 찾을 수 있다.
+
+비로그인으로 제출했거나 제출을 취소해 연결이 끊긴(`response_id`가 `null`) 평가는 본인 것인지 확인할 수 없어 개별로 지우지 않는다. 최종 집계 뒤 위의 전체 삭제로 함께 지운다.
+
+COMMIT 전에 건수를 확인해야 하므로 파일로 한 번에 넣지 않고, psql 대화 창에서 맨 앞 두 값만 채워 한 단계씩 실행한다. 실제 이메일·폼 ID는 이 문서나 저장소에 적지 않는다.
+
+```sh
+cd ~/Passform/deploy
+docker compose exec db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
+
+```sql
+\set email '요청한 Google 이메일'
+\set form_id '평가를 보낸 폼 ID'
+-- 폼 ID를 모르면 공유 링크의 slug로 찾는다: SELECT form_id, title FROM forms WHERE slug = '공유 링크의 slug';
+
+-- 1) 찾기. 0이면 여기서 멈추고 지우지 않는다.
+SELECT count(*) AS "찾은 평가 행 수"
+FROM experience_ratings e
+JOIN responses r ON r.response_id = e.response_id
+JOIN users u ON u.user_id = r.user_id
+WHERE lower(u.email) = lower(:'email')
+  AND r.form_id = :'form_id'::uuid;
+
+-- 2) 지우기. DELETE 건수가 1)의 수와 같을 때만 COMMIT하고, 다르면 ROLLBACK한다.
+BEGIN;
+DELETE FROM experience_ratings
+WHERE response_id IN (
+    SELECT r.response_id
+    FROM responses r
+    JOIN users u ON u.user_id = r.user_id
+    WHERE lower(u.email) = lower(:'email')
+      AND r.form_id = :'form_id'::uuid
+);
+COMMIT;
+
+-- 3) 확인. 0이어야 한다.
+SELECT count(*) AS "남은 평가 행 수"
+FROM experience_ratings e
+JOIN responses r ON r.response_id = e.response_id
+JOIN users u ON u.user_id = r.user_id
+WHERE lower(u.email) = lower(:'email')
+  AND r.form_id = :'form_id'::uuid;
+```
+
+- 1)에서 찾은 행이 없으면 지우지 않고, 그 계정으로 그 폼에 로그인해 제출한 응답의 평가가 없다고 답한다(비로그인·취소한 제출의 평가는 처리방침 7절대로 집계 뒤 함께 지운다).
+- 처리한 날짜와 지운 건수만 기록하고, 요청자 이메일은 저장소에 남기지 않는다.

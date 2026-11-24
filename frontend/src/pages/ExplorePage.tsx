@@ -5,6 +5,7 @@ import {
   analyzeErrorMessage,
   clarifyView,
   coverageNotice,
+  exploreExamples,
   matchedLines,
   presetGroups,
   type Choice,
@@ -403,6 +404,7 @@ export function ExplorePage({
     () => (definition ? presetGroups(definition, results) : []),
     [definition, results],
   );
+  const examples = React.useMemo(() => exploreExamples(definition, results), [definition, results]);
   const optionPresets = presets.filter((g) => g.kind === 'option');
   const mainPresets = presets.filter((g) => g.kind === 'main');
   const loading = turn?.state === 'loading';
@@ -513,7 +515,7 @@ export function ExplorePage({
             <div className="chat-body">
               {!turn && (
                 <div className="chat-bubble bot">
-                  <p>예: "3학년 응답은 몇 건이야?", "지원 동기 요약해줘"</p>
+                  <p>예: {examples.map((e) => `"${e}"`).join(', ')}</p>
                 </div>
               )}
               {turn && (
@@ -557,7 +559,7 @@ export function ExplorePage({
                 aria-label="응답에 대해 묻기"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="예: 3학년 응답은 몇 건이야?"
+                placeholder={`예: ${examples[0]}`}
               />
               <button aria-label="질문 보내기" type="submit" disabled={loading}>
                 <Icon name="arrow" size={18} />

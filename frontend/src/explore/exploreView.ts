@@ -292,11 +292,8 @@ export interface PresetGroup {
  * 요약 버튼은 폼 정의, 선택지 버튼은 제출 응답이 있는 버전(결과 API)으로 만든다.
  * 배포 전이면 응답이 없으므로 만들지 않는다. 문구가 겹치는 문항은 서버가 되묻게 되므로 뺀다.
  */
-export function presetGroups(
-  definition: CreatorFormDefinition,
-  results: FormResults,
-): PresetGroup[] {
-  if (definition.definition_version === null) return [];
+/** 현재 정의의 문항과 문구별 개수. 문구가 공백이거나 겹치는 문항은 unique에서 뺀다. */
+function definitionQuestions(definition: CreatorFormDefinition) {
   const questions = definition.sections.flatMap((s) => s.questions);
   const noteCount = new Map<string, number>();
   for (const q of questions)
@@ -304,6 +301,33 @@ export function presetGroups(
   const unique = questions.filter(
     (q) => q.question_note.trim() && noteCount.get(q.question_note) === 1,
   );
+  return { questions, noteCount, unique };
+}
+
+/** 요약할 수 있는 문항: 단답·장문이고 개인정보 문항이 아니다. */
+function summarizableQuestions(unique: Question[]): Question[] {
+  return unique.filter(
+    (q) =>
+      (q.question_type === 'short_answer' || q.question_type === 'long_answer') && !isPersonal(q),
+  );
+}
+
+/**
+ * 결과 API는 선택형 문항만 주므로, 서술형 문항이 제출 버전에 있는지는 "현재 정의 = 제출이 있는 버전"일 때만 안다.
+ * 최신 버전에 제출이 없으면 문항 요약을 만들지 않는다(사람 결정, 코덱스 검토 반영).
+ */
+function latestVersionSubmitted(definition: CreatorFormDefinition, results: FormResults): boolean {
+  return results.versions.some(
+    (v) => v.form_version === definition.definition_version && v.response_count > 0,
+  );
+}
+
+export function presetGroups(
+  definition: CreatorFormDefinition,
+  results: FormResults,
+): PresetGroup[] {
+  if (definition.definition_version === null) return [];
+  const { noteCount, unique } = definitionQuestions(definition);
 
   const groups: PresetGroup[] = [
     {
@@ -314,21 +338,13 @@ export function presetGroups(
     },
   ];
   const summaryOn = definition.settings.ai_summary?.enabled === true;
-  const summarizable = unique.filter(
-    (q) =>
-      (q.question_type === 'short_answer' || q.question_type === 'long_answer') && !isPersonal(q),
-  );
+  const summarizable = summarizableQuestions(unique);
   if (summaryOn && summarizable.length > 0) {
     groups[0].choices.push({
       label: '전체 요약',
       context: { conditions: [], operation: 'summarize' },
     });
-    // 결과 API는 선택형 문항만 주므로, 서술형 문항이 제출 버전에 있는지는 "현재 정의 = 제출이 있는 버전"일 때만 안다.
-    // 최신 버전에 제출이 없으면 문항 요약 버튼을 만들지 않는다(사람 결정, 코덱스 검토 반영).
-    const latestSubmitted = results.versions.some(
-      (v) => v.form_version === definition.definition_version && v.response_count > 0,
-    );
-    if (latestSubmitted) {
+    if (latestVersionSubmitted(definition, results)) {
       groups.push({
         title: '문항 요약',
         kind: 'main',
@@ -372,26 +388,197 @@ const answerWords = new Set(['응답', '답함', '작성함', '미응답', '안 
 function submittedChoiceQuestions(
   results: FormResults,
   definitionNoteCount: Map<string, number>,
-): Array<{ note: string; options: string[] }> {
-  const byNote = new Map<string, string[]>();
+): Array<{ note: string; questionIds: string[]; options: string[] }> {
+  return submittedChoiceIndex(results).filter(
+    (q) => q.note.trim() && !q.repeated && (definitionNoteCount.get(q.note) ?? 0) <= 1,
+  );
+}
+
+/** 제출 버전의 선택형 문항을 문구별로 모은 것. 거르기 전이다. */
+function submittedChoiceIndex(
+  results: FormResults,
+): Array<{ note: string; questionIds: string[]; options: string[]; repeated: boolean }> {
+  const byNote = new Map<string, { questionIds: string[]; options: string[] }>();
   const repeated = new Set<string>();
   for (const version of results.versions) {
     const seen = new Set<string>();
     for (const q of version.questions) {
       if (seen.has(q.question_note)) repeated.add(q.question_note);
       seen.add(q.question_note);
-      const options = byNote.get(q.question_note) ?? [];
+      const entry = byNote.get(q.question_note) ?? { questionIds: [], options: [] };
+      if (!entry.questionIds.includes(q.question_id)) entry.questionIds.push(q.question_id);
       for (const option of Object.keys(q.counts)) {
-        if (!options.includes(option)) options.push(option);
+        if (!entry.options.includes(option)) entry.options.push(option);
       }
-      byNote.set(q.question_note, options);
+      byNote.set(q.question_note, entry);
     }
   }
-  return [...byNote.entries()]
-    .filter(
-      ([note]) => note.trim() && !repeated.has(note) && (definitionNoteCount.get(note) ?? 0) <= 1,
-    )
-    .map(([note, options]) => ({ note, options }));
+  return [...byNote.entries()].map(([note, entry]) => ({
+    note,
+    ...entry,
+    repeated: repeated.has(note),
+  }));
+}
+
+/** 예시가 없을 때 쓰는 문구. 조건 없이 세므로 어느 폼에서도 되묻지 않는다. */
+export const fallbackExample = '전체 응답 몇 건이야?';
+
+/**
+ * 탐색 도우미 예시 문구. 그 폼에서 그대로 입력해도 되묻지 않는 질문만 만든다(사람 결정).
+ * 기준은 묻기 밑 버튼(presetGroups)과 같다. 예시 문장에는 문항 이름이 없으므로
+ * 같은 선택지 문구가 다른 문항에도 있으면 뺀다. 그대로 입력하는 문장이므로 서버가 질문 글을 먼저 보는
+ * 버전 범위 표현(VERSION_SCOPE)과 일반어(GENERIC)도 뺀다(사람 결정, 검토 반영).
+ * 첫 값은 건수 예시(없으면 대체 문구), 다음은 요약 예시다.
+ */
+export function exploreExamples(
+  definition: CreatorFormDefinition | null,
+  results: FormResults,
+): string[] {
+  if (!definition || definition.definition_version === null) return [fallbackExample];
+  const { questions, noteCount, unique } = definitionQuestions(definition);
+  const examples = [countExample(questions, noteCount, results) ?? fallbackExample];
+
+  const summaryOn = definition.settings.ai_summary?.enabled === true;
+  if (summaryOn && latestVersionSubmitted(definition, results)) {
+    const summary = summarizableQuestions(unique)
+      .map((q) => `${q.question_note} 요약해줘`)
+      .find((sentence) => !versionScope.test(sentence));
+    if (summary) examples.push(summary);
+  }
+  return examples;
+}
+
+/**
+ * 서버가 파서보다 먼저 보고 unsupported_scope로 되묻는 버전 표현.
+ * 정본은 QueryText.java의 VERSION_SCOPE다. 바뀌면 함께 고친다.
+ */
+const versionScope = new RegExp(
+  '버전\\s*\\d+|\\d+\\s*번?째?\\s*버전|(?<![a-z0-9])v\\d+(?![a-z0-9])|버전\\s*(별|마다|끼리|간|사이|비교)' +
+    '|(이전|예전|옛|구|최신|새|현재|지난|첫|첫번째|마지막|특정|각)\\s*버전',
+  'i',
+);
+
+/**
+ * 서버가 조건이 아닌 일반어로 보는 낱말. 파서가 조건에서 빼면 서버가 되살리지 않아 전체 응답을 센다.
+ * 정본은 QueryText.java의 GENERIC·TRAILING_PARTICLE·isGeneric이다. 바뀌면 함께 고친다.
+ */
+const genericWords = new Set([
+  '전체',
+  '전부',
+  '모든',
+  '모두',
+  '총',
+  '다',
+  '응답',
+  '응답자',
+  '응답수',
+  '제출',
+  '제출자',
+  '결과',
+  '학생',
+  '지원자',
+  '신청자',
+  '참여자',
+  '사람',
+  '인원',
+  '인원수',
+  '수',
+  '명',
+  '명수',
+  '명이야',
+  '명인가요',
+  '건',
+  '건수',
+  '개',
+  '개수',
+  '중',
+  '중에서',
+  '의견',
+  '내용',
+  '답변',
+  '답',
+  '목록',
+  '리스트',
+  '명단',
+  '요약',
+  '정리',
+  '나열',
+  '정렬',
+  '알려',
+  '보여',
+  '폼',
+  '설문',
+  '설문조사',
+]);
+const trailingParticle = /(들|을|를|은|는|이|가|의|도|만|에)$/;
+
+function isGenericWord(option: string): boolean {
+  if (option.startsWith('몇') || genericWords.has(option)) return true;
+  let stem = option;
+  for (let count = 0; count < 2; count++) {
+    stem = stem.replace(trailingParticle, '');
+    if (genericWords.has(stem)) return true;
+  }
+  return false;
+}
+
+function countExample(
+  questions: Question[],
+  noteCount: Map<string, number>,
+  results: FormResults,
+): string | null {
+  const shared = optionsInOtherQuestions(results);
+  const byId = new Map(questions.map((q) => [q.question_id, q]));
+
+  for (const q of submittedChoiceQuestions(results, noteCount)) {
+    // 개인정보 여부는 현재 정의로만 안다. 현재 정의에 없는 문항은 확인할 수 없어 쓰지 않는다.
+    const current = q.questionIds.map((id) => byId.get(id));
+    if (current.some((d) => !d || isPersonal(d))) continue;
+    const sentence = q.options
+      .filter(
+        (o) =>
+          o.trim() &&
+          !answerWords.has(o) &&
+          !isGenericWord(o) &&
+          noteCondition(q.note, o) !== null &&
+          !shared.has(o),
+      )
+      .map((o) => `${o} 응답은 몇 건이야?`)
+      .find((s) => !versionScope.test(s));
+    if (sentence) return sentence;
+  }
+  return null;
+}
+
+/**
+ * 문항 이름 없이 보내면 서버가 뜻이 다른 여러 문항에 걸렸다고 되묻는 선택지.
+ * 서버 기준(ClarifyRules.differentMeanings): question_id도 다르고 문구·유형도 다른 문항에 걸리면 되묻는다.
+ * 서버는 한 버전 안의 두 문항도 되묻지만, 그중 문구·유형이 같은 두 문항은 submittedChoiceQuestions가
+ * 문구 겹침으로 이미 빼므로 여기서는 버전 구분 없이 센다. 거르기 전 모든 제출 문항으로 센다.
+ */
+function optionsInOtherQuestions(results: FormResults): Set<string> {
+  const typeOf = new Map(
+    results.combined.questions.map((q) => [
+      `${q.question_id}\n${q.question_note}`,
+      q.question_type,
+    ]),
+  );
+  const seen = new Map<string, { ids: Set<string>; wordings: Set<string> }>();
+  for (const version of results.versions) {
+    for (const q of version.questions) {
+      const type = typeOf.get(`${q.question_id}\n${q.question_note}`) ?? '';
+      for (const option of Object.keys(q.counts)) {
+        const entry = seen.get(option) ?? { ids: new Set(), wordings: new Set() };
+        entry.ids.add(q.question_id);
+        entry.wordings.add(`${q.question_note}\n${type}`);
+        seen.set(option, entry);
+      }
+    }
+  }
+  const shared = new Set<string>();
+  for (const [option, { ids, wordings }] of seen)
+    if (ids.size >= 2 && wordings.size >= 2) shared.add(option);
+  return shared;
 }
 
 /** 묻기 실패를 쉬운 말로. 오류 코드 원문은 보이지 않는다. */

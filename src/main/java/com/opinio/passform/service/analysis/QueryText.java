@@ -2,6 +2,7 @@ package com.opinio.passform.service.analysis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -56,6 +57,11 @@ final class QueryText {
 	private static final Set<String> GENERIC = Set.of("전체", "전부", "모든", "모두", "총", "다", "응답", "응답자", "응답수", "제출", "제출자",
 			"결과", "학생", "지원자", "신청자", "참여자", "사람", "인원", "인원수", "수", "명", "명수", "명이야", "명인가요", "건", "건수", "개", "개수", "중",
 			"중에서", "의견", "내용", "답변", "답", "목록", "리스트", "명단", "요약", "정리", "나열", "정렬", "알려", "보여", "폼", "설문", "설문조사");
+
+	// 되살리기에서 조건으로 보지 않는 빈도·질문 말과 누적 말(사람이 정한 목록). 범위를 좁히는 말(오늘, 최근 등)은 넣지 않는다.
+	// 이 폼의 선택지 문구와 같으면 조건으로 되살린다.
+	private static final Set<String> FILLERS = Set.of("가장", "제일", "많이", "자주", "나온", "뭐야", "뭐지", "어때", "지금까지", "현재까지",
+			"들어왔어", "받았어", "모였어");
 
 	// #139 정렬 표현의 모양. sort가 있을 때만 쓴다. 조사는 낱말 끝에 붙을 때만 허용한다.
 	private static final String SORT_PARTICLES = "(으로|로|대로|이|가|은|는|을|를|의|에)?";
@@ -147,7 +153,7 @@ final class QueryText {
 		RequestContext keys = sortAsPhrase(query, parsed, versions);
 		boolean summarize = RequestContext.SUMMARIZE.equals(parsed.operation());
 		List<String> allWords = summarize ? summaryWords(query, versions) : actionlessTokens(query).toList();
-		List<String> words = conditionWords(allWords, keys);
+		List<String> words = withoutFillers(query, conditionWords(allWords, keys), versions);
 		if (words.isEmpty()) {
 			return parsed;
 		}
@@ -282,7 +288,127 @@ final class QueryText {
 				conditions.add(word);
 			}
 		}
-		return conditions;
+		return withoutFillers(query, conditions, versions);
+	}
+
+	// 빈도·질문 말과 누적 말을 뺀다. 이 폼의 선택지 문구와 같은 낱말과, 원문에 낱말 경계로 나온 여러 낱말 선택지
+	// ("가장 많이")를 이루는 낱말은 남긴다.
+	private static List<String> withoutFillers(String query, List<String> words, List<VersionQuestions> versions) {
+		Set<String> kept = new HashSet<>(choiceOptions(versions));
+		choiceOptions(versions).stream()
+			.filter(option -> tokens(option).size() > 1 && !spans(query, option, true).isEmpty())
+			.forEach(option -> kept.addAll(tokens(option)));
+		return words.stream().filter(word -> !FILLERS.contains(word) || kept.contains(word)).toList();
+	}
+
+	// 파서가 summarize의 target을 비우고 문항 이름을 topic에 넣었으면 target으로 옮긴다({query}에만, 되살리기보다 먼저. SPEC 319행).
+	// topic이 어느 버전의 문항 문구 그 자체일 때만 옮긴다(띄어쓰기·문장부호는 무시하고, 뒤에 조사만 붙은 꼴은 같게 본다).
+	// 문항 문구에 다른 말이 더 붙은 topic("좋았던 점 중 강연이 좋았다")은 의견 찾기이므로 그대로 둔다.
+	static RequestContext topicToTarget(RequestContext parsed, List<VersionQuestions> versions) {
+		boolean noTarget = parsed.target() == null || parsed.target().isBlank();
+		if (!RequestContext.SUMMARIZE.equals(parsed.operation()) || !noTarget || parsed.topic() == null) {
+			return parsed;
+		}
+		String topic = compact(parsed.topic());
+		List<String> notes = versions.stream()
+			.flatMap(version -> version.questions().stream())
+			.map(VersionQuestions.Question::questionNote)
+			.filter(note -> !note.isBlank())
+			.distinct()
+			.toList();
+		for (String note : notes) {
+			String compactNote = compact(note);
+			if (!compactNote.isEmpty() && topic.startsWith(compactNote)
+					&& (topic.length() == compactNote.length() || OPTION_PARTICLES.contains(topic.substring(compactNote.length())))) {
+				return new RequestContext(parsed.conditions(), parsed.match(), parsed.operation(), parsed.sort(), note, null);
+			}
+		}
+		return parsed;
+	}
+
+	private static String compact(String text) {
+		return EDGE_PUNCTUATION.matcher(WHITESPACE.matcher(text).replaceAll("")).replaceAll("");
+	}
+
+	static Set<String> choiceOptionsOf(List<VersionQuestions> versions) {
+		return choiceOptions(versions);
+	}
+
+	// 원문에서 phrases(문항 문구·선택지)가 낱말 경계로 나온 자리를 지운 뒤 남는 낱말 가운데 조사·일반어·빈도 말·동작어가
+	// 아닌 것. 비어 있으면 원문에 그 문구들 말고 뜻 있는 말이 없다는 뜻이다(파서가 원문의 말을 빼먹었는지 원문으로 확인한다).
+	static List<String> residualWords(String query, List<String> phrases, List<VersionQuestions> versions) {
+		StringBuilder rest = new StringBuilder(query);
+		for (String phrase : phrases) {
+			for (int[] span : spans(query, phrase, true)) {
+				blank(rest, span);
+			}
+		}
+		Set<String> options = choiceOptions(versions);
+		// 일반어·빈도 말이어도 이 폼의 선택지와 같으면("학생") 파서가 빼먹은 조건일 수 있으므로 남은 말로 센다.
+		return summaryWords(rest.toString(), versions).stream()
+			.filter(word -> !OPTION_PARTICLES.contains(word))
+			.filter(word -> !(isGeneric(word) || FILLERS.contains(word)) || isOptionWord(word, options))
+			.toList();
+	}
+
+	static boolean isGenericWord(String token) {
+		return isGeneric(token);
+	}
+
+	static boolean hasNegation(String query) {
+		return tokens(query).stream().anyMatch(QueryText::isNegation);
+	}
+
+	private static Set<String> choiceOptions(List<VersionQuestions> versions) {
+		return versions.stream()
+			.flatMap(version -> version.questions().stream())
+			.filter(VersionQuestions.Question::isChoice)
+			.flatMap(question -> question.options().stream())
+			.collect(Collectors.toSet());
+	}
+
+	// 원문에서 찾은 문구와 그 자리 [시작, 끝).
+	record Found(String phrase, int[] span) {
+	}
+
+	// 더 긴 문구가 찾은 자리 안에 든 짧은 문구는 뺀다("보호자 이름" 안의 "이름"). 자리 순서대로다.
+	static List<Found> longestOnly(List<Found> found) {
+		return found.stream()
+			.filter(entry -> found.stream()
+				.noneMatch(other -> other.phrase().length() > entry.phrase().length() && other.span()[0] <= entry.span()[0]
+						&& other.span()[1] >= entry.span()[1]))
+			.sorted(java.util.Comparator.comparingInt(entry -> entry.span()[0]))
+			.toList();
+	}
+
+	static List<int[]> boundedSpans(String text, String phrase) {
+		return spans(text, phrase, true);
+	}
+
+	static void blank(StringBuilder text, int[] span) {
+		for (int index = span[0]; index < span[1]; index++) {
+			text.setCharAt(index, ' ');
+		}
+	}
+
+	// target의 나머지에 조사와 일반어만 있는가. 일반어여도 이 폼의 선택지와 같으면("학생들의" ↔ 선택지 "학생") 조건이므로
+	// 버려지는 말로 보지 않는다.
+	static boolean onlyParticlesAndGeneric(String rest, List<VersionQuestions> versions) {
+		Set<String> options = choiceOptions(versions);
+		return tokens(rest).stream()
+			.allMatch(word -> OPTION_PARTICLES.contains(word) || isGeneric(word) && !isOptionWord(word, options));
+	}
+
+	// 조사를 뗀 꼴까지 선택지와 같은 낱말인가.
+	private static boolean isOptionWord(String token, Set<String> options) {
+		String stem = token;
+		for (int count = 0; count < 3; count++) {
+			if (options.contains(stem)) {
+				return true;
+			}
+			stem = TRAILING_PARTICLE.matcher(stem).replaceFirst("");
+		}
+		return false;
 	}
 
 	// SPEC 334행: 파서가 조건 일부를 버렸으면 원문에 글자 그대로 있는 선택지 문구를 되살린다. 조건이 하나라도 있을 때만 본다.

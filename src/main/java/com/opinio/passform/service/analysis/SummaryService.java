@@ -128,7 +128,7 @@ public class SummaryService {
 		matched.forEach(response -> matchedByVersion.merge(response.getFormVersion(), 1, Integer::sum));
 		List<SummaryUnavailableVersion> unavailable = new ArrayList<>();
 		for (VersionQuestions version : versions) {
-			boolean hasTarget = version.questions().stream().anyMatch(question -> isTarget(context, question));
+			boolean hasTarget = version.questions().stream().anyMatch(question -> isTarget(context, versions, question));
 			int count = matchedByVersion.getOrDefault(version.formVersion(), 0);
 			if (!hasTarget && count > 0) {
 				unavailable.add(new SummaryUnavailableVersion(version.formVersion(), count));
@@ -137,8 +137,9 @@ public class SummaryService {
 		return unavailable;
 	}
 
-	private static boolean isTarget(RequestContext context, Question question) {
-		return question.questionNote().equals(context.target().strip());
+	// 요약 대상 판정(ClarifyRules)과 같은 매칭을 쓴다.
+	private static boolean isTarget(RequestContext context, List<VersionQuestions> versions, Question question) {
+		return TargetMatching.resolve(context.target(), versions).isTarget(question);
 	}
 
 	// 통합 보기처럼 question_id·문구·유형이 같은 문항끼리 묶는다. 일치 응답이 있는 버전만, 낮은 버전부터 처음 나온 순이다.
@@ -155,7 +156,7 @@ public class SummaryService {
 			List<Question> questions = version.questions()
 				.stream()
 				.filter(Question::isSummarizable)
-				.filter(question -> context.target() == null || isTarget(context, question))
+				.filter(question -> context.target() == null || isTarget(context, versions, question))
 				.toList();
 			questionsByVersion.put(version.formVersion(), questions);
 			questions.forEach(

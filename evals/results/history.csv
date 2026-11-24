@@ -7,3 +7,6 @@ run_id,started_at,commit,change,dataset_cases,dataset_sha256,judge_version,golde
 2026-11-17T0648,2026-11-17T06:48:13.150904500Z,d506e3b,베이스라인 2회차,33,73df3a795a6b,judge_v1,GoldenTest 62/62 통과,live,null,null,102,0,true,evaluated,0.8182,0.775,0.1,0,0,1,0,1.0,,0.8,1.0,1.0
 2026-11-17T0651,2026-11-17T06:51:09.904780Z,d506e3b,베이스라인 3회차,33,73df3a795a6b,judge_v1,GoldenTest 62/62 통과,live,null,null,139,0,true,evaluated,0.7879,0.775,0.1,0,0,0,0,1.0,,0.8,1.0,1.0
 2026-11-17T1356,2026-11-17T13:56:26.014904600Z,5d1ece3,주제 분류 정확도 측정(사람 합의 라벨),33,73df3a795a6b,judge_v1,,stored,2026-11-17T0651,null,0,139,true,evaluated,0.7879,0.775,0.1,0,0,0,0,1.0,0.75,0.8,1.0,1.0
+2026-11-22T1357,2026-11-22T13:57:24.689480700Z,f02f0d2,서버보정_#155_1회차,33,73df3a795a6b,judge_v1,GoldenTest_66/66_통과,live,null,null,131,0,true,evaluated,0.8788,0.75,0.15,0,0,0,0,0.9375,,0.8,1.0,1.0
+2026-11-22T1401,2026-11-22T14:01:08.894015400Z,f02f0d2-dirty,서버보정_#155_2회차,33,73df3a795a6b,judge_v1,GoldenTest_66/66_통과,live,null,null,132,0,true,evaluated,0.8485,0.75,0.15,0,0,0,0,1.0,,0.8,0.9,1.0
+2026-11-22T1404,2026-11-22T14:04:27.134800600Z,f02f0d2-dirty,서버보정_#155_3회차,33,73df3a795a6b,judge_v1,GoldenTest_66/66_통과,live,null,null,132,0,true,evaluated,0.8788,0.8,0.125,0,0,0,0,1.0,,0.8,0.9,1.0

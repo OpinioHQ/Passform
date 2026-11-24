@@ -246,29 +246,6 @@ class QueryCorrectionTest {
 	}
 
 	@Test
-	void 홍보_지원자의_지원_동기는_홍보를_조건으로_되살리고_지원_동기를_요약한다() {
-		AnalyzeView view = ask(FORM_SUMMARY, "홍보 지원자의 지원 동기 요약해줘",
-				"{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}");
-
-		assertThat(view.status()).isEqualTo("ok");
-		RequestContext context = summarized();
-		assertThat(context.conditions()).containsExactly("홍보");
-		assertThat(TargetMatching.resolve(context.target(), formSummaryVersions()).notes()).containsExactly("지원 동기");
-		assertThat(view.matched()).allSatisfy(matched -> assertThat(matched.option()).isEqualTo("홍보"));
-	}
-
-	@Test
-	void 삼학년의_좋았던_점은_학년_문항에_걸리지_않고_3학년을_되살린다() {
-		AnalyzeView view = ask(FORM_EVAL_SUMMARY, "3학년의 좋았던 점 요약해줘",
-				"{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"3학년의 좋았던 점\"}");
-
-		assertThat(view.status()).isEqualTo("ok");
-		RequestContext context = summarized();
-		assertThat(context.conditions()).containsExactly("3학년");
-		assertThat(view.result().count()).isEqualTo(7);
-	}
-
-	@Test
 	void 지원_동기_영상은_영상이_남아_unknown_condition이다() {
 		AnalyzeView view = ask(FORM_SUMMARY, "지원 동기 영상 요약해줘",
 				"{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"지원 동기 영상\"}");
@@ -297,7 +274,7 @@ class QueryCorrectionTest {
 		Response response = new Response(FORM_ID, null, 1, ResponseStatus.SUBMITTED, List.of(new Answer("q7", "홍보")), true,
 				null, Instant.EPOCH);
 		ReflectionTestUtils.setField(response, "id", UUID.randomUUID());
-		RequestContext context = new RequestContext(List.of("홍보"), null, "summarize", null, "홍보 지원자의 지원 동기", null);
+		RequestContext context = new RequestContext(List.of("홍보"), null, "summarize", null, "지원자의 지원 동기", null);
 
 		SummaryService.Outcome outcome = service.summarize(context, formSummaryVersions(), List.of(response));
 
@@ -306,55 +283,21 @@ class QueryCorrectionTest {
 			.isInstanceOfSatisfying(ThemesItem.class, item -> assertThat(item.target().questionId()).isEqualTo("q9"));
 	}
 
-	// 변경 3 — 질의에서 target 찾기
-
+	// 문항 문구 말고 조사·일반어만 남은 target은 그 문항으로 본다("지원자의"는 일반어 "지원자"에 조사가 붙은 꼴).
 	@Test
-	void 좋았던_점_항목의_결과_전체는_target_좋았던_점으로_요약한다() {
-		AnalyzeView view = ask(FORM_EVAL_SUMMARY, "좋았던 점 항목의 결과 전체를 요약해줘",
-				"{\"conditions\":[],\"operation\":\"summarize\"}");
+	void 일반어만_남은_target은_그_문항으로_요약한다() {
+		AnalyzeView view = ask(FORM_SUMMARY, "지원자의 지원 동기 요약해줘",
+				"{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"지원자의 지원 동기\"}");
 
 		assertThat(view.status()).isEqualTo("ok");
-		RequestContext context = summarized();
-		assertThat(context.target()).isEqualTo("좋았던 점");
-		assertThat(context.conditions()).isEmpty();
-		assertThat(context.topic()).isNull();
+		assertThat(summarized().conditions()).isEmpty();
+		assertThat(view.result().count()).isEqualTo(6);
 	}
 
-	@Test
-	void 좋았던_점과_아쉬운_점은_ambiguous_match다() {
-		AnalyzeView view = ask(FORM_EVAL_SUMMARY, "좋았던 점과 아쉬운 점 요약해줘", "{\"conditions\":[],\"operation\":\"summarize\"}");
-
-		assertThat(reason(view)).isEqualTo("ambiguous_match");
-		assertThat(view.context().target()).isEqualTo("좋았던 점과 아쉬운 점");
-	}
+	// 파서가 문항 이름을 target이 아니라 topic에 넣은 꼴(e30·e31의 11-16·11-17 실패 회차). topic이 문항 문구 그 자체면 target으로 옮긴다.
 
 	@Test
-	void 질의의_휴대전화는_개인정보_문항이라_unsummarizable_field다() {
-		AnalyzeView view = ask(FORM_SUMMARY, "휴대전화 요약해줘", "{\"conditions\":[],\"operation\":\"summarize\"}");
-
-		assertThat(reason(view)).isEqualTo("unsummarizable_field");
-		assertThat(view.context().target()).isEqualTo("휴대전화");
-	}
-
-	@Test
-	void 질의의_지원_분야는_선택형이라_unsummarizable_field다() {
-		AnalyzeView view = ask(FORM_SUMMARY, "지원 분야 요약해줘", "{\"conditions\":[],\"operation\":\"summarize\"}");
-
-		assertThat(reason(view)).isEqualTo("unsummarizable_field");
-		assertThat(view.context().target()).isEqualTo("지원 분야");
-	}
-
-	@Test
-	void 조건으로_쓰인_문항_문구는_target을_채우지_않는다() {
-		RequestContext parsed = new RequestContext(List.of("면접 희망 날짜 - 응답"), null, "summarize", null, null, null);
-
-		RequestContext filled = QueryText.fillTarget("면접 희망 날짜를 적은 사람들 요약해줘", parsed, formSummaryVersions());
-
-		assertThat(filled.target()).isNull();
-	}
-
-	@Test
-	void topic이_문항_문구면_target으로_옮겨_주제_요약한다() {
+	void topic이_문항_문구면_target으로_옮겨_그_문항만_요약한다() {
 		AnalyzeView view = ask(FORM_EVAL_SUMMARY, "좋았던 점 요약해줘",
 				"{\"conditions\":[],\"operation\":\"summarize\",\"topic\":\"좋았던 점\"}");
 
@@ -362,6 +305,16 @@ class QueryCorrectionTest {
 		RequestContext context = summarized();
 		assertThat(context.target()).isEqualTo("좋았던 점");
 		assertThat(context.topic()).isNull();
+		assertThat(context.conditions()).isEmpty();
+	}
+
+	@Test
+	void 아쉬운_점도_topic에서_target으로_옮긴다() {
+		AnalyzeView view = ask(FORM_EVAL_SUMMARY, "아쉬운 점 요약해줘",
+				"{\"conditions\":[],\"operation\":\"summarize\",\"topic\":\"아쉬운 점\"}");
+
+		assertThat(view.status()).isEqualTo("ok");
+		assertThat(summarized().target()).isEqualTo("아쉬운 점");
 	}
 
 	@Test
@@ -372,6 +325,151 @@ class QueryCorrectionTest {
 		assertThat(reason(view)).isEqualTo("unsummarizable_field");
 		assertThat(view.context().target()).isEqualTo("휴대전화");
 		assertThat(view.context().topic()).isNull();
+	}
+
+	// 문항 문구에 다른 말이 더 붙은 topic은 의견 찾기라 옮기지 않는다. target이 이미 있거나 요약이 아니어도 옮기지 않는다.
+	@Test
+	void topic이_문항_문구_말고_다른_말도_담으면_옮기지_않는다() {
+		List<VersionQuestions> versions = formEvalSummaryVersions();
+		RequestContext withMore = new RequestContext(List.of(), null, "summarize", null, null, "좋았던 점 중 강연이 좋았다");
+		RequestContext withTarget = new RequestContext(List.of(), null, "summarize", null, "아쉬운 점", "좋았던 점");
+		RequestContext count = new RequestContext(List.of(), null, "count", null, null, "좋았던 점");
+
+		assertThat(QueryText.topicToTarget(withMore, versions)).isEqualTo(withMore);
+		assertThat(QueryText.topicToTarget(withTarget, versions)).isEqualTo(withTarget);
+		assertThat(QueryText.topicToTarget(count, versions)).isEqualTo(count);
+	}
+
+	// 파서가 조건을 target에 섞은 꼴: 파서 조건이 없고, 남은 말이 문항 문구 앞의 선택지 하나이며, 원문에도 다른 말이 없으면
+	// 그 선택지를 조건으로, 문항 문구를 target으로 고쳐 진행한다(SPEC 338행).
+
+	@Test
+	void 홍보_지원자의_지원_동기는_홍보를_조건으로_지원_동기를_요약한다() {
+		assertLifted(FORM_SUMMARY, "홍보 지원자의 지원 동기 요약해줘", "홍보 지원자의 지원 동기", "홍보", "지원 동기", 2);
+	}
+
+	@Test
+	void 원문이_지원자들의여도_같게_처리한다() {
+		assertLifted(FORM_SUMMARY, "홍보 지원자들의 지원 동기 요약해줘", "홍보 지원자의 지원 동기", "홍보", "지원 동기", 2);
+	}
+
+	// 사람 결정(2026-11-25): "홍보 지원 동기"는 지원 분야가 홍보인 응답의 지원 동기로 본다.
+	@Test
+	void 홍보_지원_동기는_지원_분야가_홍보인_응답의_지원_동기다() {
+		assertLifted(FORM_SUMMARY, "홍보 지원 동기 요약해줘", "홍보 지원 동기", "홍보", "지원 동기", 2);
+	}
+
+	@Test
+	void 삼학년의_좋았던_점은_3학년을_조건으로_좋았던_점을_요약한다() {
+		assertLifted(FORM_EVAL_SUMMARY, "3학년의 좋았던 점 요약해줘", "3학년의 좋았던 점", "3학년", "좋았던 점", 7);
+	}
+
+	// 고친 context(조건 "홍보", target "지원 동기")를 버튼으로 다시 보내도 같은 대상을 센다.
+	@Test
+	void 고친_context를_버튼으로_다시_보내도_같은_대상을_센다() {
+		AnalyzeView again = service(FORM_SUMMARY).analyze(new AnalyzeCommand(OWNER, FORM_ID.toString(),
+				"{\"context\":{\"conditions\":[\"홍보\"],\"operation\":\"summarize\",\"target\":\"지원 동기\"}}"));
+
+		assertThat(again.status()).isEqualTo("ok");
+		assertThat(again.result().count()).isEqualTo(2);
+	}
+
+	// 하나라도 어긋나면 고치지 않고 되묻는다. 숫자를 내지 않는다.
+	@Test
+	void 원문이나_파서_출력이_조건에_어긋나면_고치지_않고_되묻는다() {
+		String[][] cases = {
+				// 파서가 원문의 "미"·"재"를 빼먹음: 원문에 "미지원자의"가 남는다
+				{ "홍보 미지원자의 지원 동기 요약해줘", "{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}" },
+				{ "홍보 재지원자의 지원 동기 요약해줘", "{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}" },
+				// 원문에 부정 표현이 있음
+				{ "홍보 아닌 지원자의 지원 동기 요약해줘", "{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}" },
+				// 원문에 범위를 좁히는 말이 있음(앞 단계가 "오늘"을 조건으로 되살린다)
+				{ "오늘 홍보 지원자의 지원 동기 요약해줘", "{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}" },
+				// 선택지가 문항 문구 뒤에 있음: 지원 동기 가운데 홍보 이야기일 수 있다
+				{ "지원 동기에서 홍보 요약해줘", "{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"지원 동기에서 홍보\"}" },
+				// 선택지가 둘
+				{ "홍보 기획 지원자의 지원 동기 요약해줘", "{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"홍보 기획 지원자의 지원 동기\"}" },
+				// 일반어가 아닌 말이 낌
+				{ "홍보 쪽 지원자의 지원 동기 요약해줘", "{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"홍보 쪽 지원자의 지원 동기\"}" },
+				// 파서가 "홍보"를 부정 조건으로 잘못 냄: 파서 조건이 있으면 고치지 않는다
+				{ "홍보 지원자의 지원 동기 요약해줘",
+						"{\"conditions\":[\"홍보\"],\"match\":\"not\",\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}" },
+				// 파서가 원문에 없는 선택지를 target에 넣음: 사용자는 "홍보"를 말한 적이 없다
+				{ "지원 동기 요약해줘", "{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}" },
+				{ "지원자의 지원 동기 요약해줘", "{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}" },
+				// 파서가 원문에 없는 조건을 all로 냄: 고치면 파서 조건("경영학과")을 버리게 되므로 고치지 않는다
+				{ "홍보 지원자의 지원 동기 요약해줘",
+						"{\"conditions\":[\"경영학과\"],\"match\":\"all\",\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}" },
+				// 파서가 이미 조건을 냄
+				{ "소프트웨어학과 홍보 지원자의 지원 동기 요약해줘",
+						"{\"conditions\":[\"소프트웨어학과\"],\"match\":\"all\",\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}" } };
+		for (String[] c : cases) {
+			AnalyzeView view = ask(FORM_SUMMARY, c[0], c[1]);
+
+			assertThat(view.status()).as(c[0]).isEqualTo("clarify");
+			assertThat(view.result()).as(c[0]).isNull();
+		}
+		verify(summaries, never()).summarize(any(), anyList(), anyList());
+	}
+
+	// 원문 대조: 일반어여도 이 폼의 선택지("학생")면 파서가 빼먹은 조건일 수 있으므로 남은 말로 센다.
+	@Test
+	void 원문에_남은_일반어가_선택지면_남은_말로_센다() {
+		List<VersionQuestions> versions = List.of(VersionQuestions.of(1, Map.of("sections", List.of(Map.of("section_id", "s1",
+				"questions", List.of(
+						Map.of("question_id", "q1", "question_note", "직업", "question_type", "multiple_choice", "options",
+								List.of("학생", "직장인")),
+						Map.of("question_id", "q2", "question_note", "지원 분야", "question_type", "multiple_choice", "options",
+								List.of("기획", "홍보")),
+						Map.of("question_id", "q3", "question_note", "지원 동기", "question_type", "long_answer", "options",
+								List.of())))))));
+
+		assertThat(QueryText.residualWords("학생 홍보 지원자의 지원 동기 요약해줘", List.of("지원 동기", "홍보"), versions))
+			.containsExactly("학생");
+		assertThat(QueryText.residualWords("홍보 지원자들의 지원 동기 요약해줘", List.of("지원 동기", "홍보"), versions)).isEmpty();
+	}
+
+	// 일반어와 글자가 같은 선택지("학생")는 꺼내지 않는다. 그 폼에서는 되묻기로 간다(SPEC 338행).
+	@Test
+	void 일반어와_같은_선택지는_조건으로_꺼내지_않는다() {
+		List<VersionQuestions> versions = List.of(jobVersion(List.of("학생", "직장인")));
+
+		assertThat(TargetMatching.lift("학생의 지원 동기", versions)).isEmpty();
+		assertThat(TargetMatching.lift("학생 지원 동기", versions)).isEmpty();
+		assertThat(TargetMatching.lift("직장인의 지원 동기", versions)).hasValueSatisfying(lift -> {
+			assertThat(lift.note()).isEqualTo("지원 동기");
+			assertThat(lift.options()).containsExactly("직장인");
+		});
+	}
+
+	private void assertLifted(String fixture, String query, String target, String option, String note, int count) {
+		AnalyzeView view = ask(fixture, query,
+				"{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"" + target + "\"}");
+
+		assertThat(view.status()).as(query).isEqualTo("ok");
+		RequestContext context = summarized();
+		assertThat(context.conditions()).containsExactly(option);
+		assertThat(context.target()).isEqualTo(note);
+		assertThat(view.result().count()).isEqualTo(count);
+	}
+
+	// 파서가 부정·"또는" 조건을 낸 질의에서 target 안의 선택지를 조건에 섞어 세지 않는다. target 글자가 원문과 달라도, 줄어들어도 같다.
+	// PR #156 리뷰에서 not(경영학과 ∨ 홍보)로 계산되어 rs01·rs03·rs06이 나오던 질의다(의도는 rs05).
+	@Test
+	void not과_any에_target의_선택지가_섞인_질의는_숫자를_내지_않고_되묻는다() {
+		String[][] cases = {
+				{ "경영학과 아닌 홍보 지원자의 지원 동기 요약해줘", "경영학과", "not", "홍보 지원자의 지원 동기" },
+				{ "경영학과 아닌 홍보 지원자들의 지원 동기 요약해줘", "경영학과", "not", "홍보 지원자의 지원 동기" },
+				{ "경영학과 아닌 홍보 지원자들의 지원 동기 요약해줘", "경영학과", "not", "홍보 지원 동기" },
+				{ "경영학과이거나 소프트웨어학과인 홍보 지원자의 지원 동기 요약해줘", "경영학과\",\"소프트웨어학과", "any", "홍보 지원자의 지원 동기" } };
+		for (String[] c : cases) {
+			AnalyzeView view = ask(FORM_SUMMARY, c[0], "{\"conditions\":[\"" + c[1] + "\"],\"match\":\"" + c[2]
+					+ "\",\"operation\":\"summarize\",\"target\":\"" + c[3] + "\"}");
+
+			assertThat(view.status()).as(c[0] + " / " + c[3]).isEqualTo("clarify");
+			assertThat(view.result()).isNull();
+		}
+		verify(summaries, never()).summarize(any(), anyList(), anyList());
 	}
 
 	@Test
@@ -385,55 +483,11 @@ class QueryCorrectionTest {
 		assertThat(context.target()).isNull();
 	}
 
-	@Test
-	void 지킴_문항_안의_의견_찾기는_target을_채우고_topic을_유지한다() {
-		AnalyzeView view = ask(FORM_EVAL_SUMMARY, "좋았던 점 중 강연이 좋았다는 의견 요약해줘",
-				"{\"conditions\":[],\"operation\":\"summarize\",\"topic\":\"강연이 좋았다\"}");
-
-		assertThat(view.status()).isEqualTo("ok");
-		RequestContext context = summarized();
-		assertThat(context.target()).isEqualTo("좋았던 점");
-		assertThat(context.topic()).isEqualTo("강연이 좋았다");
-	}
-
 	// PR #156 리뷰 반영
-	// 리뷰 1 — target에서 되살린 선택지(긍정 조건)는 파서의 not·any와 한 match로 묶지 않는다(SPEC 317행, AC26).
+	// {context}는 보낸 조건대로 센다. target 나머지의 선택지를 조건으로 되살리지 않는다(SPEC 319행).
 
 	@Test
-	void 리뷰1_not에_target의_선택지를_묶지_않고_missing_match로_되묻는다() {
-		AnalyzeView view = ask(FORM_SUMMARY, "경영학과 아닌 홍보 지원자의 지원 동기 요약해줘",
-				"{\"conditions\":[\"경영학과\"],\"match\":\"not\",\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}");
-
-		assertThat(reason(view)).isEqualTo("missing_match");
-		assertThat(view.clarify().message()).contains("'아닌'");
-		assertThat(view.result()).isNull();
-		verify(summaries, never()).summarize(any(), anyList(), anyList());
-	}
-
-	@Test
-	void 리뷰1_any에_target의_선택지를_묶지_않고_missing_match로_되묻는다() {
-		AnalyzeView view = ask(FORM_SUMMARY, "경영학과이거나 소프트웨어학과인 홍보 지원자의 지원 동기 요약해줘",
-				"{\"conditions\":[\"경영학과\",\"소프트웨어학과\"],\"match\":\"any\",\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}");
-
-		assertThat(reason(view)).isEqualTo("missing_match");
-		assertThat(view.result()).isNull();
-		verify(summaries, never()).summarize(any(), anyList(), anyList());
-	}
-
-	@Test
-	void 리뷰1_all이면_target의_선택지를_더해_함께_만족하는_응답만_요약한다() {
-		AnalyzeView view = ask(FORM_SUMMARY, "소프트웨어학과인 홍보 지원자의 지원 동기 요약해줘",
-				"{\"conditions\":[\"소프트웨어학과\"],\"match\":\"all\",\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}");
-
-		assertThat(view.status()).isEqualTo("ok");
-		assertThat(summarized().conditions()).containsExactly("소프트웨어학과", "홍보");
-		assertThat(view.result().count()).isEqualTo(1);
-	}
-
-	// 리뷰 5 — {context}는 보낸 조건대로 센다. target 나머지의 선택지를 조건으로 더하지 않는다(SPEC 319행).
-
-	@Test
-	void 리뷰5_context의_target_나머지_선택지는_조건으로_더하지_않고_unknown_condition이다() {
+	void context의_target_나머지_선택지는_조건으로_더하지_않고_unknown_condition이다() {
 		AnalyzeView view = service(FORM_SUMMARY).analyze(new AnalyzeCommand(OWNER, FORM_ID.toString(),
 				"{\"context\":{\"conditions\":[],\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}}"));
 
@@ -441,67 +495,45 @@ class QueryCorrectionTest {
 		verify(summaries, never()).summarize(any(), anyList(), anyList());
 	}
 
+	// target은 요약에서만 쓴다. 목록·건수 질의는 이번 변경과 상관없이 파서의 조건대로 센다.
 	@Test
-	void 리뷰5_context에_그_선택지가_조건으로_있으면_지원_동기를_요약한다() {
-		AnalyzeView view = service(FORM_SUMMARY).analyze(new AnalyzeCommand(OWNER, FORM_ID.toString(),
-				"{\"context\":{\"conditions\":[\"홍보\"],\"operation\":\"summarize\",\"target\":\"홍보 지원자의 지원 동기\"}}"));
+	void 목록_질의는_target_보정과_상관없이_조건대로_센다() {
+		AnalyzeView list = ask(FORM_SUMMARY, "학과 문항에서 소프트웨어학과를 보여줘",
+				"{\"conditions\":[\"소프트웨어학과\"],\"operation\":\"list\"}");
+		AnalyzeView count = ask(FORM_SUMMARY, "소프트웨어학과 몇 명이야", "{\"conditions\":[\"소프트웨어학과\"],\"operation\":\"count\"}");
 
-		assertThat(view.status()).isEqualTo("ok");
-		assertThat(summarized().conditions()).containsExactly("홍보");
+		assertThat(list.status()).isEqualTo("ok");
+		assertThat(list.result().count()).isEqualTo(4);
+		assertThat(count.status()).isEqualTo("ok");
+		assertThat(count.result().count()).isEqualTo(4);
 	}
 
-	// 리뷰 2 — 조건을 설명하는 문항 문구("소속 학과가 소프트웨어학과인")는 target으로 쓰지 않는다.
+	// 여러 문항 문구를 이은 target 사이에 다른 낱말이 끼면 문항을 찾지 못한 것으로 본다(SPEC 338행).
 
 	@Test
-	void 리뷰2_소속_학과가_소프트웨어학과인_사람들은_target을_채우지_않고_요약한다() {
-		AnalyzeView view = ask(FORM_SUMMARY, "소속 학과가 소프트웨어학과인 사람들 요약해줘",
-				"{\"conditions\":[\"소프트웨어학과\"],\"operation\":\"summarize\"}");
-
-		assertThat(view.status()).isEqualTo("ok");
-		RequestContext context = summarized();
-		assertThat(context.target()).isNull();
-		assertThat(context.conditions()).containsExactly("소프트웨어학과");
-		assertThat(view.result().count()).isEqualTo(4);
-	}
-
-	@Test
-	void 리뷰2_학년이_3학년인_응답은_target을_채우지_않고_요약한다() {
-		AnalyzeView view = ask(FORM_EVAL_SUMMARY, "학년이 3학년인 응답 요약해줘",
-				"{\"conditions\":[\"3학년\"],\"operation\":\"summarize\"}");
-
-		assertThat(view.status()).isEqualTo("ok");
-		RequestContext context = summarized();
-		assertThat(context.target()).isNull();
-		assertThat(context.conditions()).containsExactly("3학년");
-		assertThat(view.result().count()).isEqualTo(7);
-	}
-
-	// 리뷰 3 — 여러 문항 문구를 이은 target 사이에 다른 낱말이 끼면 문항을 찾지 못한 것으로 본다.
-
-	@Test
-	void 리뷰3_버전마다_문구가_다른_문항을_이은_target_사이의_선택지는_버리지_않는다() {
+	void 리뷰3_버전마다_문구가_다른_문항을_이은_target_사이에_선택지가_끼면_찾지_못한_것이다() {
 		List<VersionQuestions> versions = List.of(motiveVersion(1, "지원 동기"), motiveVersion(2, "참여 동기"));
-		RequestContext parsed = new RequestContext(List.of(), null, "summarize", null, null, null);
 
-		RequestContext filled = QueryText.fillTarget("지원 동기와 홍보 참여 동기 요약해줘", parsed, versions);
-
-		assertThat(TargetMatching.resolve(filled.target(), versions).notes()).isEmpty();
+		assertThat(TargetMatching.resolve("지원 동기와 홍보 참여 동기", versions).notes()).isEmpty();
 		assertThat(TargetMatching.resolve("지원 동기와 참여 동기", versions).notes()).containsExactlyInAnyOrder("지원 동기",
 				"참여 동기");
 	}
 
-	// 리뷰 4 — 일반어·빈도 말의 선택지 예외.
-
+	// 일반어("학생")가 이 폼의 선택지이기도 하면 target 나머지에 남아도 버려지는 말이 아니라 조건이다. 문항을 찾지 못한 것으로 본다.
 	@Test
-	void 리뷰4_폼_일반어라도_선택지_문구와_같으면_조건으로_되살린다() {
-		List<VersionQuestions> versions = List.of(choiceVersion("연락 방법", List.of("번호", "메일")));
-		RequestContext parsed = new RequestContext(List.of(), null, "count", null, null, null);
+	void target에_남은_일반어가_이_폼의_선택지면_문항을_찾지_못한_것이다() {
+		List<VersionQuestions> withOption = List.of(jobVersion(List.of("학생", "직장인")));
+		List<VersionQuestions> withoutOption = List.of(jobVersion(List.of("재직자", "직장인")));
 
-		assertThat(QueryText.reviveDroppedConditions("번호 몇 명?", parsed, versions).conditions()).containsExactly("번호");
+		assertThat(TargetMatching.resolve("학생들의 지원 동기", withOption).notes()).isEmpty();
+		assertThat(TargetMatching.resolve("학생 지원 동기", withOption).notes()).isEmpty();
+		assertThat(TargetMatching.resolve("학생들의 지원 동기", withoutOption).notes()).containsExactly("지원 동기");
 	}
 
+	// 빈도 말이 여러 낱말 선택지의 일부면 빼지 않는다.
+
 	@Test
-	void 리뷰4_여러_낱말_선택지를_이루는_빈도_말은_빼지_않는다() {
+	void 여러_낱말_선택지를_이루는_빈도_말은_빼지_않는다() {
 		List<VersionQuestions> versions = List.of(choiceVersion("참여 빈도", List.of("가장 많이", "가끔")));
 		RequestContext parsed = new RequestContext(List.of(), null, "count", null, null, null);
 
@@ -509,18 +541,11 @@ class QueryCorrectionTest {
 			.containsExactly("가장", "많이");
 	}
 
-	@Test
-	void 리뷰4_다른_조건이_있어도_폼_일반어_선택지를_버리지_않는다() {
-		List<VersionQuestions> versions = List.of(VersionQuestions.of(1, Map.of("sections", List.of(Map.of("section_id", "s1",
-				"questions", List.of(
-						Map.of("question_id", "q1", "question_note", "학년", "question_type", "multiple_choice", "options",
-								List.of("1학년", "3학년")),
-						Map.of("question_id", "q2", "question_note", "연락 방법", "question_type", "multiple_choice", "options",
-								List.of("번호", "메일"))))))));
-		RequestContext parsed = new RequestContext(List.of("3학년"), null, "count", null, null, null);
-
-		assertThat(QueryText.reviveDroppedOptions("3학년 번호 몇 명?", parsed, versions).conditions()).containsExactly("3학년",
-				"번호");
+	private static VersionQuestions jobVersion(List<String> jobOptions) {
+		return VersionQuestions.of(1, Map.of("sections", List.of(Map.of("section_id", "s1", "questions",
+				List.of(Map.of("question_id", "q1", "question_note", "직업", "question_type", "multiple_choice", "options", jobOptions),
+						Map.of("question_id", "q2", "question_note", "지원 동기", "question_type", "long_answer", "options",
+								List.of()))))));
 	}
 
 	private static VersionQuestions choiceVersion(String note, List<String> options) {
@@ -534,6 +559,18 @@ class QueryCorrectionTest {
 						List.of("기획", "홍보")),
 						Map.of("question_id", "q9", "question_note", motiveNote, "question_type", "long_answer", "options",
 								List.of()))))));
+	}
+
+	@SuppressWarnings("unchecked")
+	private static List<VersionQuestions> formEvalSummaryVersions() {
+		try {
+			Map<String, Object> seed = JsonMapper.builder().build().readValue(Files.readString(Path.of(FORM_EVAL_SUMMARY)), Map.class);
+			Map<String, Object> version = ((List<Map<String, Object>>) seed.get("form_versions")).get(0);
+			return List.of(VersionQuestions.of(1, (Map<String, Object>) version.get("form")));
+		}
+		catch (IOException e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	@SuppressWarnings("unchecked")

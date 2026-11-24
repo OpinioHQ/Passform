@@ -96,11 +96,14 @@ public class AnalysisService {
 			}
 			statistics = QueryText.asksStatistics(query, versions);
 			// 스키마 재검증 뒤, 표 3행 전에 보정한다(SPEC 334행). 조건이 있으면 선택지 문구를, 없으면 남는 낱말을 되살린다.
-			// 파서가 비운 target은 되살리기보다 먼저 원문에서 찾는다(fillTarget).
+			// 파서가 문항 이름을 topic에 넣었으면 되살리기보다 먼저 target으로 옮긴다(SPEC 319행).
 			context = statistics ? parsed.get()
 					: QueryText.reviveDroppedConditions(query,
-							QueryText.reviveDroppedOptions(query, QueryText.fillTarget(query, parsed.get(), versions), versions),
+							QueryText.reviveDroppedOptions(query, QueryText.topicToTarget(parsed.get(), versions), versions),
 							versions);
+			if (!statistics) {
+				context = liftTargetOption(query, parsed.get(), context, versions);
+			}
 		}
 		else {
 			context = RequestContextSchema.toContext(request.get("context"));
@@ -144,16 +147,10 @@ public class AnalysisService {
 	// 표 3행부터 조건 평가까지다(analyze_api.md 2절). 되묻기면 clarify만 채워 돌려준다.
 	private Evaluated evaluate(Form form, String query, boolean statistics, RequestContext requested,
 			Candidates candidates) {
-		List<VersionQuestions> versions = candidates.versions();
 		RequestContext context = requested.withoutUnusedKeys();
-		// target 나머지의 선택지 문구를 조건으로 되살리는 것은 {query}에만 한다. {context}·내보내기는 보낸 대로 본다(SPEC 319행).
-		List<String> targetOptions = query == null ? List.of() : targetOptions(context, versions);
-		boolean unjoinableTarget = !targetOptions.isEmpty() && !joinsWithAll(context);
-		if (!targetOptions.isEmpty() && !unjoinableTarget) {
-			context = context.withAddedConditions(targetOptions);
-		}
+		List<VersionQuestions> versions = candidates.versions();
 		Optional<ClarifyView> clarify = ClarifyRules.beforeMatching(query, context, aiSummaryEnabled(form), statistics,
-				versions, unjoinableTarget);
+				versions);
 		if (clarify.isPresent()) {
 			return new Evaluated(AnalyzeView.clarify(context, clarify.get()), context, null, null);
 		}
@@ -179,22 +176,35 @@ public class AnalysisService {
 				sort);
 	}
 
-	// target이 문항 문구를 포함하고 나머지에 선택지 문구가 있으면 그 문구를 조건으로 되살린다({query}만, SPEC 338행).
-	private static List<String> targetOptions(RequestContext context, List<VersionQuestions> versions) {
-		if (context.target() == null) {
-			return List.of();
+	// 파서가 조건을 target에 섞은 꼴("홍보 지원자의 지원 동기")이면 그 선택지를 조건으로, 문항 문구를 target으로 고친다(SPEC 338행).
+	// {query}에만 하고, 아래를 모두 만족할 때만 한다. 하나라도 어긋나면 고치지 않고 되묻기 표로 보낸다(AGENTS 3절 3·4항).
+	// - 요약이다. 파서가 조건을 하나도 내지 않았고 match가 없거나 all이며, 보정 뒤에도 조건이 없다
+	//   (부정·"또는" 조건과 섞여 뜻이 뒤집히는 경로를 막는다)
+	// - target 안의 문항 문구가 하나이고, 남은 말이 그 문구보다 앞의 선택지 하나와 조사·일반어뿐이다
+	// - 원문에 부정 표현이 없고, 그 선택지가 원문에 그대로 나오며, 원문에서 그 문항 문구와 선택지를 지우면
+	//   조사·일반어·빈도 말·동작어만 남는다(그 폼의 선택지와 같은 낱말은 남은 말로 센다)
+	//   (파서가 "미지원자"의 "미"처럼 원문의 말을 빼먹은 경우를 원문으로 확인한다)
+	// target을 문항 문구로 고치므로 고친 context를 그대로 다시 보내도({context}) 같은 대상을 센다.
+	private static RequestContext liftTargetOption(String query, RequestContext parsed, RequestContext corrected,
+			List<VersionQuestions> versions) {
+		boolean joinsWithAll = parsed.match() == null || "all".equals(parsed.match());
+		if (!RequestContext.SUMMARIZE.equals(corrected.operation()) || !joinsWithAll || !parsed.conditions().isEmpty() || !corrected.conditions().isEmpty()) {
+			return corrected;
 		}
-		return TargetMatching.resolve(context.target(), versions)
-			.options()
-			.stream()
-			.filter(option -> !context.conditions().contains(option))
-			.toList();
-	}
-
-	// 되살린 선택지는 긍정 조건이다. 파서의 match가 all이거나 없을 때만 기존 조건과 한 match로 묶인다.
-	// not·any에 붙이면 뜻이 뒤집히거나 넓어지므로 되묻는다(SPEC 317행, AC26, AGENTS 3절 3·4항).
-	private static boolean joinsWithAll(RequestContext context) {
-		return context.match() == null || "all".equals(context.match());
+		Optional<TargetMatching.Lift> lift = TargetMatching.lift(corrected.target(), versions);
+		if (lift.isEmpty() || lift.get().options().size() != 1 || !lift.get().optionsBeforeNote() || QueryText.hasNegation(query)) {
+			return corrected;
+		}
+		String option = lift.get().options().get(0);
+		// 파서가 원문에 없는 선택지를 target에 넣었으면("지원 동기 요약해줘" → target "홍보 지원자의 지원 동기") 고치지 않는다.
+		if (QueryText.boundedSpans(query, option).isEmpty()) {
+			return corrected;
+		}
+		if (!QueryText.residualWords(query, List.of(lift.get().note(), option), versions).isEmpty()) {
+			return corrected;
+		}
+		return new RequestContext(List.of(option), parsed.match(), corrected.operation(), corrected.sort(), lift.get().note(),
+				corrected.topic());
 	}
 
 	// 없거나 삭제된 폼은 404, 남의 폼은 403이다.

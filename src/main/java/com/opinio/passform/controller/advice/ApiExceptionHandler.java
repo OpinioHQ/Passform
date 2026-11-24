@@ -47,6 +47,8 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 			case STORAGE_QUOTA_EXCEEDED -> HttpStatus.CONFLICT;
 			case ATTACHMENT_REMOVED -> HttpStatus.GONE;
 			case NOT_OPEN -> HttpStatus.CONFLICT;
+			case INVALID_EXPERIENCE -> HttpStatus.BAD_REQUEST;
+			case ALREADY_RATED, SURVEY_CLOSED -> HttpStatus.CONFLICT;
 		};
 	}
 

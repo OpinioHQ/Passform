@@ -61,6 +61,16 @@ export interface SubmittedResponse {
   attachments: ResponseAttachment[];
   submitted_at: string;
   updated_at: null;
+  /** 사용 경험 평가용 일회용 표(SPEC 4절 61행). 설정이 꺼졌거나 만들지 못했으면 `null`이다. */
+  experience_token: string | null;
+}
+/** 작성 용이성 4단계(SPEC 4절 60행). */
+export type ExperienceEase = 'very_hard' | 'hard' | 'easy' | 'very_easy';
+/** `POST /forms/{form_id}/responses/{response_id}/experience`의 입력(SPEC 4절 61행). */
+export interface ExperienceRequest {
+  token: string;
+  ease?: ExperienceEase;
+  improvement?: string;
 }
 /** `GET /me/forms`(SPEC 200행). `closed`는 서버가 계산한다. */
 export interface SavedFormSummary {

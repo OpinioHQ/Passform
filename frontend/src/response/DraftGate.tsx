@@ -14,6 +14,7 @@ import type {
   ResponseAnswer,
   SubmitFiles,
   SubmitResponseInput,
+  SubmittedResponse,
 } from '../types/api';
 import {
   type DraftSink,
@@ -46,7 +47,8 @@ type Session =
 
 interface Props {
   form: PublicForm;
-  onSubmit: (data: SubmitResponseInput, files?: SubmitFiles) => Promise<void>;
+  /** 새 제출은 서버의 201 본문을 돌려준다(완료 화면의 사용 경험 평가·제출 내역 바로가기). */
+  onSubmit: (data: SubmitResponseInput, files?: SubmitFiles) => Promise<SubmittedResponse | void>;
   saving: boolean;
   onBack?: () => void;
   onReload?: () => void;

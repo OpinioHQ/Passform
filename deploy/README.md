@@ -75,6 +75,7 @@ docker image prune -f   # 이전 빌드가 남긴 이름 없는 이미지를 지
 ```
 
 - 디스크 확인: `df -h /`로 남은 공간을, `docker system df`로 이미지·컨테이너·볼륨이 차지한 양을 본다.
+- 사용 경험 평가 켜기·끄기(테스트 기간 한정): `.env`의 `EXPERIENCE_SURVEY_ENABLED`를 `true` 또는 `false`로 바꾼 뒤 `docker compose up -d app`으로 app만 다시 띄운다. 켠 시각과 끈 시각은 `docs/experience_survey.md`의 기록 칸에 적는다. 켜기 전에 그 문서의 제외 목록을 확정한다.
 
 - 세션은 메모리에 있어서 app을 다시 띄우면 모두 다시 로그인한다.
 - DB 백업: `mkdir -p ~/passform-backups`를 한 번 하고 `crontab -e`에 아래 한 줄을 넣는다. 서버 시계는 UTC라 한국 시각 03:30이다. 백업은 7일 보관한다.

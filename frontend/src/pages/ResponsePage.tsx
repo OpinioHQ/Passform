@@ -1,5 +1,6 @@
 import React from 'react';
-import { ApiError } from '../api/client';
+import { useNavigate } from 'react-router-dom';
+import { ApiError, api } from '../api/client';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
 import {
   type AnswerProblem,
@@ -12,6 +13,7 @@ import {
 import { AutofillLoginHint, AutofillPanel } from '../response/AutofillPanel';
 import { changeErrorText, fileErrorText } from '../response/changeErrors';
 import { type AutosaveStatus, type DraftSink, useAutosave } from '../response/draftSync';
+import { ExperienceSurvey } from '../response/ExperienceSurvey';
 import { loadFileDraft, removeFileDraft, saveFileDraft } from '../response/fileDrafts';
 import { FormAttachmentList } from '../response/FormAttachmentList';
 import { QUESTION_FILE_LIMIT_BYTES, ResponseFilePicker } from '../response/ResponseFilePicker';
@@ -21,6 +23,7 @@ import {
   pagesOf,
   remainingIsKnown,
 } from '../response/responsePath';
+import { paths } from '../routes/paths';
 import type {
   AnswerValue,
   AutofillResult,
@@ -32,12 +35,16 @@ import type {
   ResponseAttachment,
   SubmitFiles,
   SubmitResponseInput,
+  SubmittedResponse,
 } from '../types/api';
 
 interface Props {
   form: PublicForm;
-  /** 성공하면 resolve, 서버가 거부하면 `ApiError`로 reject한다. 화면이 오류를 읽어 안내한다. */
-  onSubmit: (data: SubmitResponseInput, files?: SubmitFiles) => Promise<void>;
+  /**
+   * 성공하면 resolve, 서버가 거부하면 `ApiError`로 reject한다. 화면이 오류를 읽어 안내한다.
+   * 새 제출이 서버의 201 본문을 돌려주면 완료 화면에 사용 경험 평가와 제출 내역 바로가기를 붙인다. 없으면 붙이지 않는다.
+   */
+  onSubmit: (data: SubmitResponseInput, files?: SubmitFiles) => Promise<SubmittedResponse | void>;
   saving: boolean;
   onBack?: () => void;
   /** 최신 폼을 다시 받는다(AC76). 없으면 같은 정의로 처음부터 다시 쓴다. */
@@ -179,6 +186,16 @@ function emptyValue(question: Question): AnswerValue {
   return question.question_type === 'checkbox' ? [] : '';
 }
 
+/** 방금 제출한 응답의 제출 내역으로 간다. 로그인 응답(라우터 안)에서만 그린다. */
+function HistoryButton({ responseId }: { responseId: string }) {
+  const navigate = useNavigate();
+  return (
+    <Button variant="secondary" onClick={() => navigate(paths.myResponse(responseId))}>
+      제출 내역에서 보기
+    </Button>
+  );
+}
+
 /** 응답 한 번. 제출 후 "새 응답 작성"을 누르면 바깥에서 새로 만든다. */
 function ResponseForm({
   form,
@@ -218,6 +235,8 @@ function ResponseForm({
   const [consentError, setConsentError] = React.useState('');
   const [formError, setFormError] = React.useState('');
   const [outcome, setOutcome] = React.useState<Outcome | null>(null);
+  // 새 제출의 201 본문. 완료 화면의 사용 경험 평가 표와 제출 내역 바로가기에 쓴다.
+  const [submitted, setSubmitted] = React.useState<SubmittedResponse | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [previewNotice, setPreviewNotice] = React.useState(false);
   // 개인정보 동의 내용은 평소에 접어 두고 버튼으로 펼친다(이슈 #41 결정). AI 요약 고지도 같은 박스에서 접어 둔다(사람 결정, #42).
@@ -495,9 +514,10 @@ function ResponseForm({
         ? { files: filesToSend, ...(keepChanged ? { keep: keptIds } : {}) }
         : undefined;
     try {
-      await (extra ? onSubmit(body, extra) : onSubmit(body));
+      const result = await (extra ? onSubmit(body, extra) : onSubmit(body));
       // 수정은 이력 화면으로 돌아간다. 제출 완료 화면을 보이지 않는다.
       if (editing) return;
+      setSubmitted(result ?? null);
       // 성공한 뒤에만 초안을 정리한다. 실패하면 서버 초안과 브라우저 초안을 그대로 둔다.
       void autosave.cancel();
       sink?.submitted();
@@ -541,15 +561,29 @@ function ResponseForm({
     );
   }
   if (outcome === 'submitted') {
+    const responseId = submitted?.response_id ?? null;
+    const token = submitted?.experience_token ?? null;
     return (
       <>
         <Panel className="response-notice">
           <Badge tone="green">제출 완료</Badge>
           <h2>응답을 제출했어요</h2>
           <p className="muted">「{form.title}」에 응답해 주셔서 고마워요.</p>
-          <Button variant="secondary" onClick={onRestart}>
-            새 응답 작성
-          </Button>
+          {/* 테스트 기간 한정 사용 경험 평가(SPEC 4절 59~61행). 서버가 표를 줬을 때만 보인다. */}
+          {responseId && token && !preview && (
+            <ExperienceSurvey
+              onSend={(rating) =>
+                api.rateExperience(form.form_id, responseId, { token, ...rating })
+              }
+            />
+          )}
+          <div className="button-row">
+            <Button variant="secondary" onClick={onRestart}>
+              새 응답 작성
+            </Button>
+            {/* 로그인 응답만 계정의 제출 내역에 남는다(SPEC 5절 232행). */}
+            {responseId && sink?.kind === 'account' && <HistoryButton responseId={responseId} />}
+          </div>
         </Panel>
         <PaymentLink link={form.payment_link} />
       </>

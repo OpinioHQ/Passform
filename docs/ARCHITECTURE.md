@@ -124,6 +124,7 @@ SPEC 4절 비포함과 같다. 주관식 내용으로 `count`·`list` 거르기,
 | `saved_forms`, `notifications` | 내 폼함(처음 들어간 시각 `saved_at` 포함), 알림 |
 | `consent_templates`, `question_templates` | 템플릿 |
 | `attachments` | 첨부 메타데이터. 원본은 S3 |
+| `experience_ratings` | 테스트 기간 한정 사용 경험 평가(SPEC 4절, AC95). 응답과 분리해 두고 결과·분석·내보내기는 읽지 않는다. 일회용 표는 해시만 저장. 응답이 지워지면 `response_id`만 `null`(ON DELETE SET NULL), `form_id`는 외래 키 없이 값만 둔다. 최종 평가 집계 뒤 사람이 지운다(`docs/experience_survey.md`) |
 
 - **결정(2026-11-04, 사용자):** 문항·답변 테이블은 만들지 않고 폼 정의와 답을 `jsonb` 컬럼에 둔다. DB 변경은 Flyway로 관리한다. SPEC 25행이 이 결정을 아키텍처로 넘겼고 SPEC·AGENTS에 다른 기준은 없다.
 - 근거: 시험 데모에서 버전 판정, 이력, 통계, 분석이 모두 이 구조로 동작했다. 문항이 버전마다 바뀌어 테이블로 나누면 동기화가 늘어난다.

@@ -18,7 +18,9 @@ public enum ErrorCode {
 	// 첨부와 저장 공간(SPEC 5절 121~124행, 188행, 198행). storage_unavailable은 사람 결정(#63)이다.
 	INVALID_FILE_TYPE, FILE_TOO_LARGE, STORAGE_QUOTA_EXCEEDED, ATTACHMENT_REMOVED, STORAGE_UNAVAILABLE,
 	// QR은 공유 링크가 생긴 뒤에만 만든다(SPEC 5절 126행).
-	NOT_OPEN;
+	NOT_OPEN,
+	// 테스트 기간 한정 사용 경험 평가(SPEC 4절 61행, AC95).
+	INVALID_EXPERIENCE, ALREADY_RATED, SURVEY_CLOSED;
 
 	// 응답의 error 값이다(예: not_found).
 	public String code() {

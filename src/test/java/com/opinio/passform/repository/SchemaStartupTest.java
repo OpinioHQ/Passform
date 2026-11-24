@@ -50,10 +50,11 @@ class SchemaStartupTest extends DatabaseTest {
 				""", String.class);
 
 		assertThat(tables).containsExactlyInAnyOrder("users", "profiles", "forms", "form_versions", "responses",
-				"saved_forms", "notifications", "consent_templates", "question_templates", "attachments");
+				"saved_forms", "notifications", "consent_templates", "question_templates", "attachments",
+				"experience_ratings");
 		assertThat(jdbc.queryForObject("select version from flyway_schema_history where success order by installed_rank desc limit 1",
 				String.class))
-			.isEqualTo("3");
+			.isEqualTo("4");
 	}
 
 	@ParameterizedTest

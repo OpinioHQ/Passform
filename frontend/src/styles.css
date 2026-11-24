@@ -2100,6 +2100,17 @@ textarea::placeholder {
   padding: 26px 30px;
   margin-bottom: 16px;
 }
+/* 제출 완료 패널 안의 사용 경험 평가(SPEC 4절 59~61행). 패널 폭을 다 쓰고, 문항은 응답 화면과 같은 모양이다. */
+.experience-survey {
+  align-self: stretch;
+}
+.experience-survey .question:last-of-type {
+  padding-bottom: var(--space-4);
+}
+.experience-survey > p,
+.experience-survey > .button-row {
+  margin-top: 4px;
+}
 .view-switch {
   display: inline-flex;
   flex-wrap: wrap;

@@ -56,6 +56,8 @@ services:
       MAIL_FROM: ${MAIL_FROM:-}
       MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
       MAIL_PORT: ${MAIL_PORT:-587}
+      # 테스트 기간 한정 사용 경험 평가. 켜고 끄는 절차와 기록은 docs/experience_survey.md.
+      EXPERIENCE_SURVEY_ENABLED: ${EXPERIENCE_SURVEY_ENABLED:-false}
       # 사람이 정한 배포 값(ARCHITECTURE 10절). 비밀이 아니므로 여기 고정한다.
       SESSION_COOKIE_SECURE: "true"
       FRONTEND_ORIGIN: https://app.passform.kr

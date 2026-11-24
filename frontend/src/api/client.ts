@@ -13,6 +13,7 @@ import type {
   CreatorFormDefinition,
   CreatorFormSummary,
   EditedResponse,
+  ExperienceRequest,
   ExportRequest,
   ExportResult,
   FileToSend,
@@ -262,6 +263,12 @@ export const api = {
       method: 'POST',
       body: multipartBody(body, files),
     }),
+  /** 제출 직후의 사용 경험 평가(SPEC 4절 61행). 성공하면 본문 없는 201이다. */
+  rateExperience: (formId: string, responseId: string, body: ExperienceRequest) =>
+    request<void>(
+      `/forms/${segment(formId)}/responses/${segment(responseId)}/experience`,
+      json(body),
+    ),
   analyze: (formId: string, body: AnalyzeRequest) =>
     request<AnalyzeResponse>(`/forms/${segment(formId)}/analyze`, json(body)),
   saveForm: (body: SaveFormInput) => request<void>('/me/saved-forms', json(body)),

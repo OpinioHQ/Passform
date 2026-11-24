@@ -145,6 +145,7 @@ export const demoResponses: SubmittedResponse[] = names.map((name, i) => ({
   status: 'submitted',
   submitted_at: `2026-10-${28 - Math.floor(i / 2)}T${10 + i}:42:00+09:00`,
   updated_at: null,
+  experience_token: null,
   attachments: [],
   content: [
     { question_id: 'q1', question_note: '이름', value: name },
@@ -169,6 +170,8 @@ export function demoSubmission(form: PublicForm, payload: SubmitResponseInput): 
     status: 'submitted',
     submitted_at: new Date().toISOString(),
     updated_at: null,
+    // 가짜 데이터 모드에는 사용 경험 평가가 없다.
+    experience_token: null,
     attachments: [],
     content: payload.answers.map((a) => ({
       question_id: a.question_id,

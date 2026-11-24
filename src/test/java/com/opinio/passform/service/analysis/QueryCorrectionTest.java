@@ -490,6 +490,44 @@ class QueryCorrectionTest {
 				"참여 동기");
 	}
 
+	// 리뷰 4 — 일반어·빈도 말의 선택지 예외.
+
+	@Test
+	void 리뷰4_폼_일반어라도_선택지_문구와_같으면_조건으로_되살린다() {
+		List<VersionQuestions> versions = List.of(choiceVersion("연락 방법", List.of("번호", "메일")));
+		RequestContext parsed = new RequestContext(List.of(), null, "count", null, null, null);
+
+		assertThat(QueryText.reviveDroppedConditions("번호 몇 명?", parsed, versions).conditions()).containsExactly("번호");
+	}
+
+	@Test
+	void 리뷰4_여러_낱말_선택지를_이루는_빈도_말은_빼지_않는다() {
+		List<VersionQuestions> versions = List.of(choiceVersion("참여 빈도", List.of("가장 많이", "가끔")));
+		RequestContext parsed = new RequestContext(List.of(), null, "count", null, null, null);
+
+		assertThat(QueryText.reviveDroppedConditions("가장 많이 몇 명?", parsed, versions).conditions())
+			.containsExactly("가장", "많이");
+	}
+
+	@Test
+	void 리뷰4_다른_조건이_있어도_폼_일반어_선택지를_버리지_않는다() {
+		List<VersionQuestions> versions = List.of(VersionQuestions.of(1, Map.of("sections", List.of(Map.of("section_id", "s1",
+				"questions", List.of(
+						Map.of("question_id", "q1", "question_note", "학년", "question_type", "multiple_choice", "options",
+								List.of("1학년", "3학년")),
+						Map.of("question_id", "q2", "question_note", "연락 방법", "question_type", "multiple_choice", "options",
+								List.of("번호", "메일"))))))));
+		RequestContext parsed = new RequestContext(List.of("3학년"), null, "count", null, null, null);
+
+		assertThat(QueryText.reviveDroppedOptions("3학년 번호 몇 명?", parsed, versions).conditions()).containsExactly("3학년",
+				"번호");
+	}
+
+	private static VersionQuestions choiceVersion(String note, List<String> options) {
+		return VersionQuestions.of(1, Map.of("sections", List.of(Map.of("section_id", "s1", "questions", List.of(Map.of(
+				"question_id", "q1", "question_note", note, "question_type", "multiple_choice", "options", options))))));
+	}
+
 	private static VersionQuestions motiveVersion(int formVersion, String motiveNote) {
 		return VersionQuestions.of(formVersion, Map.of("sections", List.of(Map.of("section_id", "s1", "questions",
 				List.of(Map.of("question_id", "q7", "question_note", "지원 분야", "question_type", "multiple_choice", "options",

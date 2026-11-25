@@ -17,6 +17,8 @@ public enum ErrorCode {
 	INVALID_CONTEXT, LLM_UNAVAILABLE,
 	// 첨부와 저장 공간(SPEC 5절 121~124행, 188행, 198행). storage_unavailable은 사람 결정(#63)이다.
 	INVALID_FILE_TYPE, FILE_TOO_LARGE, STORAGE_QUOTA_EXCEEDED, ATTACHMENT_REMOVED, STORAGE_UNAVAILABLE,
+	// 제작자가 파일 첨부를 켜지 않은 문항에 보낸 응답 파일.
+	FILE_UPLOAD_NOT_ALLOWED,
 	// QR은 공유 링크가 생긴 뒤에만 만든다(SPEC 5절 126행).
 	NOT_OPEN,
 	// 테스트 기간 한정 사용 경험 평가(SPEC 4절 61행, AC95).

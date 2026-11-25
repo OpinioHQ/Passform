@@ -154,10 +154,18 @@ public class SubmissionService {
 	}
 
 	// 파일은 응답 경로 위의 문항에만 연결한다. 없는 문항이거나 분기로 건너뛴 문항이면 형식 오류다.
+	// 경로 위라도 제작자가 파일 첨부를 켜지 않은 문항이면 file_upload_not_allowed다. 판정 정의는 제출 버전이다.
 	static void requireFilesOnPath(List<Question> onPath, Set<String> fileQuestionIds) {
-		Set<String> allowed = onPath.stream().map(Question::questionId).collect(Collectors.toSet());
-		if (!allowed.containsAll(fileQuestionIds)) {
+		if (fileQuestionIds.isEmpty()) {
+			return;
+		}
+		Map<String, Question> byId = onPath.stream()
+			.collect(Collectors.toMap(Question::questionId, question -> question, (first, second) -> first));
+		if (!byId.keySet().containsAll(fileQuestionIds)) {
 			throw new DomainException(ErrorCode.INVALID_REQUEST);
+		}
+		if (!fileQuestionIds.stream().allMatch(id -> byId.get(id).allowResponseFiles())) {
+			throw new DomainException(ErrorCode.FILE_UPLOAD_NOT_ALLOWED);
 		}
 	}
 

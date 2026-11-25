@@ -12,7 +12,8 @@ public record FormDefinition(String displayMode, boolean aiSummaryEnabled, List<
 	}
 
 	public record Question(String questionId, String questionNote, String questionType, List<String> options,
-			boolean required, String inputFormatKind, Integer characterLimit, List<BranchRule> branchRules) {
+			boolean required, String inputFormatKind, Integer characterLimit, List<BranchRule> branchRules,
+			boolean allowResponseFiles) {
 
 		public boolean isCheckbox() {
 			return "checkbox".equals(questionType);
@@ -73,7 +74,9 @@ public record FormDefinition(String displayMode, boolean aiSummaryEnabled, List<
 		return new Question((String) question.get("question_id"), (String) question.get("question_note"),
 				(String) question.get("question_type"), options, Boolean.TRUE.equals(question.get("required")), kind,
 				(Integer) question.get("character_limit"),
-				list(question.get("branch_rules")).stream().map(FormDefinition::branchRule).toList());
+				list(question.get("branch_rules")).stream().map(FormDefinition::branchRule).toList(),
+				// 필드가 없는 기존 폼·과거 버전은 꺼짐이다(응답 파일 첨부 켜기/끄기).
+				Boolean.TRUE.equals(question.get("allow_response_files")));
 	}
 
 	private static BranchRule branchRule(Object value) {

@@ -30,6 +30,7 @@ const form: PublicForm = {
           required: false,
           profile_key: null,
           attachments: [],
+          allow_response_files: true,
           branch_rules: [],
         },
       ],

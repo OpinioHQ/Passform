@@ -35,9 +35,10 @@ public final class SampleForms {
 				    {"section_id": "s2", "title": "연락", "questions": [
 				      {"question_id": "q4", "template_id": null, "question_note": "연락처", "question_type": "short_answer",
 				       "options": [], "required": false, "input_format": {"kind": "mobile_phone"}, "profile_key": null,
-				       "attachments": [], "branch_rules": []},
+				       "attachments": [], "allow_response_files": true, "branch_rules": []},
 				      {"question_id": "q5", "template_id": null, "question_note": "하고 싶은 말", "question_type": "long_answer",
-				       "options": [], "required": false, "profile_key": null, "attachments": [], "branch_rules": []}
+				       "options": [], "required": false, "profile_key": null, "attachments": [], "allow_response_files": true,
+				       "branch_rules": []}
 				    ]}
 				  ]
 				}

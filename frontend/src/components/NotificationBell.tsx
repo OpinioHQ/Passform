@@ -2,6 +2,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { deadlineText } from '../pages/ResponsePage';
+import { displayTitle } from '../formTitle';
 import { paths } from '../routes/paths';
 import type { NotificationView, SavedFormSummary } from '../types/api';
 import { Icon } from './UI';
@@ -114,7 +115,7 @@ export function NotificationBell({ open, onToggle, onClose }: Props) {
                       onClick={() => void openNotification(n)}
                     >
                       <span className="notification-title">
-                        {form ? form.title : '열 수 없는 폼이에요'}
+                        {form ? displayTitle(form.title) : '열 수 없는 폼이에요'}
                       </span>
                       {form && <span className="muted small">{deadlineText(form.deadline)}</span>}
                       {!n.read && <span className="notification-unread">안 읽음</span>}

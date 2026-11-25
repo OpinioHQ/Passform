@@ -7,6 +7,7 @@
 import React from 'react';
 import { ApiError, api } from '../api/client';
 import { Badge, Button, Panel } from '../components/UI';
+import { displayTitle } from '../formTitle';
 import { ResponsePage } from '../pages/ResponsePage';
 import type {
   AnswerValue,
@@ -241,7 +242,7 @@ export function DraftGate({ form, ...rest }: Props) {
         </Panel>
         <Panel className="questions stale-draft">
           <h3>
-            {session.definition.title} · 폼 버전 {session.version}에서 저장한 답
+            {displayTitle(session.definition.title)} · 폼 버전 {session.version}에서 저장한 답
           </h3>
           <dl className="consent-terms">
             {session.definition.sections

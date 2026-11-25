@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError, api } from '../api/client';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
+import { displayTitle } from '../formTitle';
 import {
   type AnswerProblem,
   checkAnswer,
@@ -568,7 +569,7 @@ function ResponseForm({
         <Panel className="response-notice">
           <Badge tone="green">제출 완료</Badge>
           <h2>응답을 제출했어요</h2>
-          <p className="muted">「{form.title}」에 응답해 주셔서 고마워요.</p>
+          <p className="muted">「{displayTitle(form.title)}」에 응답해 주셔서 고마워요.</p>
           {/* 테스트 기간 한정 사용 경험 평가(SPEC 4절 59~61행). 서버가 표를 줬을 때만 보인다. */}
           {responseId && token && !preview && (
             <ExperienceSurvey
@@ -974,7 +975,7 @@ function ResponseForm({
           <Badge tone={preview || editing ? 'amber' : 'blue'}>
             {preview ? '미리보기' : editing ? '제출한 답 수정' : '응답 받는 중'}
           </Badge>
-          <h2>{form.title}</h2>
+          <h2>{displayTitle(form.title)}</h2>
           {form.note.trim() && <p className="form-note">{form.note}</p>}
           <p className="muted">{deadlineText(form.deadline)}</p>
           <FormAttachmentList

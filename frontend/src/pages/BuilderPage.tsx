@@ -26,6 +26,7 @@ import { QuestionEditor, RowButton } from '../builder/QuestionEditor';
 import { ShareQr } from '../builder/ShareQr';
 import { useCreatorAutosave, useLeaveWarning } from '../builder/creatorAutosave';
 import { Badge, Button, Heading, Icon, Panel } from '../components/UI';
+import { displayTitle } from '../formTitle';
 import type {
   Attachment,
   ConsentTemplate,
@@ -385,7 +386,7 @@ export function BuilderPage({
             {showingQr ? 'QR 닫기' : 'QR 보기'}
           </button>
           {copyNote && <small className="muted">{copyNote}</small>}
-          {showingQr && <ShareQr load={loadQr} label={definition.title.trim() || '제목 없는 폼'} />}
+          {showingQr && <ShareQr load={loadQr} label={displayTitle(definition.title.trim())} />}
         </Panel>
       )}
       <fieldset className="builder-fieldset" disabled={busy}>

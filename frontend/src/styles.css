@@ -2047,6 +2047,13 @@ textarea::placeholder {
   font-size: 12px;
   overflow-wrap: anywhere;
 }
+.form-attachments {
+  padding-left: 0;
+  list-style: none;
+}
+.form-attachments li + li {
+  margin-top: var(--space-2);
+}
 .attachment-image {
   display: block;
   max-width: 100%;

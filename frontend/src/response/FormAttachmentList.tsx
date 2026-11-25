@@ -16,7 +16,7 @@ export function FormAttachmentList({
 }) {
   if (files.length === 0) return null;
   return (
-    <ul className="attachment-list">
+    <ul className="attachment-list form-attachments">
       {files.map((file) => {
         const url = formId ? attachmentUrl(formId, questionId, file.attachment_id) : null;
         return (

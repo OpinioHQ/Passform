@@ -5,6 +5,8 @@ import { ApiError } from '../api/client';
 const FILE_ERRORS: Record<string, string> = {
   invalid_file_type: '이미지, PDF, ZIP, PPT, DOC, HWP 파일만 첨부할 수 있어요.',
   file_too_large: '한 문항에 첨부한 파일의 합계는 25MB까지예요.',
+  file_upload_not_allowed:
+    '파일 첨부를 허용하지 않은 문항이 있어요. 새로고침한 뒤 다시 시도해 주세요.',
   storage_quota_exceeded:
     '폼을 만든 사람의 저장 공간이 부족해 저장하지 못했어요. 폼을 보낸 사람에게 알려 주세요.',
   storage_unavailable:

@@ -13,6 +13,7 @@ export function ResponseFilePicker({
   onPick,
   onRemovePicked,
   onRemoveExisting,
+  canAdd = true,
 }: {
   label: string;
   /** 수정 화면에서 남겨 둔 제출 파일. */
@@ -21,6 +22,8 @@ export function ResponseFilePicker({
   onPick: (files: File[]) => void;
   onRemovePicked: (item: FileToSend) => void;
   onRemoveExisting: (attachmentId: string) => void;
+  /** 제작자가 첨부를 켠 문항만 새 파일을 고를 수 있다. 꺼진 문항은 이미 제출한 파일을 보고 뺄 수만 있다. */
+  canAdd?: boolean;
 }) {
   return (
     <div className="response-files">
@@ -55,21 +58,23 @@ export function ResponseFilePicker({
           ))}
         </ul>
       )}
-      <label className="btn btn-ghost response-file-button">
-        파일 첨부
-        <input
-          type="file"
-          multiple
-          accept={ACCEPT}
-          aria-label={`${label} 파일 첨부`}
-          onChange={(event) => {
-            const files = Array.from(event.target.files ?? []);
-            // 같은 파일을 다시 고를 수 있게 비운다.
-            event.target.value = '';
-            if (files.length > 0) onPick(files);
-          }}
-        />
-      </label>
+      {canAdd && (
+        <label className="btn btn-ghost response-file-button">
+          파일 첨부
+          <input
+            type="file"
+            multiple
+            accept={ACCEPT}
+            aria-label={`${label} 파일 첨부`}
+            onChange={(event) => {
+              const files = Array.from(event.target.files ?? []);
+              // 같은 파일을 다시 고를 수 있게 비운다.
+              event.target.value = '';
+              if (files.length > 0) onPick(files);
+            }}
+          />
+        </label>
+      )}
     </div>
   );
 }

@@ -213,6 +213,14 @@ function ResponseForm({
   const defaultMode = form.display.default_mode;
   const switchable = form.display.allowed_modes.length > 1;
   const allQuestions = React.useMemo(() => form.sections.flatMap((s) => s.questions), [form]);
+  // 제작자가 파일 첨부를 켠 문항만 새 파일을 받는다. 필드가 없는 기존 폼·과거 버전은 꺼짐이다.
+  const fileQuestionIds = React.useMemo(
+    () =>
+      new Set(
+        allQuestions.filter((q) => q.allow_response_files === true).map((q) => q.question_id),
+      ),
+    [allQuestions],
+  );
   const [answers, setAnswers] = React.useState<AnswerMap>(
     () => draft?.initialAnswers ?? editing?.initialAnswers ?? {},
   );
@@ -292,6 +300,9 @@ function ResponseForm({
     if (fileKey) void removeFileDraft(fileKey).catch(() => undefined);
   }
 
+  // 브라우저에 보관한 파일이 꺼진 문항에 남아 있어도 화면·제출에서 쓰지 않는다.
+  const usablePicked = picked.filter((item) => fileQuestionIds.has(item.question_id));
+
   function bytesOf(questionId: string): number {
     const kept = editableFiles
       .filter((file) => file.question_id === questionId && keptIds.includes(file.attachment_id))
@@ -303,6 +314,7 @@ function ResponseForm({
 
   function addFiles(question: Question, added: File[]) {
     const id = question.question_id;
+    if (!fileQuestionIds.has(id)) return;
     const total = added.reduce((sum, file) => sum + file.size, bytesOf(id));
     if (total > QUESTION_FILE_LIMIT_BYTES) {
       setErrors((prev) => ({ ...prev, [id]: '한 문항에 첨부한 파일의 합계는 25MB까지예요.' }));
@@ -508,7 +520,7 @@ function ResponseForm({
     };
     // 분기로 건너뛴 문항의 파일은 보내지 않는다. 답과 마찬가지다.
     const onPathIds = new Set(onPath.map((q) => q.question_id));
-    const filesToSend = picked.filter((item) => onPathIds.has(item.question_id));
+    const filesToSend = usablePicked.filter((item) => onPathIds.has(item.question_id));
     const keepChanged = editableFiles.length !== keptIds.length;
     const extra: SubmitFiles | undefined =
       filesToSend.length > 0 || keepChanged
@@ -729,6 +741,11 @@ function ResponseForm({
 
   function renderQuestion(question: Question, number: number) {
     const id = question.question_id;
+    const canAddFiles = fileQuestionIds.has(id);
+    // 첨부가 꺼진 문항이라도 이미 제출한 파일은 수정 화면에서 보이고 뺄 수 있다.
+    const existingFiles = editableFiles.filter(
+      (file) => file.question_id === id && keptIds.includes(file.attachment_id),
+    );
     const choiceGroup =
       question.question_type === 'multiple_choice' || question.question_type === 'checkbox';
     return (
@@ -764,13 +781,12 @@ function ResponseForm({
           files={question.attachments}
         />
         <div className="question-input">{renderInput(question)}</div>
-        {acceptsFiles && !preview && (
+        {acceptsFiles && !preview && (canAddFiles || existingFiles.length > 0) && (
           <ResponseFilePicker
             label={question.question_note}
-            existing={editableFiles.filter(
-              (file) => file.question_id === id && keptIds.includes(file.attachment_id),
-            )}
-            picked={picked.filter((item) => item.question_id === id)}
+            existing={existingFiles}
+            canAdd={canAddFiles}
+            picked={usablePicked.filter((item) => item.question_id === id)}
             onPick={(added) => addFiles(question, added)}
             onRemovePicked={(item) => changePicked(picked.filter((other) => other !== item))}
             onRemoveExisting={(attachmentId) =>
@@ -1014,13 +1030,16 @@ function ResponseForm({
       )}
       {/* 로그인 초안을 이어 쓰는데 파일이 없으면 다른 기기에서 고른 파일을 다시 고르라고(SPEC 5절 212행, AC82),
           파일을 고른 뒤에는 이 브라우저에만 있다고 알린다. 비로그인 초안은 이 브라우저에만 있어 재첨부 안내가 맞지 않는다. */}
-      {files && !preview && ((restored && sink?.kind === 'account') || picked.length > 0) && (
-        <p className="small muted" data-testid="file-draft-notice">
-          {picked.length === 0
-            ? '이 브라우저에 보관한 파일이 없어요. 다른 기기나 브라우저에서 첨부했다면 파일을 다시 골라 주세요.'
-            : '첨부한 파일은 제출 전까지 이 브라우저에만 보관돼요.'}
-        </p>
-      )}
+      {files &&
+        !preview &&
+        fileQuestionIds.size > 0 &&
+        ((restored && sink?.kind === 'account') || usablePicked.length > 0) && (
+          <p className="small muted" data-testid="file-draft-notice">
+            {usablePicked.length === 0
+              ? '이 브라우저에 보관한 파일이 없어요. 다른 기기나 브라우저에서 첨부했다면 파일을 다시 골라 주세요.'
+              : '첨부한 파일은 제출 전까지 이 브라우저에만 보관돼요.'}
+          </p>
+        )}
       {fileNotice && (
         <p className="error" role="alert">
           {fileNotice}

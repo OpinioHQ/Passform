@@ -477,6 +477,7 @@ export function BuilderPage({
                       onMove={(delta) => edit((d) => moveQuestion(d, sectionId, questionId, delta))}
                       onDuplicate={() => edit((d) => duplicateQuestion(d, sectionId, questionId))}
                       onRemove={() => edit((d) => removeQuestion(d, sectionId, questionId))}
+                      responseFileToggle
                       attachments={
                         <AttachmentEditor
                           formId={formId}

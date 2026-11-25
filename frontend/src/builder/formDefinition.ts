@@ -254,6 +254,17 @@ export function removeOption(question: Question, index: number): Question {
   return { ...question, options: question.options.filter((_, i) => i !== index) };
 }
 
+/** 응답 파일 첨부 켜기/끄기. 끄면 키를 빼서 필드가 없던 문항과 같은 정의로 둔다(쓸데없는 새 버전을 막는다). */
+export function setAllowResponseFiles(question: Question, allow: boolean): Question {
+  const next: Question = { ...question };
+  if (allow) next.allow_response_files = true;
+  else delete next.allow_response_files;
+  return next;
+}
+
+/** 응답자가 이 문항에 새 파일을 첨부할 수 있는지. 필드가 없는 기존 폼·과거 버전은 꺼짐이다. */
+export const allowsResponseFiles = (question: Question) => question.allow_response_files === true;
+
 export function setCharacterLimit(question: Question, limit: number | null): Question {
   const next: Question = { ...question };
   if (limit === null) delete next.character_limit;

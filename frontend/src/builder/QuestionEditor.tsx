@@ -9,6 +9,8 @@ import {
   isChoiceType,
   ownInfoQuestion,
   removeOption,
+  allowsResponseFiles,
+  setAllowResponseFiles,
   setCharacterLimit,
   setInputFormat,
   setOwnInfo,
@@ -70,6 +72,7 @@ export function QuestionEditor({
   onDuplicate,
   onRemove,
   attachments,
+  responseFileToggle = false,
 }: {
   definition: FormDefinition;
   question: Question;
@@ -84,6 +87,8 @@ export function QuestionEditor({
   onRemove: () => void;
   /** 문항 첨부 칸. 서버에 연결된 빌더만 넣는다. */
   attachments?: React.ReactNode;
+  /** 응답 파일 첨부 켜기/끄기 칸. 기본 모드만 넣는다. 빠른 모드는 값을 바꾸지 않고 그대로 둔다. */
+  responseFileToggle?: boolean;
 }) {
   const [ownInfoCleared, setOwnInfoCleared] = React.useState(false);
   const name = `질문 ${number}`;
@@ -257,6 +262,18 @@ export function QuestionEditor({
         />{' '}
         필수 문항
       </label>
+
+      {responseFileToggle && (
+        <label className="builder-check">
+          <input
+            type="checkbox"
+            checked={allowsResponseFiles(q)}
+            aria-label={`${name} 응답자 파일 첨부 허용`}
+            onChange={(e) => onChange(setAllowResponseFiles(q, e.target.checked))}
+          />{' '}
+          응답자 파일 첨부 허용
+        </label>
+      )}
 
       {attachments}
 

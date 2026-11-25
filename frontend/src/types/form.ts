@@ -38,6 +38,8 @@ export interface Question {
   profile_key: ProfileKey | null;
   character_limit?: number | null;
   attachments: Attachment[];
+  /** 응답자가 이 문항의 답에 파일을 첨부할 수 있는지. 없으면 꺼짐(false)이다. */
+  allow_response_files?: boolean;
   branch_rules: BranchRule[];
 }
 export interface FormSection {

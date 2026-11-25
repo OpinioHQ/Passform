@@ -2175,6 +2175,7 @@ textarea::placeholder {
 }
 .consent-toggle {
   padding: 0 8px;
+  font-size: 13px;
 }
 .response-page .info {
   width: 100%;
@@ -2287,6 +2288,32 @@ textarea::placeholder {
   }
   .consent p {
     margin-left: 0;
+  }
+  /* 내용 보기는 동의 문구 아래, 문구 글자 왼쪽 끝에 맞춘다. 체크박스 칸과 문구 칸을 격자로 나눠
+     체크박스 너비를 숫자로 박지 않는다. 버튼 글자는 왼쪽 padding과 테두리만큼 당겨 문구 글자와 같은 줄에 둔다. */
+  .consent .button-row {
+    row-gap: 2px;
+  }
+  .consent .consent-toggle {
+    min-height: 0;
+    padding: 4px 8px;
+  }
+  @supports (grid-template-columns: subgrid) {
+    .consent .button-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      column-gap: 12px;
+    }
+    .consent .button-row label {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: subgrid;
+    }
+    .consent .consent-toggle {
+      grid-column: 2;
+      justify-self: start;
+      margin-left: -9px;
+    }
   }
   .response-page .response-files {
     margin-left: 0;

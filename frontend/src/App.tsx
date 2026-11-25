@@ -2,6 +2,7 @@ import { Route, Routes, useNavigate } from 'react-router-dom';
 import { useLiveApi } from './api/client';
 import { AppLayout } from './components/AppLayout';
 import { DemoDataProvider } from './demo/DemoDataContext';
+import { scrollToLandingFeatures } from './landing/landingFeatures';
 import { landingTargets } from './landing/landingTargets';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
@@ -27,12 +28,12 @@ import {
 
 function LandingRoute() {
   const navigate = useNavigate();
-  const targets = landingTargets(useLiveApi, import.meta.env.VITE_EXAMPLE_FORM_SLUG);
+  const targets = landingTargets(useLiveApi);
   return (
     <LandingPage
       onStart={() => navigate(paths.myForms)}
       onCreate={() => navigate(paths.newForm)}
-      onTour={() => navigate(targets.tour)}
+      onTour={scrollToLandingFeatures}
       onExplore={() => navigate(targets.explore)}
     />
   );

@@ -75,6 +75,11 @@
 html {
   scroll-behavior: smooth;
 }
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
 body {
   margin: 0;
   min-width: 320px;
@@ -1670,6 +1675,8 @@ textarea::placeholder {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-6);
+  /* "서비스 둘러보기"로 스크롤해 왔을 때 카드가 화면 맨 위에 붙지 않게 머리 줄 높이만큼 띄운다. */
+  scroll-margin-top: var(--header-height);
 }
 /* feature-card: 연회색 바탕, 경계선 없음, 버튼은 카드 바닥에 맞춘다. */
 .landing-feature-grid .panel {

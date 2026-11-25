@@ -1,4 +1,5 @@
 import { Button, Icon, Panel } from '../components/UI';
+import { LANDING_FEATURES_ID } from '../landing/landingFeatures';
 import { LazyHeroAnimation } from '../landing/LazyHeroAnimation';
 import { useRevealOnce } from '../landing/useRevealOnce';
 export function LandingPage({
@@ -43,6 +44,7 @@ export function LandingPage({
       </section>
       <div
         ref={features.ref}
+        id={LANDING_FEATURES_ID}
         className={`landing-feature-grid${features.stage === 'idle' ? '' : ' landing-reveal'}${
           features.stage === 'ready' ? ' landing-reveal-wait' : ''
         }`}

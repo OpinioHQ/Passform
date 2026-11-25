@@ -286,6 +286,24 @@ class ResponseFileToggleApiTest extends DatabaseTest {
 	}
 
 	@Test
+	void false를_명시한_배포_폼에서_키를_빼고_저장해도_새_버전을_만들지_않는다() throws Exception {
+		Map<String, Object> explicitFalse = threeQuestions(true);
+		SampleForms.question(explicitFalse, 0, 0).put("allow_response_files", false);
+		String formId = openForm(explicitFalse);
+
+		// 화면에서 켰다가 다시 끄면 키가 빠진 정의를 보낸다.
+		MockHttpServletResponse withoutKey = perform(patch("/forms/" + formId).contentType(MediaType.APPLICATION_JSON)
+			.content(JSON.writeValueAsString(Map.of("sections", threeQuestions(true).get("sections")))), owner);
+		assertThat(JSON.readTree(withoutKey.getContentAsByteArray()).get("definition_version").asInt()).isEqualTo(1);
+
+		// 반대로 키가 없던 문항에 false를 보내도 같다.
+		MockHttpServletResponse backToFalse = perform(patch("/forms/" + formId).contentType(MediaType.APPLICATION_JSON)
+			.content(JSON.writeValueAsString(Map.of("sections", explicitFalse.get("sections")))), owner);
+		assertThat(JSON.readTree(backToFalse.getContentAsByteArray()).get("definition_version").asInt()).isEqualTo(1);
+		assertThat(created(submit(formId, 1, "q2")).get("attachments")).hasSize(1);
+	}
+
+	@Test
 	void 값이_같은_정의를_다시_저장하면_새_버전을_만들지_않는다() throws Exception {
 		String formId = openForm(threeQuestions(true));
 

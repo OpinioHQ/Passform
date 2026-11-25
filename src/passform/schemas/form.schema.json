@@ -125,6 +125,10 @@
           "type": "array",
           "items": { "$ref": "#/definitions/attachment" }
         },
+        "allow_response_files": {
+          "type": "boolean",
+          "description": "응답자가 이 문항의 답에 파일을 첨부할 수 있는지. 선택. 없으면 false(꺼짐)로 본다. 모든 문항 유형에서 켤 수 있다."
+        },
         "branch_rules": {
           "type": "array",
           "items": { "$ref": "#/definitions/branch_rule" },

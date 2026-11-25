@@ -173,7 +173,7 @@ function AutosaveStatusLine({
           ? `${place} 저장한 답을 불러왔어요.`
           : kind === 'account'
             ? ''
-            : '답은 이 브라우저에만 저장돼요. 다른 브라우저에서는 이어 쓸 수 없어요.';
+            : '답은 이 브라우저에만 저장돼요.';
   // 로그인 사용자의 입력 전 안내는 두지 않는다. 입력하면 바로 저장 상태가 보인다(SPEC 5절 212행).
   if (!text) return null;
   return (

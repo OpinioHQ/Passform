@@ -10,3 +10,6 @@ run_id,started_at,commit,change,dataset_cases,dataset_sha256,judge_version,golde
 2026-11-22T1357,2026-11-22T13:57:24.689480700Z,f02f0d2,서버보정_#155_1회차,33,73df3a795a6b,judge_v1,GoldenTest_66/66_통과,live,null,null,131,0,true,evaluated,0.8788,0.75,0.15,0,0,0,0,0.9375,,0.8,1.0,1.0
 2026-11-22T1401,2026-11-22T14:01:08.894015400Z,f02f0d2-dirty,서버보정_#155_2회차,33,73df3a795a6b,judge_v1,GoldenTest_66/66_통과,live,null,null,132,0,true,evaluated,0.8485,0.75,0.15,0,0,0,0,1.0,,0.8,0.9,1.0
 2026-11-22T1404,2026-11-22T14:04:27.134800600Z,f02f0d2-dirty,서버보정_#155_3회차,33,73df3a795a6b,judge_v1,GoldenTest_66/66_통과,live,null,null,132,0,true,evaluated,0.8788,0.8,0.125,0,0,0,0,1.0,,0.8,0.9,1.0
+2026-11-25T1445,2026-11-25T14:45:49.071313700Z,97cc180,#156_머지뒤_재측정_1회차,33,2637a42fd2b5,judge_v1,GoldenTest_66/66_통과,live,null,null,126,0,true,evaluated,0.8788,0.775,0.1,0,0,0,0,1.0,,0.8,0.8824,1.0
+2026-11-25T1451,2026-11-25T14:51:56.380760Z,97cc180-dirty,#156_머지뒤_재측정_2회차,33,2637a42fd2b5,judge_v1,GoldenTest_66/66_통과,live,null,null,126,0,true,evaluated,0.8485,0.725,0.125,0,0,0,0,1.0,,0.8,0.8235,1.0
+2026-11-25T1456,2026-11-25T14:56:05.457596400Z,97cc180-dirty,#156_머지뒤_재측정_3회차,33,2637a42fd2b5,judge_v1,GoldenTest_66/66_통과,live,null,null,126,0,true,evaluated,0.8485,0.775,0.125,0,0,0,0,1.0,,0.8,0.9412,1.0

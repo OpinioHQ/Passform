@@ -34,7 +34,7 @@ public class OpenAiQueryParser implements QueryParser {
 
 	private static final Logger log = LoggerFactory.getLogger(OpenAiQueryParser.class);
 
-	private static final String MODEL = "gpt-6-luna";
+	private static final String MODEL = "gpt-6.1-terra";
 
 	private static final String PROMPT_PATH = "response_analysis/prompts/parse_query.md";
 

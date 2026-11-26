@@ -25,7 +25,7 @@ import tools.jackson.databind.json.JsonMapper;
 @Component
 public class LlmConditionMatcher {
 
-	private static final String MODEL = "gpt-6-luna";
+	private static final String MODEL = "gpt-6.1-terra";
 
 	private static final String PROMPT_PATH = "response_analysis/prompts/match_conditions.md";
 

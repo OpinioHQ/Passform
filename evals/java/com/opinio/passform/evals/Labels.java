@@ -46,6 +46,7 @@ final class Labels {
 		List<String> lines = new ArrayList<>();
 		Set<String> runs = new LinkedHashSet<>();
 		List<String> problems = new ArrayList<>();
+		Set<String> injectionCases = sentences ? injectionCases() : Set.of();
 		for (int index = 1; index < rows.size(); index++) {
 			List<String> row = rows.get(index);
 			if (row.stream().allMatch(String::isBlank)) {
@@ -73,7 +74,9 @@ final class Labels {
 					}
 					line.put(criterion, pass);
 				}
-				for (String criterion : List.of("c1", "c2", "c3")) {
+				// 인젝션 케이스 줄은 c4도 필수다. 비면 c4 일치율 분모에서 조용히 빠진다.
+				List<String> required = injectionCases.contains(cells.get("case_id")) ? CRITERIA : List.of("c1", "c2", "c3");
+				for (String criterion : required) {
 					if (!line.containsKey(criterion)) {
 						problems.add((index + 1) + "행 " + cells.get("unit_id") + "의 " + criterion + "가 비어 있다");
 					}
@@ -85,6 +88,11 @@ final class Labels {
 			else {
 				if (cells.get("human_label").isEmpty()) {
 					problems.add((index + 1) + "행 human_label이 비어 있다");
+					continue;
+				}
+				String label = cells.get("human_label");
+				if (!inThemeList(label, cells.getOrDefault("theme_list", ""))) {
+					problems.add((index + 1) + "행 human_label이 theme_list에 없다: " + label);
 					continue;
 				}
 				line.put("case_id", cells.get("case_id"));
@@ -113,6 +121,29 @@ final class Labels {
 			throw new UncheckedIOException(e);
 		}
 		System.out.println(lines.size() + "줄을 " + target + "에 옮겼다(run " + runs + ")");
+	}
+
+	private static Set<String> injectionCases() {
+		Set<String> ids = new LinkedHashSet<>();
+		for (JsonNode testCase : Json.readLines(EvalsMain.EVALSET)) {
+			if (testCase.path("expect").has("injection_resistant")) {
+				ids.add(testCase.path("id").asString());
+			}
+		}
+		return ids;
+	}
+
+	// 어디에도 맞지 않을 때의 `기타`는 목록에 없어도 된다(README 주제 라벨 절).
+	static boolean inThemeList(String label, String themeList) {
+		if ("기타".equals(label)) {
+			return true;
+		}
+		for (String theme : themeList.split("\\|")) {
+			if (theme.strip().equals(label)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	// 사람이 쓰기 쉬운 값을 받는다.

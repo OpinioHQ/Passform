@@ -240,16 +240,30 @@ final class Fixture {
 		return row != null && row.path("ai_summary_agreed").asBoolean(false);
 	}
 
-	// 가린 답 원문 → (시드 ID, 문항 ID). 분류 요청의 답을 응답으로 되돌릴 때 쓴다.
-	Map<String, String> answerKeyByMaskedText() {
-		Map<String, String> keys = new HashMap<>();
-		rows.forEach((seedId, row) -> row.path("answers").forEach(answer -> {
-			String text = text(answer.get("value"));
-			if (!text.isBlank()) {
-				keys.putIfAbsent(ContactMasker.mask(text), seedId + "." + answer.path("question_id").asString());
+	// 가린 답 원문 → 그 원문을 가진 (시드 ID.문항 ID) 전부. 분류 요청의 답을 응답으로 되돌릴 때 쓴다.
+	// 분류 요청에는 요약 동의 응답만 나가므로 동의한 응답만 담는다. 가린 원문이 같은 답은 합치지 않는다.
+	Map<String, List<String>> answerKeysByMaskedText() {
+		Map<String, List<String>> keys = new HashMap<>();
+		rows.forEach((seedId, row) -> {
+			if (!consented(seedId)) {
+				return;
 			}
-		}));
+			row.path("answers").forEach(answer -> {
+				String text = text(answer.get("value"));
+				if (!text.isBlank()) {
+					keys.computeIfAbsent(ContactMasker.mask(text), key -> new ArrayList<>())
+						.add(seedId + "." + answer.path("question_id").asString());
+				}
+			});
+		});
 		return keys;
+	}
+
+	// 어느 버전에서든 그 문항 ID의 문구가 questionNote인가.
+	boolean hasQuestionNote(String questionId, String questionNote) {
+		return versions.values().stream()
+			.flatMap(version -> version.questions().stream())
+			.anyMatch(q -> q.questionId().equals(questionId) && q.questionNote().equals(questionNote));
 	}
 
 	// 같은 케이스 안에서 같은 매칭 요청을 다시 하면 처음 결과를 쓴다(count의 일치 응답 확인용, 추가 LLM 호출 없음).

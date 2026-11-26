@@ -70,7 +70,7 @@ class OpenAiQueryParserTest {
 		assertThat(output).isEqualTo(OUTPUT);
 		assertThat(("Bearer " + TEST_KEY).equals(authorization.get())).as("키 헤더가 맞아야 한다").isTrue();
 		JsonNode body = JsonMapper.builder().build().readTree(requestBody.get());
-		assertThat(body.path("model").asString()).isEqualTo("gpt-6-luna");
+		assertThat(body.path("model").asString()).isEqualTo("gpt-6.1-terra");
 		assertThat(body.path("reasoning").path("effort").asString()).isEqualTo("none");
 		assertThat(body.path("temperature").asInt(-1)).isZero();
 		assertThat(body.path("input").asString()).isEqualTo("전체 응답 수 알려줘");
